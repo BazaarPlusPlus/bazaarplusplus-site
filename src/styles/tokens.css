@@ -1,0 +1,15 @@
+@theme {
+  --color-bg-base: #0f0d0a;
+  --color-bg-elev: #1a1613;
+  --color-bg-hover: #2a2419;
+  --color-border: #3a2f1f;
+  --color-text-base: #f2e8d5;
+  --color-text-muted: #9a8b6f;
+  --color-accent: #d4a24c;
+  --color-accent-bright: #ffd27a;
+  --color-pos: #5aa96b;
+  --color-neg: #c85a5a;
+  --color-warn: #e6b64a;
+
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+}

@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+html, body {
+  background: var(--color-bg-base);
+  color: var(--color-text-base);
+  font-family: var(--font-sans);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}

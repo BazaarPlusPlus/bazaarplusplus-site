@@ -3,7 +3,6 @@ import { isHeroName, type HeroName } from './heroes';
 export type SpaRoute =
   | { page: 'heroes' }
   | { page: 'cards' }
-  | { page: 'archetypes' }
   | { page: 'builds' }
   | { page: 'hero-detail'; hero: HeroName }
   | { page: 'not-found' };
@@ -17,10 +16,6 @@ export function resolveSpaRoute(pathname: string): SpaRoute {
 
   if (normalized === '/cards') {
     return { page: 'cards' };
-  }
-
-  if (normalized === '/archetypes') {
-    return { page: 'archetypes' };
   }
 
   if (normalized === '/builds') {

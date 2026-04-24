@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import ArchetypeDashboard from './components/ArchetypeDashboard';
 import CardWinrateDashboard from './components/CardWinrateDashboard';
 import DailyHeroDashboard from './components/DailyHeroDashboard';
 import FinalBuildDashboard from './components/FinalBuildDashboard';
@@ -26,12 +25,10 @@ import {
 import { createRuntimeMetricsClient, type RuntimeMetricsClient } from './lib/metrics-client';
 import { isSpaRoutePath, resolveSpaRoute, type SpaRoute } from './lib/spa-router';
 import {
-  loadArchetypesPageData,
   loadBuildsPageData,
   loadCardsPageData,
   loadHeroDetailPageData,
   loadHeroOverviewPageData,
-  type ArchetypesPageData,
   type BuildsPageData,
   type CardsPageData,
   type HeroDetailPageData,
@@ -260,59 +257,6 @@ function CardsDashboard({
   );
 }
 
-function ArchetypesPage({
-  client,
-  locale,
-  search,
-}: {
-  client: RuntimeMetricsClient;
-  locale: Locale;
-  search: string;
-}) {
-  const { data, error, isLoading } = usePageQuery(
-    ['archetypes', locale],
-    () => loadArchetypesPageData(client, locale)
-  );
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  if (!data) {
-    return <ErrorScreen error={error} />;
-  }
-
-  return <ArchetypesDashboard data={data} locale={locale} search={search} />;
-}
-
-function ArchetypesDashboard({
-  data,
-  locale,
-  search,
-}: {
-  data: ArchetypesPageData;
-  locale: Locale;
-  search: string;
-}) {
-  const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialTierOptions = getCommonAvailableTiers(data.manifest, initialSelectedWindow, [
-    'archetype_winrate',
-    'archetypes',
-  ]);
-  const initialSelectedTier = getInitialTier(initialTierOptions, search);
-
-  return (
-    <ArchetypeDashboard
-      locale={locale}
-      manifest={data.manifest}
-      initialSelectedWindow={initialSelectedWindow}
-      initialSelectedTier={initialSelectedTier}
-      source={data.source}
-      rowsByWindow={data.rowsByWindow}
-    />
-  );
-}
-
 function BuildsPage({
   client,
   locale,
@@ -469,10 +413,6 @@ export default function App() {
 
   if (route.page === 'cards') {
     return <CardsPage client={client} locale={locale} search={location.search} />;
-  }
-
-  if (route.page === 'archetypes') {
-    return <ArchetypesPage client={client} locale={locale} search={location.search} />;
   }
 
   if (route.page === 'builds') {

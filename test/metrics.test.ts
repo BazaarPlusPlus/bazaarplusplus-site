@@ -9,8 +9,6 @@ import { createMetricsRepository } from '../src/lib/metrics-node';
 import { type HeroOverviewPayload, type ManifestPayload } from '../src/lib/metrics';
 import type { CardWinratePayload } from '../src/lib/metrics';
 import type {
-  ArchetypeCatalogPayload,
-  ArchetypeWinratePayload,
   CardDictionary,
   EnchantUpliftPayload,
   FinalBuildsPayload,
@@ -188,69 +186,6 @@ describe('createMetricsRepository', () => {
     });
 
     await expect(repo.getCardWinrate('3d', 'high')).resolves.toEqual(payload);
-  });
-
-  test('reads archetype payloads and card dictionary from local files', async () => {
-    const dir = await makeTempMetricsDir();
-    const winrate: ArchetypeWinratePayload = {
-      metric: 'archetype_winrate',
-      generatedAt: '2026-04-18T18:57:46Z',
-      rowCount: 1,
-      rows: [
-        {
-          hero: 'Dooley',
-          archetype_id: 'arch-1',
-          runs: 55,
-          wins_10w: 54,
-          win_rate: 0.9818,
-          win_rate_wilson_lower: 0.9039,
-          p75_run_days: 13.75,
-          hero_total_10w: 782,
-        },
-      ],
-    };
-    const catalog: ArchetypeCatalogPayload = {
-      metric: 'archetypes',
-      generatedAt: '2026-04-18T18:57:46Z',
-      rowCount: 1,
-      rows: [
-        {
-          archetype_id: 'arch-1',
-          defining_cards: ['card-a', 'card-b', 'card-c'],
-          support_count: 44,
-          support_share: 0.0561,
-          hero: 'Dooley',
-        },
-      ],
-    };
-    const cardDictionary: CardDictionary = {
-      'card-a': { name: { en: 'Amber Core', zh: 'Amber Core' } },
-    };
-
-    await mkdir(join(dir, 'archetype_winrate', '1d'), { recursive: true });
-    await mkdir(join(dir, 'archetypes', '1d'), { recursive: true });
-    await writeFile(
-      join(dir, 'archetype_winrate', '1d', 'all.json'),
-      JSON.stringify(winrate)
-    );
-    await writeFile(
-      join(dir, 'archetypes', '1d', 'all.json'),
-      JSON.stringify(catalog)
-    );
-
-    const dictionaryDir = await makeTempMetricsDir();
-    await writeFile(join(dictionaryDir, 'card_url.json'), JSON.stringify(cardDictionary));
-
-    const repo = await createMetricsRepository({
-      localMetricsDir: dir,
-      localCardDictionaryPath: join(dictionaryDir, 'card_url.json'),
-      remoteBaseUrl: 'https://metrics.example.com',
-      fetchImpl: vi.fn(),
-    });
-
-    await expect(repo.getArchetypeWinrate('1d', 'all')).resolves.toEqual(winrate);
-    await expect(repo.getArchetypes('1d', 'all')).resolves.toEqual(catalog);
-    await expect(repo.getCardDictionary()).resolves.toEqual(cardDictionary);
   });
 
   test('reads final builds payloads and resolves card strips from the signature', async () => {
@@ -543,26 +478,24 @@ describe('createMetricsRepository', () => {
 
     await writeFile(join(dir, 'manifest.json'), JSON.stringify(manifest));
 
-    const remotePayload: ArchetypeWinratePayload = {
-      metric: 'archetype_winrate',
+    const remotePayload: CardWinratePayload = {
+      metric: 'item_winrate',
       generatedAt: '2026-04-18T18:57:46Z',
       rowCount: 1,
       rows: [
         {
           hero: 'Dooley',
-          archetype_id: 'arch-1',
-          runs: 55,
-          wins_10w: 54,
-          win_rate: 0.9818,
-          win_rate_wilson_lower: 0.9039,
-          p75_run_days: 13.75,
-          hero_total_10w: 782,
+          template_id: 'card-a',
+          appearances: 55,
+          wins: 34,
+          win_rate: 0.6181,
+          win_rate_wilson_lower: 0.49,
         },
       ],
     };
 
     const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).endsWith('/archetype_winrate/1d/all.json')) {
+      if (String(input).endsWith('/item_winrate/1d/all.json')) {
         return new Response(JSON.stringify(remotePayload), {
           status: 200,
           headers: { 'content-type': 'application/json' },
@@ -581,9 +514,9 @@ describe('createMetricsRepository', () => {
       fetchImpl,
     });
 
-    await expect(repo.getArchetypeWinrate('1d', 'all')).resolves.toEqual(remotePayload);
+    await expect(repo.getCardWinrate('1d', 'all')).resolves.toEqual(remotePayload);
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://metrics.example.com/root/archetype_winrate/1d/all.json'
+      'https://metrics.example.com/root/item_winrate/1d/all.json'
     );
   });
 });

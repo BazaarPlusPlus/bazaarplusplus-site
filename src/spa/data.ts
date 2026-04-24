@@ -1,5 +1,4 @@
 import {
-  buildArchetypeViewRows,
   buildCardWinrateViewRows,
   buildEnchantUpliftViewRows,
   buildFinalBuildViewRows,
@@ -11,7 +10,6 @@ import {
   getAvailableTiersForWindowlessMetric,
   getAvailableWindows,
   getCommonAvailableTiers,
-  type ArchetypeViewRow,
   type CardWinrateViewRow,
   type EnchantUpliftViewRow,
   type FinalBuildViewRow,
@@ -56,10 +54,6 @@ export type CardsPageData = PageDataBase & {
   phaseValueByWindow: ViewWindowTierMap<PhaseValueViewRow>;
   phaseInclusionByWindow: ViewWindowTierMap<PhaseInclusionViewRow>;
   enchantByWindow: ViewWindowTierMap<EnchantUpliftViewRow>;
-};
-
-export type ArchetypesPageData = PageDataBase & {
-  rowsByWindow: ViewWindowTierMap<ArchetypeViewRow>;
 };
 
 export type BuildsPageData = PageDataBase & {
@@ -204,36 +198,6 @@ export async function loadCardsPageData(
     phaseValueByWindow,
     phaseInclusionByWindow,
     enchantByWindow,
-  };
-}
-
-export async function loadArchetypesPageData(
-  client: RuntimeMetricsClient,
-  locale: Locale
-): Promise<ArchetypesPageData> {
-  const [manifest, cardDictionary] = await Promise.all([
-    client.getManifest(),
-    client.getCardDictionary(),
-  ]);
-  const rowsByWindow = await loadCommonWindowTierViewMap(
-    manifest,
-    ['archetype_winrate', 'archetypes'],
-    async (window, tier) => {
-      const [archetypeWinrate, archetypes] = await Promise.all([
-        client.getArchetypeWinrate(window, tier),
-        client.getArchetypes(window, tier),
-      ]);
-      return {
-        rowCount: archetypeWinrate.rowCount,
-        rows: buildArchetypeViewRows(archetypeWinrate, archetypes, cardDictionary, locale),
-      };
-    }
-  );
-
-  return {
-    manifest,
-    source: client.getSource(),
-    rowsByWindow,
   };
 }
 

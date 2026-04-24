@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest';
 import CardThumbGroup from '../src/components/CardThumbGroup';
 
 describe('CardThumbGroup', () => {
-  test('renders a packed archetype card cluster centered inside a nine-unit container', () => {
+  test('renders a packed card cluster centered inside a nine-unit container', () => {
     render(
       <CardThumbGroup
         size="md"

@@ -1,6 +1,4 @@
 import type {
-  ArchetypeCatalogPayload,
-  ArchetypeWinratePayload,
   CardDictionary,
   CardWinratePayload,
   EnchantUpliftPayload,
@@ -130,10 +128,6 @@ export async function createMetricsRepository(options: MetricsRepositoryOptions 
       loadJson<PhaseInclusionPayload>(`item_phase_inclusion/${window}/${tier}.json`),
     getEnchantUplift: (window: MetricWindow, tier: RatingTier) =>
       loadJson<EnchantUpliftPayload>(`enchant_uplift/${window}/${tier}.json`),
-    getArchetypeWinrate: (window: MetricWindow, tier: RatingTier) =>
-      loadJson<ArchetypeWinratePayload>(`archetype_winrate/${window}/${tier}.json`),
-    getArchetypes: (window: MetricWindow, tier: RatingTier) =>
-      loadJson<ArchetypeCatalogPayload>(`archetypes/${window}/${tier}.json`),
     getFinalBuilds: (window: MetricWindow, tier: RatingTier) =>
       loadJson<FinalBuildsPayload>(`final_builds/${window}/${tier}.json`),
     getHeroWinrateDaily: (tier: RatingTier) =>

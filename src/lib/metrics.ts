@@ -196,49 +196,6 @@ export type EnchantUpliftViewRow = EnchantUpliftRow & {
   card_size: 'small' | 'medium' | 'large';
 };
 
-export type ArchetypeWinrateRow = {
-  hero: string;
-  archetype_id: string;
-  runs: number;
-  wins_10w: number;
-  win_rate: number;
-  win_rate_wilson_lower: number;
-  p75_run_days: number | null;
-  hero_total_10w: number;
-};
-
-export type ArchetypeWinratePayload = {
-  metric: 'archetype_winrate';
-  generatedAt: string;
-  rowCount: number;
-  rows: ArchetypeWinrateRow[];
-};
-
-export type ArchetypeCatalogRow = {
-  archetype_id: string;
-  defining_cards: string[];
-  support_count: number;
-  support_share: number;
-  hero: string;
-};
-
-export type ArchetypeCatalogPayload = {
-  metric: 'archetypes';
-  generatedAt: string;
-  rowCount: number;
-  rows: ArchetypeCatalogRow[];
-};
-
-export type ArchetypeViewRow = ArchetypeWinrateRow & {
-  defining_card_names: string[];
-  thumb_cards: Array<{
-    id: string;
-    name: string;
-    imageUrl?: string;
-    cardSize?: 'small' | 'medium' | 'large';
-  }>;
-};
-
 export type FinalBuildRow = {
   hero: string;
   sig: string;
@@ -567,35 +524,6 @@ export function buildEnchantUpliftViewRows(
     image_url: cardDictionary[row.template_id]?.image_url,
     card_size: getCardSize(cardDictionary[row.template_id]?.size),
   }));
-}
-
-export function buildArchetypeViewRows(
-  archetypeWinrate: ArchetypeWinratePayload,
-  archetypes: ArchetypeCatalogPayload,
-  cardDictionary: CardDictionary,
-  locale: Locale
-): ArchetypeViewRow[] {
-  const catalogByKey = new Map(
-    archetypes.rows.map((row) => [`${row.hero}:${row.archetype_id}`, row] as const)
-  );
-
-  return archetypeWinrate.rows.map((row) => {
-    const catalog = catalogByKey.get(`${row.hero}:${row.archetype_id}`);
-    const definingCards = catalog?.defining_cards ?? [];
-
-    return {
-      ...row,
-      defining_card_names: definingCards.map((id) =>
-        getCardDisplayName(cardDictionary, id, locale)
-      ),
-      thumb_cards: definingCards.slice(0, 3).map((id) => ({
-        id,
-        name: getCardDisplayName(cardDictionary, id, locale),
-        imageUrl: cardDictionary[id]?.image_url,
-        cardSize: getCardSize(cardDictionary[id]?.size),
-      })),
-    };
-  });
 }
 
 export function buildFinalBuildViewRows(

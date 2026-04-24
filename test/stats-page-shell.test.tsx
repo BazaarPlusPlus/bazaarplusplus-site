@@ -31,6 +31,7 @@ describe('StatsPageShell', () => {
       'href',
       '/builds?lang=zh'
     );
+    expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(cardsLink.className).toContain('text-[color:var(--color-accent-bright)]');
     expect(screen.getByText('Local metrics')).toBeInTheDocument();
     expect(screen.getByText('Summary slot')).toBeInTheDocument();

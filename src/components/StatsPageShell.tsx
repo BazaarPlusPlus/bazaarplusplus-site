@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Locale, MetricsSource } from '../lib/metrics';
 import { buildLocalizedHref, formatDateTime } from '../lib/dashboard';
 
-type Section = 'heroes' | 'cards' | 'archetypes' | 'builds';
+type Section = 'heroes' | 'cards' | 'builds';
 
 type StatsPageShellProps = {
   activeSection: Section;
@@ -21,7 +21,6 @@ type StatsPageShellProps = {
 const NAV_ITEMS: Array<{ key: Section; label: string; href: string }> = [
   { key: 'heroes', label: 'Heroes', href: '/' },
   { key: 'cards', label: 'Cards', href: '/cards' },
-  { key: 'archetypes', label: 'Archetypes', href: '/archetypes' },
   { key: 'builds', label: 'Builds', href: '/builds' },
 ];
 

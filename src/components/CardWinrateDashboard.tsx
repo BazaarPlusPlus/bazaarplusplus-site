@@ -69,7 +69,7 @@ const CARD_METRIC_TABS: Array<{
   { key: 'inclusion', label: 'Inclusion', ariaLabel: 'Card inclusion' },
 ];
 
-const CARD_WINRATE_COLUMN_WIDTHS = ['10%', '13%', '25%', '13%', '13%', '12%', '14%'];
+const CARD_WINRATE_COLUMN_WIDTHS = ['11%', '14%', '31%', '14%', '15%', '15%'];
 const CARD_UPLIFT_COLUMN_WIDTHS = ['9%', '12%', '22%', '11%', '11%', '11%', '12%', '12%'];
 const CARD_INCLUSION_COLUMN_WIDTHS = ['10%', '13%', '29%', '14%', '14%', '20%'];
 
@@ -79,7 +79,6 @@ type CardSortKey =
   | 'winRate'
   | 'appearances'
   | 'wins'
-  | 'wilsonLower'
   | 'uplift'
   | 'ciLower'
   | 'ciUpper'
@@ -295,8 +294,6 @@ export default function CardWinrateDashboard({
       appearances: (row) =>
         'appearances' in row ? row.appearances : 'runs_with' in row ? row.runs_with : null,
       wins: (row) => ('wins' in row ? row.wins : null),
-      wilsonLower: (row) =>
-        'win_rate_wilson_lower' in row ? row.win_rate_wilson_lower : null,
       uplift: (row) => ('uplift' in row ? row.uplift : null),
       ciLower: (row) => ('uplift_ci_95_lower' in row ? row.uplift_ci_95_lower : null),
       ciUpper: (row) => ('uplift_ci_95_upper' in row ? row.uplift_ci_95_upper : null),
@@ -319,7 +316,7 @@ export default function CardWinrateDashboard({
       ? 8
       : selectedMetric === 'inclusion'
         ? 6
-        : 7;
+        : 6;
   const columnWidths = getCardTableColumnWidths(selectedMetric);
 
   const totalRows = sortedRows.length;
@@ -428,7 +425,6 @@ export default function CardWinrateDashboard({
                   <SortableHeader label="Win rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
                   <SortableHeader label="Appearances" className="px-5 py-4" activeDirection={sortState.key === 'appearances' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'appearances', 'desc'))} />
                   <SortableHeader label="Wins" className="px-5 py-4" activeDirection={sortState.key === 'wins' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins', 'desc'))} />
-                  <SortableHeader label="Wilson lower" className="px-5 py-4" activeDirection={sortState.key === 'wilsonLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wilsonLower', 'desc'))} />
                 </>
               )}
             </tr>
@@ -498,9 +494,6 @@ export default function CardWinrateDashboard({
                   </td>
                   <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
                     {formatInteger((row as CardWinrateViewRow).wins)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatPercent((row as CardWinrateViewRow).win_rate_wilson_lower)}
                   </td>
                 </>
               )}

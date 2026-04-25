@@ -199,6 +199,7 @@ describe('CardWinrateDashboard', () => {
     expect(screen.getByRole('button', { name: 'Mak' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Enchants' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Wilson lower')).not.toBeInTheDocument();
     expect(await screen.findByText('75.0%')).toBeInTheDocument();
     expect(window.location.search).not.toContain('pm=');
 

@@ -2,21 +2,45 @@ export type SpaRoute =
   | { page: 'heroes' }
   | { page: 'cards' }
   | { page: 'builds' }
+  | { page: 'download' }
+  | { page: 'support' }
   | { page: 'not-found' };
 
-export function resolveSpaRoute(pathname: string): SpaRoute {
-  const normalized = pathname.replace(/\/+$/, '') || '/';
+const CANONICAL_PATHS: Record<string, string> = {
+  '/supporters': '/support',
+};
 
-  if (normalized === '/') {
+function normalizePathname(pathname: string): string {
+  return pathname.replace(/\/+$/, '') || '/';
+}
+
+export function getCanonicalPath(pathname: string): string | null {
+  const normalized = normalizePathname(pathname);
+  return CANONICAL_PATHS[normalized] ?? null;
+}
+
+export function resolveSpaRoute(pathname: string): SpaRoute {
+  const normalized = normalizePathname(pathname);
+  const resolved = CANONICAL_PATHS[normalized] ?? normalized;
+
+  if (resolved === '/') {
     return { page: 'heroes' };
   }
 
-  if (normalized === '/cards') {
+  if (resolved === '/cards') {
     return { page: 'cards' };
   }
 
-  if (normalized === '/builds') {
+  if (resolved === '/builds') {
     return { page: 'builds' };
+  }
+
+  if (resolved === '/download') {
+    return { page: 'download' };
+  }
+
+  if (resolved === '/support') {
+    return { page: 'support' };
   }
 
   return { page: 'not-found' };

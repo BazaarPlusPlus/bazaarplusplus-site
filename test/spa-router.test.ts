@@ -1,12 +1,32 @@
 import { describe, expect, test } from 'vitest';
 
-import { isSpaRoutePath, resolveSpaRoute } from '../src/lib/spa-router';
+import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/lib/spa-router';
 
 describe('spa router', () => {
   test('resolves top-level stats routes', () => {
     expect(resolveSpaRoute('/')).toEqual({ page: 'heroes' });
     expect(resolveSpaRoute('/cards')).toEqual({ page: 'cards' });
     expect(resolveSpaRoute('/builds')).toEqual({ page: 'builds' });
+  });
+
+  test('resolves info pages', () => {
+    expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
+    expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
+    expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
+  });
+
+  test('treats /supporters as an alias of /support', () => {
+    expect(resolveSpaRoute('/supporters')).toEqual({ page: 'support' });
+    expect(resolveSpaRoute('/supporters/')).toEqual({ page: 'support' });
+    expect(isSpaRoutePath('/supporters')).toBe(true);
+  });
+
+  test('getCanonicalPath returns the canonical alias target', () => {
+    expect(getCanonicalPath('/supporters')).toBe('/support');
+    expect(getCanonicalPath('/supporters/')).toBe('/support');
+    expect(getCanonicalPath('/support')).toBeNull();
+    expect(getCanonicalPath('/download')).toBeNull();
+    expect(getCanonicalPath('/unknown')).toBeNull();
   });
 
   test('rejects unknown routes and unknown heroes', () => {
@@ -16,6 +36,8 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/archetypes')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });
     expect(isSpaRoutePath('/cards')).toBe(true);
+    expect(isSpaRoutePath('/download')).toBe(true);
+    expect(isSpaRoutePath('/support')).toBe(true);
     expect(isSpaRoutePath('/archetypes')).toBe(false);
     expect(isSpaRoutePath('/unknown')).toBe(false);
   });

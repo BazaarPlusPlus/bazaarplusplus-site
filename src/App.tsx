@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import CardWinrateDashboard from './components/CardWinrateDashboard';
 import DailyHeroDashboard from './components/DailyHeroDashboard';
 import FinalBuildDashboard from './components/FinalBuildDashboard';
+import DownloadPage from './pages/DownloadPage';
+import SupportPage from './pages/SupportPage';
 import {
   getAvailableTiers,
   getAvailableWindows,
@@ -18,7 +20,7 @@ import {
   type RatingTier,
 } from './lib/metrics';
 import { createRuntimeMetricsClient, type RuntimeMetricsClient } from './lib/metrics-client';
-import { isSpaRoutePath, resolveSpaRoute } from './lib/spa-router';
+import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from './lib/spa-router';
 import {
   loadBuildsPageData,
   loadCardsPageData,
@@ -307,6 +309,14 @@ export default function App() {
   const locale = readLocale(location.search);
 
   useEffect(() => {
+    const canonical = getCanonicalPath(location.pathname);
+    if (canonical && canonical !== location.pathname) {
+      window.history.replaceState({}, '', `${canonical}${location.search}`);
+      setLocation(readBrowserLocation());
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     function handlePopState() {
       setLocation(readBrowserLocation());
     }
@@ -350,6 +360,14 @@ export default function App() {
 
   if (route.page === 'builds') {
     return <BuildsPage client={client} locale={locale} search={location.search} />;
+  }
+
+  if (route.page === 'download') {
+    return <DownloadPage locale={locale} />;
+  }
+
+  if (route.page === 'support') {
+    return <SupportPage locale={locale} />;
   }
 
   return <NotFoundScreen />;

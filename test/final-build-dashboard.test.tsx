@@ -150,11 +150,12 @@ describe('FinalBuildDashboard', () => {
     expect(screen.queryByText('Metric:')).not.toBeInTheDocument();
     expect(screen.queryByText('final_builds')).not.toBeInTheDocument();
     const scopeFilters = screen.getByRole('region', { name: 'Build scope filters' });
-    expect(within(scopeFilters).getByText('Time window')).toBeInTheDocument();
+    expect(within(scopeFilters).getByText('Window')).toBeInTheDocument();
+    expect(within(scopeFilters).queryByText('Time window')).not.toBeInTheDocument();
     const tierGroup = within(scopeFilters).getByRole('group', { name: 'Tier' });
     expect(within(tierGroup).queryByRole('button', { name: 'High rank' })).not.toBeInTheDocument();
-    expect(within(tierGroup).getByRole('button', { name: 'ALL' })).toBeInTheDocument();
-    expect(within(tierGroup).getByRole('button', { name: 'HIGH' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(tierGroup).getByRole('button', { name: 'All' })).toBeInTheDocument();
+    expect(within(tierGroup).getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('cell', { name: 'Mak' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'P75 days' })).not.toBeInTheDocument();
@@ -175,7 +176,7 @@ describe('FinalBuildDashboard', () => {
     expect(screen.getByRole('cell', { name: 'Vanessa' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
     const heroGroup = within(scopeFilters).getByRole('group', { name: 'Hero' });
-    fireEvent.click(within(heroGroup).getByRole('button', { name: 'ALL' }));
+    fireEvent.click(within(heroGroup).getByRole('button', { name: 'All' }));
     fireEvent.click(screen.getByRole('button', { name: 'Runs' }));
     const dataRows = screen
       .getAllByRole('row')

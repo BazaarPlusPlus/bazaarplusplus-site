@@ -59,8 +59,19 @@ function getInitialTier(options: RatingTier[], search: string): RatingTier {
 
 function LoadingScreen() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-6 py-10 text-[color:var(--color-text-muted)]">
-      Loading metrics...
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-6 px-6 py-10">
+      <div className="flex items-center gap-3">
+        <span className="relative flex h-10 w-10 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--color-accent)] opacity-30" />
+          <span className="relative h-3 w-3 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_18px_rgba(232,185,74,0.7)]" />
+        </span>
+        <span className="font-display-italic text-lg tracking-[0.18em] text-[color:var(--color-text-muted)]">
+          tallying the bazaar…
+        </span>
+      </div>
+      <div className="h-[2px] w-48 overflow-hidden rounded-full bg-[color:var(--color-border-soft)]">
+        <div className="shimmer h-full w-full" />
+      </div>
     </main>
   );
 }
@@ -69,29 +80,38 @@ function ErrorScreen({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : 'Unknown error';
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-3 px-6 py-10">
-      <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">
-        Metrics unavailable
-      </p>
-      <h1 className="font-serif text-4xl text-[color:var(--color-accent-bright)]">
-        Could not load stats data
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
+      <p className="eyebrow eyebrow-rule">A hush falls over the bazaar</p>
+      <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+        The ledger is{' '}
+        <span className="font-display-italic text-[color:var(--color-neg)]">silent</span>
       </h1>
-      <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">{message}</p>
+      <p className="mt-2 max-w-xl text-sm leading-6 text-[color:var(--color-text-muted)]">
+        {message}
+      </p>
+      <a
+        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
+        href="/"
+      >
+        ← Back to hero overview
+      </a>
     </main>
   );
 }
 
 function NotFoundScreen() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-3 px-6 py-10">
-      <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">
-        Not found
-      </p>
-      <h1 className="font-serif text-4xl text-[color:var(--color-accent-bright)]">
-        Page not found
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
+      <p className="eyebrow eyebrow-rule">Off the bazaar map</p>
+      <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+        This page is{' '}
+        <span className="font-display-italic text-[color:var(--color-accent-bright)]">unwritten</span>
       </h1>
-      <a className="text-sm text-[color:var(--color-accent-bright)]" href="/">
-        Back to hero overview
+      <a
+        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
+        href="/"
+      >
+        ← Back to hero overview
       </a>
     </main>
   );

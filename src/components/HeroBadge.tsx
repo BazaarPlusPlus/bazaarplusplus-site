@@ -8,15 +8,15 @@ type HeroBadgeProps = {
 };
 
 const SIZE_CLASSES: Record<NonNullable<HeroBadgeProps['size']>, string> = {
-  sm: 'gap-1.5 px-2 py-1 text-xs',
-  md: 'gap-2 px-2.5 py-1.5 text-sm',
-  lg: 'gap-2.5 px-3 py-1.5 text-base',
+  sm: 'gap-1.5 px-2 py-1 text-[0.7rem]',
+  md: 'gap-2 px-2.5 py-1.5 text-[0.78rem]',
+  lg: 'gap-2.5 px-3 py-2 text-sm',
 };
 
-const DOT_CLASSES: Record<NonNullable<HeroBadgeProps['size']>, string> = {
-  sm: 'h-2 w-2',
-  md: 'h-2.5 w-2.5',
-  lg: 'h-3 w-3',
+const SWATCH_CLASSES: Record<NonNullable<HeroBadgeProps['size']>, string> = {
+  sm: 'h-4 w-1',
+  md: 'h-4 w-1',
+  lg: 'h-5 w-1',
 };
 
 export default function HeroBadge({
@@ -33,18 +33,22 @@ export default function HeroBadge({
       data-hero-badge={hero}
       data-hero-short-label={label}
       title={hero}
-      className={`inline-flex min-w-0 items-center rounded-full border font-semibold tracking-[0.1em] ${
+      className={`group inline-flex min-w-0 items-center rounded-md border font-mono font-semibold uppercase tracking-[0.16em] transition ${
         SIZE_CLASSES[size]
       } ${
         selected
-          ? 'border-[color:var(--color-accent)] bg-[color:rgba(212,162,76,0.2)] text-[color:var(--color-text-base)] shadow-[0_0_0_1px_rgba(212,162,76,0.18)]'
-          : 'border-[color:rgba(58,47,31,0.78)] bg-[color:rgba(19,15,8,0.7)] text-[color:var(--color-text-base)]'
+          ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.12)] text-[color:var(--color-text-base)] shadow-[inset_0_0_0_1px_rgba(232,185,74,0.25)]'
+          : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.7)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
       } ${className}`}
+      style={{ '--hero-color': color } as React.CSSProperties}
     >
       <span
         data-hero-color-dot={hero}
-        className={`${DOT_CLASSES[size]} shrink-0 rounded-full`}
-        style={{ backgroundColor: color }}
+        className={`${SWATCH_CLASSES[size]} shrink-0 rounded-sm`}
+        style={{
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}40`,
+        }}
         aria-hidden="true"
       />
       <span aria-hidden="true">{label}</span>

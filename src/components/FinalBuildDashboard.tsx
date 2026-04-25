@@ -9,6 +9,7 @@ import type {
   RatingTier,
 } from '../lib/metrics';
 import { formatInteger } from '../lib/dashboard';
+import { getHeroColor } from '../lib/heroes';
 import { getAvailableTiers } from '../lib/metrics';
 import {
   ALL_HEROES,
@@ -135,9 +136,8 @@ export default function FinalBuildDashboard({
     <StatsPageShell
       activeSection="builds"
       locale={locale}
-      eyebrow="BazaarPlusPlus analytics"
+      eyebrow="Bazaar Almanac · Winning blueprints"
       title="Final builds"
-      description=""
       source={source}
       generatedAt={manifest.generatedAt}
       summary={null}
@@ -156,7 +156,7 @@ export default function FinalBuildDashboard({
         />
       }
     >
-      <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
+      <section className="surface overflow-hidden">
         <VirtualizedMetricTable
           ariaLabel="Final builds"
           columnCount={6}
@@ -198,20 +198,21 @@ export default function FinalBuildDashboard({
           renderRow={(row) => (
             <tr
               key={`${row.hero}:${row.sig}`}
-              className="metric-row border-t border-[color:rgba(58,47,31,0.7)] text-sm text-[color:var(--color-text-base)]"
+              className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+              style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
             >
               <td className="px-5 py-4">
-                <HeroBadge hero={row.hero} />
+                <HeroBadge hero={row.hero} size="sm" />
               </td>
               <td className="px-5 py-4">
                 <FinalBuildCardStrip cards={row.build_cards} title={row.card_names.join(', ')} />
               </td>
               <td className="px-5 py-4 tnum">{formatInteger(row.run_count)}</td>
-              <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
+              <td className="px-5 py-4 tnum font-semibold text-[color:var(--color-accent-bright)]">
                 {formatGoldScore(row.gold_score)}
               </td>
-              <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                {row.rank}
+              <td className="px-5 py-4 font-display-italic tnum text-[color:var(--color-text-muted)]">
+                #{row.rank}
               </td>
               <td className="px-5 py-4">
                 {row.representative_user_display_name ? (

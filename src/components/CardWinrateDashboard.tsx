@@ -19,6 +19,7 @@ import {
   formatInteger,
   formatPercent,
 } from '../lib/dashboard';
+import { getHeroColor } from '../lib/heroes';
 import {
   ALL_HEROES,
   getActiveHeroFilter,
@@ -70,7 +71,7 @@ const CARD_METRIC_TABS: Array<{
 
 const CARD_WINRATE_COLUMN_WIDTHS = ['10%', '13%', '25%', '13%', '13%', '12%', '14%'];
 const CARD_UPLIFT_COLUMN_WIDTHS = ['9%', '12%', '22%', '11%', '11%', '11%', '12%', '12%'];
-const CARD_INCLUSION_COLUMN_WIDTHS = ['10%', '13%', '25%', '13%', '13%', '16%', '10%'];
+const CARD_INCLUSION_COLUMN_WIDTHS = ['10%', '13%', '29%', '14%', '14%', '20%'];
 
 type CardSortKey =
   | 'hero'
@@ -317,42 +318,56 @@ export default function CardWinrateDashboard({
     selectedMetric === 'uplift'
       ? 8
       : selectedMetric === 'inclusion'
-        ? 7
+        ? 6
         : 7;
   const columnWidths = getCardTableColumnWidths(selectedMetric);
+
+  const totalRows = sortedRows.length;
 
   return (
     <StatsPageShell
       activeSection="cards"
       locale={locale}
-      eyebrow="BazaarPlusPlus analytics"
+      eyebrow={`Bazaar Almanac · ${metricTitle} ledger`}
       title={title}
-      description=""
       source={source}
       generatedAt={manifest.generatedAt}
       summary={null}
       filters={
-        <section className="grid gap-4">
-          <div className="flex flex-wrap gap-7 border-b border-[color:rgba(58,47,31,0.76)]">
-            {CARD_METRIC_TABS.map((option) => {
-              const active = option.key === selectedMetric;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  aria-label={option.ariaLabel}
-                  aria-pressed={active}
-                  onClick={() => setSelectedMetric(option.key)}
-                  className={`border-b-2 px-0 pb-3 text-sm font-medium transition ${
-                    active
-                      ? 'border-[color:var(--color-accent)] text-[color:var(--color-accent-bright)]'
-                      : 'border-transparent text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-base)]'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        <section className="grid gap-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {CARD_METRIC_TABS.map((option) => {
+                const active = option.key === selectedMetric;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    aria-label={option.ariaLabel}
+                    aria-pressed={active}
+                    onClick={() => setSelectedMetric(option.key)}
+                    className={`group relative inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      active
+                        ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.12)] text-[color:var(--color-accent-bright)]'
+                        : 'border-transparent text-[color:var(--color-text-muted)] hover:border-[color:var(--color-border-soft)] hover:text-[color:var(--color-text-base)]'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`font-display-italic text-[0.7rem] tracking-[0.18em] ${
+                        active ? 'text-[color:var(--color-accent)]' : 'text-[color:var(--color-text-faint)]'
+                      }`}
+                    >
+                      {String(CARD_METRIC_TABS.indexOf(option) + 1).padStart(2, '0')}
+                    </span>
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="font-display-italic text-[0.78rem] tracking-[0.12em] text-[color:var(--color-text-muted)]">
+              <span className="tnum text-[color:var(--color-accent-bright)]">{formatInteger(totalRows)}</span> cards in view
+            </p>
           </div>
 
           <ScopeFilterPanel
@@ -370,7 +385,7 @@ export default function CardWinrateDashboard({
         </section>
       }
     >
-      <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
+      <section className="surface overflow-hidden">
         <VirtualizedMetricTable
           ariaLabel={metricTitle}
           columnCount={columnCount}
@@ -407,7 +422,6 @@ export default function CardWinrateDashboard({
                   <SortableHeader label="Inclusion" className="px-5 py-4" activeDirection={sortState.key === 'inclusionRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'inclusionRate', 'desc'))} />
                   <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
                   <SortableHeader label="Hero 10W total" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal10w', 'desc'))} />
-                  <th className="px-5 py-4">Share type</th>
                 </>
               ) : (
                 <>
@@ -422,7 +436,8 @@ export default function CardWinrateDashboard({
           renderRow={(row) => (
             <tr
               key={`${row.hero}:${row.template_id}`}
-              className="metric-row border-t border-[color:rgba(58,47,31,0.7)] text-sm text-[color:var(--color-text-base)]"
+              className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+              style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
             >
               <td className="px-5 py-4">
                 <CardThumb
@@ -433,12 +448,19 @@ export default function CardWinrateDashboard({
                 />
               </td>
               <td className="px-5 py-4">
-                <HeroBadge hero={row.hero} />
+                <HeroBadge hero={row.hero} size="sm" />
               </td>
-              <td className="px-5 py-4">{row.display_name}</td>
+              <td className="px-5 py-4 font-medium text-[color:var(--color-text-base)]">{row.display_name}</td>
               {selectedMetric === 'uplift' ? (
                 <>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
+                  <td
+                    className={`px-5 py-4 tnum text-[0.95rem] font-semibold ${
+                      (row as ItemUpliftViewRow).uplift >= 0
+                        ? 'text-[color:var(--color-pos)]'
+                        : 'text-[color:var(--color-neg)]'
+                    }`}
+                  >
+                    {(row as ItemUpliftViewRow).uplift >= 0 ? '+' : ''}
                     {formatPercent((row as ItemUpliftViewRow).uplift)}
                   </td>
                   <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
@@ -465,7 +487,6 @@ export default function CardWinrateDashboard({
                   <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
                     {formatInteger((row as ItemInclusionViewRow).runs_total_10w)}
                   </td>
-                  <td className="px-5 py-4 text-[color:var(--color-text-muted)]">10W runs</td>
                 </>
               ) : (
                 <>

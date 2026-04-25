@@ -48,7 +48,7 @@ export default function VirtualizedMetricTable<T>({
             ))}
           </colgroup>
         ) : null}
-        <thead className="sticky top-0 z-10 bg-[color:rgba(212,162,76,0.12)] text-left text-xs uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] backdrop-blur">
+        <thead className="sticky top-0 z-10 bg-[linear-gradient(180deg,rgba(26,21,16,0.96),rgba(20,16,11,0.96))] text-left font-display-italic text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] shadow-[0_1px_0_var(--color-border-soft)] backdrop-blur">
           {columns}
         </thead>
         <tbody>

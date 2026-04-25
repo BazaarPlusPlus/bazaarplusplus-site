@@ -17,6 +17,7 @@ import {
 import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
 import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
 import HeroBadge from './HeroBadge';
+import { SegmentedButton, SegmentedControl } from './ScopeFilterPanel';
 import SortableHeader from './SortableHeader';
 import StatsPageShell from './StatsPageShell';
 
@@ -56,6 +57,7 @@ type DailySortKey =
   | 'hero'
   | 'winRate'
   | 'runsTotal'
+  | 'runsShare'
   | 'wins10w'
   | 'perfectRate'
   | 'goldRate'
@@ -78,10 +80,10 @@ type HoveredTrendPoint = ChartPoint & {
 
 const CHART_WIDTH = 960;
 const CHART_HEIGHT = 360;
-const CHART_PADDING = { top: 24, right: 24, bottom: 44, left: 56 };
-const POINT_TOOLTIP_WIDTH = 70;
-const POINT_TOOLTIP_HEIGHT = 28;
-const POINT_TOOLTIP_OFFSET = 14;
+const CHART_PADDING = { top: 28, right: 28, bottom: 48, left: 56 };
+const POINT_TOOLTIP_WIDTH = 168;
+const POINT_TOOLTIP_HEIGHT = 56;
+const POINT_TOOLTIP_OFFSET = 18;
 const GRIDLINE_COUNT = 4;
 const WINDOW_DAY_COUNT: Record<MetricWindow, number> = {
   '1d': 1,
@@ -95,7 +97,7 @@ const TREND_TIER_LABELS: Record<TrendTier, string> = {
   mid: 'Mid',
   high: 'High',
 };
-const SNAPSHOT_COLUMN_WIDTHS = ['20%', '12%', '12%', '12%', '11%', '11%', '11%', '11%'];
+const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '11%', '10%', '11%', '10%', '10%', '9%', '9%'];
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -285,6 +287,11 @@ function buildChartState(
     .sort((a, b) => b.latestWinRate - a.latestWinRate || a.hero.localeCompare(b.hero));
 
   return { visibleDays, detailRows, latestDay, yAxisTicks, series };
+}
+
+function computeTrendDelta(series: HeroSeries): { delta: number; first: number } {
+  const first = series.points[0]?.winRate ?? series.latestWinRate;
+  return { delta: series.latestWinRate - first, first };
 }
 
 export default function DailyHeroDashboard({
@@ -477,6 +484,7 @@ export default function DailyHeroDashboard({
         hero: (row) => row.hero,
         winRate: (row) => row.winRate,
         runsTotal: (row) => row.runsTotal,
+        runsShare: (row) => row.runsTotal,
         wins10w: (row) => row.wins10w,
         perfectRate: (row) => row.perfectRate,
         goldRate: (row) => row.goldRate,
@@ -485,61 +493,107 @@ export default function DailyHeroDashboard({
       }),
     [detailRows, sortState]
   );
+  const maxWinRateInTable = sortedDetailRows.reduce(
+    (max, row) => (row.winRate > max ? row.winRate : max),
+    0
+  );
+  const totalRunsInTable = sortedDetailRows.reduce(
+    (sum, row) => sum + (row.runsTotal ?? 0),
+    0
+  );
+  const focusedDelta = focusedTrendHero ? computeTrendDelta(focusedTrendHero) : null;
   return (
     <StatsPageShell
       activeSection="heroes"
       locale={locale}
-      eyebrow="BazaarPlusPlus analytics"
+      eyebrow="Bazaar Almanac · Hero Currents"
       title="Hero overview"
-      description=""
       source={source}
       generatedAt={generatedAt}
       summary={null}
       filters={null}
     >
       <section className="grid gap-6">
-        <section className="grid gap-5 rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)] p-5 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">
-                Trend view
-              </p>
-              <h2 className="mt-2 text-xl text-[color:var(--color-text-base)]">
-                {WINDOW_LABELS[TREND_WINDOW]} hero winrate lines
-              </h2>
-            </div>
-            {trendTierOptions.length > 0 ? (
-              <div aria-label="Trend tier" className="flex flex-wrap gap-2">
-                {trendTierOptions.map((tierOption) => {
-                  const active = tierOption === activeTrendTier;
-                  return (
-                    <button
-                      key={tierOption}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setSelectedTrendTier(tierOption)}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                        active
-                          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:#130f08]'
-                          : 'border-[color:var(--color-border)] bg-transparent text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-text-base)]'
-                      }`}
-                    >
-                      {TREND_TIER_LABELS[tierOption]}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-
+        {/* === TREND SECTION ============================================ */}
+        <section className="surface relative overflow-hidden p-5 sm:p-6">
           <div
-            data-testid="trend-layout"
-            className="grid min-w-0 gap-3"
-          >
-            <div className="grid min-w-0 gap-3">
-              <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: focusedTrendHero
+                ? `radial-gradient(ellipse at 78% 12%, ${focusedTrendHero.color}18, transparent 55%)`
+                : undefined,
+            }}
+          />
+
+          <div className="relative grid min-w-0 gap-4 lg:grid-cols-[260px_1fr] lg:gap-x-6">
+            {/* Row 1, col 1: Header + focus card */}
+            <div className="flex flex-col gap-4 lg:h-full">
+              <div>
+                <p className="eyebrow eyebrow-rule">{WINDOW_LABELS[TREND_WINDOW]} winrate trend</p>
+                <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+                  Hero <span className="font-display-italic text-[color:var(--color-accent-bright)]">currents</span>
+                </h2>
+              </div>
+
+              {focusedTrendHero ? (
+                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 lg:flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="eyebrow text-[0.66rem] tracking-[0.22em]">In focus</span>
+                    {focusedDelta ? (
+                      <span
+                        className={`tnum text-[0.7rem] font-semibold ${
+                          focusedDelta.delta >= 0
+                            ? 'text-[color:var(--color-pos)]'
+                            : 'text-[color:var(--color-neg)]'
+                        }`}
+                      >
+                        {focusedDelta.delta >= 0 ? '▲' : '▼'} {formatPercent(Math.abs(focusedDelta.delta))}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 flex items-baseline gap-3">
+                    <span
+                      className="h-8 w-1 rounded-sm"
+                      style={{
+                        backgroundColor: focusedTrendHero.color,
+                        boxShadow: `0 0 12px ${focusedTrendHero.color}66`,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <div className="font-display text-2xl font-semibold text-[color:var(--color-text-base)]">
+                        {focusedTrendHero.hero}
+                      </div>
+                      <div className="font-display-italic text-[0.78rem] tracking-[0.18em] text-[color:var(--color-text-muted)]">
+                        {getHeroShortLabel(focusedTrendHero.hero)} · {WINDOW_LABELS[TREND_WINDOW]}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="eyebrow text-[0.62rem] tracking-[0.2em]">Latest</div>
+                      <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-accent-bright)]">
+                        {formatPercent(focusedTrendHero.latestWinRate)}
+                      </div>
+                    </div>
+                    {focusedDelta ? (
+                      <div>
+                        <div className="eyebrow text-[0.62rem] tracking-[0.2em]">Started at</div>
+                        <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-text-muted)]">
+                          {formatPercent(focusedDelta.first)}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Row 1, col 2: Chart */}
+            <div
                 data-testid="daily-winrate-chart"
-                className="aspect-[8/3] min-h-[280px] overflow-hidden rounded-[20px] border border-[color:rgba(58,47,31,0.7)] bg-[linear-gradient(180deg,rgba(212,162,76,0.05),rgba(13,11,8,0.94))] p-3 sm:p-4 lg:min-h-[360px]"
+                className="h-full min-h-[260px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] p-2 sm:p-3 lg:min-h-[300px]"
               >
                 <svg
                   viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
@@ -547,276 +601,359 @@ export default function DailyHeroDashboard({
                   role="img"
                   aria-label="Hero winrate chart"
                 >
-              {trendYAxisTicks.map((tick) => {
-                const y = getChartY(tick, yMin, yMax);
-                return (
-                  <g key={`tick-${tick.toFixed(4)}`}>
-                    <line
-                      x1={CHART_PADDING.left}
-                      y1={y}
-                      x2={CHART_WIDTH - CHART_PADDING.right}
-                      y2={y}
-                      stroke="rgba(125, 105, 70, 0.24)"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={CHART_PADDING.left - 12}
-                      y={y + 4}
-                      fill="rgba(233,224,207,0.72)"
-                      fontSize="12"
-                      textAnchor="end"
-                    >
-                      {formatPercent(tick)}
-                    </text>
-                  </g>
-                );
-              })}
+                  <defs>
+                    {focusedTrendHero ? (
+                      <linearGradient id="focused-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={focusedTrendHero.color} stopOpacity="0.35" />
+                        <stop offset="100%" stopColor={focusedTrendHero.color} stopOpacity="0" />
+                      </linearGradient>
+                    ) : null}
+                  </defs>
 
-              {trendVisibleDays.map((day, index) => {
-                const x = getChartX(index, trendVisibleDays.length);
-                return (
-                  <g key={day}>
-                    <line
-                      x1={x}
-                      y1={CHART_PADDING.top}
-                      x2={x}
-                      y2={CHART_HEIGHT - CHART_PADDING.bottom}
-                      stroke="rgba(125, 105, 70, 0.12)"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={x}
-                      y={CHART_HEIGHT - 14}
-                      fill="rgba(233,224,207,0.72)"
-                      fontSize="12"
-                      textAnchor="middle"
-                    >
-                      {formatShortDate(day)}
-                    </text>
-                  </g>
-                );
-              })}
+                  {trendYAxisTicks.map((tick) => {
+                    const y = getChartY(tick, yMin, yMax);
+                    return (
+                      <g key={`tick-${tick.toFixed(4)}`}>
+                        <line
+                          x1={CHART_PADDING.left}
+                          y1={y}
+                          x2={CHART_WIDTH - CHART_PADDING.right}
+                          y2={y}
+                          stroke="rgba(148, 131, 95, 0.14)"
+                          strokeWidth="1"
+                          strokeDasharray="2 4"
+                        />
+                        <text
+                          x={CHART_PADDING.left - 12}
+                          y={y + 4}
+                          fill="rgba(148, 131, 95, 0.78)"
+                          fontSize="11"
+                          fontFamily="JetBrains Mono, monospace"
+                          textAnchor="end"
+                        >
+                          {formatPercent(tick)}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-              {trendSeries.map((heroSeries) => {
-                const points: ChartPoint[] = heroSeries.points.map((point) => ({
-                  day: point.day,
-                  winRate: point.winRate,
-                  x: getChartX(trendVisibleDays.indexOf(point.day), trendVisibleDays.length),
-                  y: getChartY(point.winRate, yMin, yMax),
-                }));
-                const showTrendPoint = (point: ChartPoint | undefined) => {
-                  if (point == null) {
-                    return;
-                  }
+                  {trendVisibleDays.map((day, index) => {
+                    const x = getChartX(index, trendVisibleDays.length);
+                    const isLast = index === trendVisibleDays.length - 1;
+                    return (
+                      <g key={day}>
+                        <line
+                          x1={x}
+                          y1={CHART_PADDING.top}
+                          x2={x}
+                          y2={CHART_HEIGHT - CHART_PADDING.bottom}
+                          stroke="rgba(148, 131, 95, 0.06)"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={x}
+                          y={CHART_HEIGHT - 14}
+                          fill={isLast ? 'rgba(255,212,122,0.95)' : 'rgba(148, 131, 95, 0.78)'}
+                          fontSize="11"
+                          fontFamily="JetBrains Mono, monospace"
+                          fontWeight={isLast ? '600' : '400'}
+                          textAnchor="middle"
+                        >
+                          {formatShortDate(day)}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-                  setSelectedTrendHero(heroSeries.hero);
-                  setHoveredTrendPoint({
-                    ...point,
-                    hero: heroSeries.hero,
-                    color: heroSeries.color,
-                  });
-                };
-                const clearTrendPoint = () => setHoveredTrendPoint(null);
+                  {/* Focused area fill — drawn beneath all lines */}
+                  {focusedTrendHero ? (
+                    (() => {
+                      const points = focusedTrendHero.points.map((point) => ({
+                        x: getChartX(trendVisibleDays.indexOf(point.day), trendVisibleDays.length),
+                        y: getChartY(point.winRate, yMin, yMax),
+                      }));
+                      if (points.length === 0) return null;
+                      const pathD = `M ${points[0].x} ${CHART_HEIGHT - CHART_PADDING.bottom} L ${points
+                        .map((p) => `${p.x} ${p.y}`)
+                        .join(' L ')} L ${points.at(-1)!.x} ${CHART_HEIGHT - CHART_PADDING.bottom} Z`;
+                      return <path d={pathD} fill="url(#focused-area)" />;
+                    })()
+                  ) : null}
 
-                return (
-                  <g
-                    key={heroSeries.hero}
-                    data-testid="daily-winrate-line"
-                    data-hero={heroSeries.hero}
-                    data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
-                    className="transition-opacity duration-150"
-                  >
-                    <polyline
-                      fill="none"
-                      stroke={heroSeries.color}
-                      strokeOpacity={heroSeries.hero === focusedTrendHero?.hero ? '1' : '0.26'}
-                      strokeWidth="3"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-                    />
-                    <polyline
-                      fill="none"
-                      stroke="transparent"
-                      strokeWidth="18"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-                      style={{ pointerEvents: 'stroke' }}
-                      aria-hidden="true"
-                      onMouseEnter={(event) => showTrendPoint(getNearestChartPoint(event, points))}
-                      onMouseMove={(event) => showTrendPoint(getNearestChartPoint(event, points))}
-                      onMouseLeave={clearTrendPoint}
-                    />
-                    {points.map((point, index) => (
-                      <circle
-                        key={`${heroSeries.hero}-${index}`}
-                        cx={point.x}
-                        cy={point.y}
-                        r="4"
-                        fill={heroSeries.color}
-                        fillOpacity={heroSeries.hero === focusedTrendHero?.hero ? '1' : '0.35'}
-                        stroke="rgba(19,15,8,0.9)"
-                        strokeWidth="2"
-                        onMouseEnter={() => showTrendPoint(point)}
-                        onMouseLeave={clearTrendPoint}
-                        onFocus={() => showTrendPoint(point)}
-                        onBlur={clearTrendPoint}
-                        tabIndex={0}
-                        aria-label={`${heroSeries.hero} ${formatShortDate(point.day)} ${formatPercent(point.winRate)}`}
+                  {trendSeries.map((heroSeries) => {
+                    const isFocused = heroSeries.hero === focusedTrendHero?.hero;
+                    const points: ChartPoint[] = heroSeries.points.map((point) => ({
+                      day: point.day,
+                      winRate: point.winRate,
+                      x: getChartX(trendVisibleDays.indexOf(point.day), trendVisibleDays.length),
+                      y: getChartY(point.winRate, yMin, yMax),
+                    }));
+                    const showTrendPoint = (point: ChartPoint | undefined) => {
+                      if (point == null) return;
+                      setSelectedTrendHero(heroSeries.hero);
+                      setHoveredTrendPoint({
+                        ...point,
+                        hero: heroSeries.hero,
+                        color: heroSeries.color,
+                      });
+                    };
+                    const clearTrendPoint = () => setHoveredTrendPoint(null);
+
+                    return (
+                      <g
+                        key={heroSeries.hero}
+                        data-testid="daily-winrate-line"
+                        data-hero={heroSeries.hero}
+                        data-selected={isFocused ? 'true' : 'false'}
+                        className="transition-opacity duration-200"
+                      >
+                        <polyline
+                          fill="none"
+                          stroke={heroSeries.color}
+                          strokeOpacity={isFocused ? '1' : '0.18'}
+                          strokeWidth={isFocused ? '3' : '2'}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                          points={points.map((p) => `${p.x},${p.y}`).join(' ')}
+                          style={isFocused ? { filter: `drop-shadow(0 0 6px ${heroSeries.color}88)` } : undefined}
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="transparent"
+                          strokeWidth="22"
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                          points={points.map((p) => `${p.x},${p.y}`).join(' ')}
+                          style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                          aria-hidden="true"
+                          onMouseEnter={(event) => showTrendPoint(getNearestChartPoint(event, points))}
+                          onMouseMove={(event) => showTrendPoint(getNearestChartPoint(event, points))}
+                          onMouseLeave={clearTrendPoint}
+                          onClick={() => setSelectedTrendHero(heroSeries.hero)}
+                        />
+                        {points.map((point, index) => (
+                          <circle
+                            key={`${heroSeries.hero}-${index}`}
+                            cx={point.x}
+                            cy={point.y}
+                            r={isFocused ? '4.5' : '3'}
+                            fill={heroSeries.color}
+                            fillOpacity={isFocused ? '1' : '0.4'}
+                            stroke="rgba(12,10,7,0.95)"
+                            strokeWidth="2"
+                            onMouseEnter={() => showTrendPoint(point)}
+                            onMouseLeave={clearTrendPoint}
+                            onFocus={() => showTrendPoint(point)}
+                            onBlur={clearTrendPoint}
+                            tabIndex={0}
+                            aria-label={`${heroSeries.hero} ${formatShortDate(point.day)} ${formatPercent(point.winRate)}`}
+                          />
+                        ))}
+                      </g>
+                    );
+                  })}
+
+                  {hoveredTrendPoint ? (
+                    <g data-testid="trend-point-tooltip" pointerEvents="none">
+                      <line
+                        x1={hoveredTrendPoint.x}
+                        y1={hoveredTrendPoint.y}
+                        x2={hoveredTrendPoint.x}
+                        y2={CHART_HEIGHT - CHART_PADDING.bottom}
+                        stroke={hoveredTrendPoint.color}
+                        strokeOpacity="0.4"
+                        strokeWidth="1"
+                        strokeDasharray="2 3"
                       />
-                    ))}
-                  </g>
-                );
-              })}
-
-              {hoveredTrendPoint ? (
-                <g data-testid="trend-point-tooltip" pointerEvents="none">
-                  <line
-                    x1={hoveredTrendPoint.x}
-                    y1={hoveredTrendPoint.y}
-                    x2={hoveredTrendPoint.x}
-                    y2={CHART_HEIGHT - CHART_PADDING.bottom}
-                    stroke={hoveredTrendPoint.color}
-                    strokeOpacity="0.32"
-                    strokeWidth="1"
-                  />
-                  <circle
-                    cx={hoveredTrendPoint.x}
-                    cy={hoveredTrendPoint.y}
-                    r="7"
-                    fill="none"
-                    stroke={hoveredTrendPoint.color}
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x={trendTooltipX}
-                    y={trendTooltipY}
-                    width={POINT_TOOLTIP_WIDTH}
-                    height={POINT_TOOLTIP_HEIGHT}
-                    rx="8"
-                    fill="rgba(19,15,8,0.96)"
-                    stroke="rgba(212,162,76,0.48)"
-                  />
-                  <text
-                    x={trendTooltipX + POINT_TOOLTIP_WIDTH / 2}
-                    y={trendTooltipY + 19}
-                    fill="rgba(255,248,228,0.96)"
-                    fontSize="13"
-                    fontWeight="700"
-                    textAnchor="middle"
-                  >
-                    {formatPercent(hoveredTrendPoint.winRate)}
-                  </text>
-                </g>
-              ) : null}
+                      <circle
+                        cx={hoveredTrendPoint.x}
+                        cy={hoveredTrendPoint.y}
+                        r="8"
+                        fill="none"
+                        stroke={hoveredTrendPoint.color}
+                        strokeWidth="2"
+                        strokeOpacity="0.6"
+                      />
+                      <rect
+                        x={trendTooltipX}
+                        y={trendTooltipY}
+                        width={POINT_TOOLTIP_WIDTH}
+                        height={POINT_TOOLTIP_HEIGHT}
+                        rx="10"
+                        fill="rgba(15,12,8,0.97)"
+                        stroke={hoveredTrendPoint.color}
+                        strokeOpacity="0.55"
+                        strokeWidth="1"
+                      />
+                      <rect
+                        x={trendTooltipX + 10}
+                        y={trendTooltipY + 12}
+                        width="3"
+                        height="32"
+                        fill={hoveredTrendPoint.color}
+                        rx="1.5"
+                      />
+                      <text
+                        x={trendTooltipX + 22}
+                        y={trendTooltipY + 22}
+                        fill="rgba(241,230,205,0.96)"
+                        fontSize="12"
+                        fontWeight="600"
+                        fontFamily="IBM Plex Sans, sans-serif"
+                      >
+                        {hoveredTrendPoint.hero}
+                      </text>
+                      <text
+                        x={trendTooltipX + 22}
+                        y={trendTooltipY + 38}
+                        fill="rgba(148,131,95,0.95)"
+                        fontSize="10"
+                        fontFamily="JetBrains Mono, monospace"
+                        letterSpacing="0.06em"
+                      >
+                        {formatShortDate(hoveredTrendPoint.day)}
+                      </text>
+                      <text
+                        x={trendTooltipX + POINT_TOOLTIP_WIDTH - 14}
+                        y={trendTooltipY + 35}
+                        fill="rgba(255,212,122,1)"
+                        fontSize="18"
+                        fontWeight="700"
+                        fontFamily="JetBrains Mono, monospace"
+                        textAnchor="end"
+                      >
+                        {formatPercent(hoveredTrendPoint.winRate)}
+                      </text>
+                    </g>
+                  ) : null}
                 </svg>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                {trendSeries.map((heroSeries) => (
-                  <button
-                    key={heroSeries.hero}
-                    type="button"
-                    data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
-                    onMouseEnter={() => setSelectedTrendHero(heroSeries.hero)}
-                    onFocus={() => setSelectedTrendHero(heroSeries.hero)}
-                    onClick={() => setSelectedTrendHero(heroSeries.hero)}
-                    className={`inline-flex min-w-0 items-center justify-center gap-2 rounded-full border px-2.5 py-1.5 text-sm transition ${
-                      heroSeries.hero === focusedTrendHero?.hero
-                        ? 'border-[color:var(--color-accent)] bg-[color:rgba(212,162,76,0.2)] text-[color:var(--color-text-base)] shadow-[0_0_0_1px_rgba(212,162,76,0.18)]'
-                        : 'border-[color:rgba(58,47,31,0.78)] bg-[color:rgba(19,15,8,0.7)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
-                    }`}
-                    aria-label={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
-                    title={heroSeries.hero}
-                  >
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: heroSeries.color }}
-                      aria-hidden="true"
-                    />
-                    <span className="font-medium tracking-[0.08em]">
-                      {getHeroShortLabel(heroSeries.hero)}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            {/* Row 2, col 1: Tier filter */}
+            <div className="flex items-center gap-3">
+              {trendTierOptions.length > 0 ? (
+                <>
+                  <p className="eyebrow whitespace-nowrap text-[0.66rem] tracking-[0.22em]">Tier</p>
+                  <SegmentedControl>
+                    {trendTierOptions.map((tierOption) => (
+                      <SegmentedButton
+                        key={tierOption}
+                        active={tierOption === activeTrendTier}
+                        onClick={() => setSelectedTrendTier(tierOption)}
+                      >
+                        {TREND_TIER_LABELS[tierOption]}
+                      </SegmentedButton>
+                    ))}
+                  </SegmentedControl>
+                </>
+              ) : null}
             </div>
+
+            {/* Row 2, col 2: Hero legend */}
+            <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
+                {trendSeries.map((heroSeries) => {
+                  const isFocused = heroSeries.hero === focusedTrendHero?.hero;
+                  return (
+                    <button
+                      key={heroSeries.hero}
+                      type="button"
+                      data-selected={isFocused ? 'true' : 'false'}
+                      onMouseEnter={() => setSelectedTrendHero(heroSeries.hero)}
+                      onFocus={() => setSelectedTrendHero(heroSeries.hero)}
+                      onClick={() => setSelectedTrendHero(heroSeries.hero)}
+                      className={`group inline-flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition ${
+                        isFocused
+                          ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
+                          : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
+                      }`}
+                      aria-label={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
+                      title={heroSeries.hero}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="h-4 w-1 shrink-0 rounded-sm"
+                          style={{
+                            backgroundColor: heroSeries.color,
+                            boxShadow: isFocused ? `0 0 10px ${heroSeries.color}aa` : `0 0 6px ${heroSeries.color}55`,
+                          }}
+                          aria-hidden="true"
+                        />
+                        <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-base)]">
+                          {getHeroShortLabel(heroSeries.hero)}
+                        </span>
+                      </span>
+                      <span
+                        className={`tnum text-[0.74rem] font-semibold ${
+                          isFocused ? 'text-[color:var(--color-accent-bright)]' : 'text-[color:var(--color-text-muted)]'
+                        }`}
+                      >
+                        {formatPercent(heroSeries.latestWinRate)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:rgba(58,47,31,0.7)] px-5 py-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">
-                Latest hero snapshot
-              </p>
-              <h2 className="mt-2 text-lg text-[color:var(--color-text-base)]">
-                {latestDay ? formatShortDate(latestDay) : 'No data'}
-              </h2>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div
-                aria-label="Snapshot window"
-                className="inline-flex shrink-0 rounded-full border border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.42)] p-1"
-              >
-                {availableWindows.map((windowOption) => {
-                  const active = windowOption === selectedWindow;
-                  return (
-                    <button
-                      key={windowOption}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setSelectedWindow(windowOption)}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition ${
-                        active
-                          ? 'bg-[color:var(--color-accent)] text-[color:#130f08]'
-                          : 'text-[color:var(--color-text-muted)] hover:bg-[color:rgba(212,162,76,0.12)] hover:text-[color:var(--color-text-base)]'
-                      }`}
-                    >
-                      {WINDOW_LABELS[windowOption]}
-                    </button>
-                  );
-                })}
+        {/* === SNAPSHOT TABLE ============================================ */}
+        <section className="surface overflow-hidden">
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5">
+              <div>
+                <p className="eyebrow eyebrow-rule">Snapshot · {latestDay ? formatShortDate(latestDay) : 'No data'}</p>
+                <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+                  Hero <span className="font-display-italic text-[color:var(--color-accent-bright)]">ledger</span>
+                </h2>
               </div>
-              <div
-                aria-label="Snapshot tier"
-                className="inline-flex shrink-0 rounded-full border border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.42)] p-1"
-              >
-                {snapshotTierOptions.map((tierOption) => {
-                  const active = tierOption === activeSnapshotTier;
-                  return (
-                    <button
-                      key={tierOption}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setSelectedTier(tierOption)}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition ${
-                        active
-                          ? 'bg-[color:var(--color-accent)] text-[color:#130f08]'
-                          : 'text-[color:var(--color-text-muted)] hover:bg-[color:rgba(212,162,76,0.12)] hover:text-[color:var(--color-text-base)]'
-                      }`}
-                    >
-                      {TREND_TIER_LABELS[tierOption]}
-                    </button>
-                  );
-                })}
+              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <div>
+                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">Window</p>
+                  <div className="mt-1.5">
+                    <SegmentedControl>
+                      {availableWindows.map((option) => (
+                        <SegmentedButton
+                          key={option}
+                          active={option === selectedWindow}
+                          onClick={() => setSelectedWindow(option)}
+                        >
+                          {WINDOW_LABELS[option]}
+                        </SegmentedButton>
+                      ))}
+                    </SegmentedControl>
+                  </div>
+                </div>
+                <div>
+                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">Tier</p>
+                  <div className="mt-1.5">
+                    <SegmentedControl>
+                      {snapshotTierOptions.map((option) => (
+                        <SegmentedButton
+                          key={option}
+                          active={option === activeSnapshotTier}
+                          onClick={() => setSelectedTier(option)}
+                        >
+                          {TREND_TIER_LABELS[option]}
+                        </SegmentedButton>
+                      ))}
+                    </SegmentedControl>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[780px] table-fixed border-collapse">
+            <table className="w-full min-w-[820px] table-fixed border-collapse">
               <colgroup>
                 {SNAPSHOT_COLUMN_WIDTHS.map((width, index) => (
                   <col key={`${index}:${width}`} style={{ width }} />
                 ))}
               </colgroup>
-              <thead className="bg-[color:rgba(212,162,76,0.12)] text-left text-[0.72rem] uppercase tracking-[0.08em] text-[color:var(--color-text-muted)]">
+              <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
                 <tr>
                   <SortableHeader label="Hero" className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
-                  <SortableHeader label="10W rate" className="px-5 py-3.5" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
+                  <SortableHeader label="Win rate" className="px-5 py-3.5" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
                   <SortableHeader label="Runs" className="px-5 py-3.5" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
+                  <SortableHeader label="Share" className="px-5 py-3.5" activeDirection={sortState.key === 'runsShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsShare', 'desc'))} />
                   <SortableHeader label="10W wins" className="px-5 py-3.5" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
                   <SortableHeader label="Perfect" className="px-5 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
                   <SortableHeader label="Gold" className="px-5 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
@@ -825,52 +962,61 @@ export default function DailyHeroDashboard({
                 </tr>
               </thead>
               <tbody>
-                {sortedDetailRows.map((row) => (
-                  <tr
-                    key={`${row.day}:${row.hero}`}
-                    className="border-t border-[color:rgba(58,47,31,0.7)] text-sm text-[color:var(--color-text-base)]"
-                  >
-                    <td className="px-5 py-4">
-                      <button
-                        type="button"
-                        data-selected={row.hero === selectedSnapshotHero ? 'true' : 'false'}
-                        onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
-                        onFocus={() => setSelectedSnapshotHero(row.hero)}
-                        onClick={() => setSelectedSnapshotHero(row.hero)}
-                        className={`inline-flex bg-transparent p-0 text-left transition ${
-                          row.hero === selectedSnapshotHero
-                            ? 'text-[color:var(--color-accent-bright)]'
-                            : 'hover:text-[color:var(--color-accent-bright)]'
-                        }`}
-                      >
-                        <HeroBadge
-                          hero={row.hero}
-                          selected={row.hero === selectedSnapshotHero}
-                          size="sm"
-                        />
-                      </button>
-                    </td>
-                    <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
-                      {formatPercent(row.winRate)}
-                    </td>
-                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                      {row.runsTotal == null ? 'N/A' : formatInteger(row.runsTotal)}
-                    </td>
-                    <td className="px-5 py-4 tnum">{formatInteger(row.wins10w)}</td>
-                    <td className="px-5 py-4 tnum">
-                      {row.perfectRate === null ? 'N/A' : formatPercent(row.perfectRate)}
-                    </td>
-                    <td className="px-5 py-4 tnum">
-                      {row.goldRate === null ? 'N/A' : formatPercent(row.goldRate)}
-                    </td>
-                    <td className="px-5 py-4 tnum">
-                      {row.silverRate === null ? 'N/A' : formatPercent(row.silverRate)}
-                    </td>
-                    <td className="px-5 py-4 tnum">
-                      {row.bronzeRate === null ? 'N/A' : formatPercent(row.bronzeRate)}
-                    </td>
-                  </tr>
-                ))}
+                {sortedDetailRows.map((row, index) => {
+                  const heroColor = getHeroColor(row.hero);
+                  const isSelected = row.hero === selectedSnapshotHero;
+                  const winRateRatio = maxWinRateInTable > 0 ? row.winRate / maxWinRateInTable : 0;
+                  return (
+                    <tr
+                      key={`${row.day}:${row.hero}`}
+                      className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+                      style={{ '--hero-color': heroColor } as React.CSSProperties}
+                    >
+                      <td className="relative px-5 py-4">
+                        <button
+                          type="button"
+                          data-selected={isSelected ? 'true' : 'false'}
+                          onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
+                          onFocus={() => setSelectedSnapshotHero(row.hero)}
+                          onClick={() => setSelectedSnapshotHero(row.hero)}
+                          className="inline-flex items-center gap-3 bg-transparent p-0 text-left transition"
+                        >
+                          <span
+                            className="font-display-italic tnum text-[0.78rem] text-[color:var(--color-text-faint)]"
+                            aria-hidden="true"
+                          >
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <HeroBadge hero={row.hero} selected={isSelected} size="sm" />
+                        </button>
+                      </td>
+                      <td className="databar relative px-5 py-4 tnum text-[color:var(--color-accent-bright)]" style={{ '--bar-width': `${winRateRatio * 100}%` } as React.CSSProperties}>
+                        <span className="relative">{formatPercent(row.winRate)}</span>
+                      </td>
+                      <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                        {row.runsTotal == null ? '—' : formatInteger(row.runsTotal)}
+                      </td>
+                      <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                        {row.runsTotal == null || totalRunsInTable === 0
+                          ? '—'
+                          : formatPercent(row.runsTotal / totalRunsInTable)}
+                      </td>
+                      <td className="px-5 py-4 tnum text-[color:var(--color-text-base)]">{formatInteger(row.wins10w)}</td>
+                      <td className="px-5 py-4 tnum">
+                        {row.perfectRate === null ? '—' : formatPercent(row.perfectRate)}
+                      </td>
+                      <td className="px-5 py-4 tnum">
+                        {row.goldRate === null ? '—' : formatPercent(row.goldRate)}
+                      </td>
+                      <td className="px-5 py-4 tnum">
+                        {row.silverRate === null ? '—' : formatPercent(row.silverRate)}
+                      </td>
+                      <td className="px-5 py-4 tnum">
+                        {row.bronzeRate === null ? '—' : formatPercent(row.bronzeRate)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

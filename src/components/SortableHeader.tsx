@@ -13,28 +13,46 @@ export default function SortableHeader({
   onToggle,
   className = '',
 }: SortableHeaderProps) {
-  const arrow = activeDirection === 'asc' ? '↑' : activeDirection === 'desc' ? '↓' : '↕';
+  const isAsc = activeDirection === 'asc';
+  const isDesc = activeDirection === 'desc';
+  const isActive = isAsc || isDesc;
 
   return (
     <th
       scope="col"
-      aria-sort={
-        activeDirection === 'asc'
-          ? 'ascending'
-          : activeDirection === 'desc'
-            ? 'descending'
-            : 'none'
-      }
+      aria-sort={isAsc ? 'ascending' : isDesc ? 'descending' : 'none'}
       className={className}
     >
       <button
         type="button"
         onClick={onToggle}
-        className="inline-flex min-w-max items-center gap-1.5 whitespace-nowrap text-inherit transition hover:text-[color:var(--color-text-base)]"
+        className={`group inline-flex min-w-max items-center gap-1.5 whitespace-nowrap text-left transition ${
+          isActive
+            ? 'text-[color:var(--color-accent-bright)]'
+            : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-base)]'
+        }`}
       >
         <span className="whitespace-nowrap">{label}</span>
-        <span aria-hidden="true" className="shrink-0 text-[0.9em] text-[color:var(--color-accent-bright)]">
-          {arrow}
+        <span
+          aria-hidden="true"
+          className={`flex flex-col leading-[0.6] text-[0.6rem] transition ${
+            isActive ? 'text-[color:var(--color-accent)]' : 'text-[color:var(--color-text-faint)]'
+          }`}
+        >
+          <span
+            className={`transition ${
+              isAsc ? 'opacity-100 text-[color:var(--color-accent-bright)]' : isDesc ? 'opacity-30' : 'opacity-50'
+            }`}
+          >
+            ▲
+          </span>
+          <span
+            className={`transition ${
+              isDesc ? 'opacity-100 text-[color:var(--color-accent-bright)]' : isAsc ? 'opacity-30' : 'opacity-50'
+            }`}
+          >
+            ▼
+          </span>
         </span>
       </button>
     </th>

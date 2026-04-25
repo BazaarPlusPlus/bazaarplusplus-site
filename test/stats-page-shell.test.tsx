@@ -11,7 +11,6 @@ describe('StatsPageShell', () => {
         locale="zh"
         eyebrow="BazaarPlusPlus analytics"
         title="Card winrate"
-        description="Shared shell description"
         source="local"
         generatedAt="2026-04-18T18:57:46Z"
         summary={<div>Summary slot</div>}
@@ -36,7 +35,7 @@ describe('StatsPageShell', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(cardsLink.className).toContain('text-[color:var(--color-accent-bright)]');
-    expect(screen.getByText('Local metrics')).toBeInTheDocument();
+    expect(screen.getByText('Local feed')).toBeInTheDocument();
     expect(screen.getByText('Summary slot')).toBeInTheDocument();
     expect(screen.getByText('Filters slot')).toBeInTheDocument();
     expect(screen.getByText('Table slot')).toBeInTheDocument();

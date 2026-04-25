@@ -271,18 +271,18 @@ describe('DailyHeroDashboard', () => {
     );
 
     expect(screen.getByTestId('daily-winrate-chart')).toBeInTheDocument();
-    expect(screen.getByText('7D hero winrate lines')).toBeInTheDocument();
     expect(screen.getByText(formatShortDate('2026-04-10T16:00:00Z'))).toBeInTheDocument();
     expect(screen.queryByText('Hero filters')).not.toBeInTheDocument();
     expect(screen.queryByText('Focused hero')).not.toBeInTheDocument();
     expect(screen.queryByText('Sampled heroes')).not.toBeInTheDocument();
     expect(screen.queryByText('Latest day')).not.toBeInTheDocument();
 
-    const trendSection = screen.getByText('Trend view').closest('section');
-    const snapshotSection = screen.getByText('Latest hero snapshot').closest('section');
+    const trendSection = screen.getByText('7D winrate trend').closest('section');
+    const trendChartSection = screen.getByTestId('daily-winrate-chart').closest('section');
+    const snapshotSection = screen.getByText(/^Snapshot · /).closest('section');
     expect(trendSection).not.toBeNull();
+    expect(trendChartSection).not.toBeNull();
     expect(snapshotSection).not.toBeNull();
-    expect(within(trendSection!).getByTestId('trend-layout').className).toContain('min-w-0');
     expect(within(trendSection!).queryByTestId('trend-movement-rail')).not.toBeInTheDocument();
     expect(within(trendSection!).queryByText('Risers')).not.toBeInTheDocument();
     expect(within(trendSection!).queryByText('Fallers')).not.toBeInTheDocument();
@@ -299,8 +299,8 @@ describe('DailyHeroDashboard', () => {
     expect(within(snapshotSection!).queryByRole('button', { name: 'Low' })).not.toBeInTheDocument();
     const snapshotTable = within(snapshotSection!).getByRole('table');
     expect(snapshotTable.className).toContain('table-fixed');
-    expect(snapshotTable.querySelectorAll('col')).toHaveLength(8);
-    expect(within(snapshotSection!).getByRole('button', { name: '10W rate' }).className).toContain('whitespace-nowrap');
+    expect(snapshotTable.querySelectorAll('col')).toHaveLength(9);
+    expect(within(snapshotSection!).getByRole('button', { name: 'Win rate' }).className).toContain('whitespace-nowrap');
     expect(within(snapshotSection!).getByRole('button', { name: '10W wins' })).toBeInTheDocument();
     expect(within(snapshotSection!).queryByRole('button', { name: '10 wins' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Day' })).not.toBeInTheDocument();
@@ -308,18 +308,15 @@ describe('DailyHeroDashboard', () => {
     expect(screen.getByRole('button', { name: 'Silver' })).toBeInTheDocument();
     expect(container.querySelector('[data-hero="Stelle"] polyline')).toHaveAttribute('stroke', '#ffeb18');
     expect(container.querySelector('[data-hero="Dooley"] polyline')).toBeNull();
-    const stelleTrendButton = within(trendSection!).getByRole('button', { name: 'Stelle 42.0%' });
+    const stelleTrendButton = within(trendChartSection!).getByRole('button', { name: 'Stelle 42.0%' });
     expect(stelleTrendButton).not.toHaveAttribute('href');
-    expect(stelleTrendButton).not.toHaveTextContent('42.0%');
-    fireEvent.mouseEnter(stelleTrendButton);
-    expect(within(stelleTrendButton).queryByText('42.0%')).not.toBeInTheDocument();
+    expect(stelleTrendButton).toHaveTextContent('42.0%');
     fireEvent.mouseLeave(stelleTrendButton);
     const stelleTrendPoints = container.querySelectorAll('[data-hero="Stelle"] circle');
     expect(stelleTrendPoints).toHaveLength(3);
     fireEvent.mouseEnter(stelleTrendPoints[2]!);
-    expect(within(trendSection!).getByText('42.0%')).toBeInTheDocument();
+    expect(within(trendChartSection!).getAllByText('42.0%').length).toBeGreaterThan(0);
     fireEvent.mouseLeave(stelleTrendPoints[2]!);
-    expect(within(trendSection!).queryByText('42.0%')).not.toBeInTheDocument();
     expect(screen.getByRole('cell', { name: 'Dooley' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '64.0%' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '10.0%' })).toBeInTheDocument();

@@ -19,10 +19,10 @@ type ScopeFilterPanelProps = {
 };
 
 const SCOPE_TIER_LABELS: Record<RatingTier, string> = {
-  all: 'ALL',
-  low: 'LOW',
-  mid: 'MID',
-  high: 'HIGH',
+  all: 'All',
+  low: 'Low',
+  mid: 'Mid',
+  high: 'High',
 };
 
 export default function ScopeFilterPanel({
@@ -40,43 +40,48 @@ export default function ScopeFilterPanel({
   return (
     <section
       aria-label={ariaLabel}
-      className="rounded-[20px] border border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.62)] px-5 py-5 shadow-[inset_0_1px_0_rgba(246,226,184,0.05)] sm:px-6"
+      className="surface px-6 py-5"
     >
-      <div className="flex flex-wrap items-start gap-x-3 gap-y-4">
-        <ScopeFilterGroup label="Time window">
-          {windowOptions.map((option) => (
-            <ScopeFilterButton
-              key={option}
-              active={option === selectedWindow}
-              onClick={() => onWindowSelect(option)}
-            >
-              {WINDOW_LABELS[option]}
-            </ScopeFilterButton>
-          ))}
+      <div className="grid gap-5 lg:grid-cols-[auto_auto_1fr] lg:items-start lg:gap-x-10">
+        <ScopeFilterGroup label="Window">
+          <SegmentedControl>
+            {windowOptions.map((option) => (
+              <SegmentedButton
+                key={option}
+                active={option === selectedWindow}
+                onClick={() => onWindowSelect(option)}
+              >
+                {WINDOW_LABELS[option]}
+              </SegmentedButton>
+            ))}
+          </SegmentedControl>
         </ScopeFilterGroup>
 
         <ScopeFilterGroup label="Tier">
-          {tierOptions.map((option) => (
-            <ScopeFilterButton
-              key={option}
-              active={option === selectedTier}
-              onClick={() => onTierSelect(option)}
-            >
-              {SCOPE_TIER_LABELS[option]}
-            </ScopeFilterButton>
-          ))}
+          <SegmentedControl>
+            {tierOptions.map((option) => (
+              <SegmentedButton
+                key={option}
+                active={option === selectedTier}
+                onClick={() => onTierSelect(option)}
+              >
+                {SCOPE_TIER_LABELS[option]}
+              </SegmentedButton>
+            ))}
+          </SegmentedControl>
         </ScopeFilterGroup>
 
-        <ScopeFilterGroup label="Hero" className="basis-full">
-          {heroOptions.map((option) => (
-            <ScopeFilterButton
-              key={option}
-              active={option === selectedHero}
-              onClick={() => onHeroSelect(option)}
-            >
-              {option === ALL_HEROES ? 'ALL' : <ScopeHeroOptionLabel hero={option} />}
-            </ScopeFilterButton>
-          ))}
+        <ScopeFilterGroup label="Hero">
+          <div className="flex flex-wrap gap-1.5">
+            {heroOptions.map((option) => (
+              <HeroFilterButton
+                key={option}
+                hero={option}
+                active={option === selectedHero}
+                onClick={() => onHeroSelect(option)}
+              />
+            ))}
+          </div>
         </ScopeFilterGroup>
       </div>
     </section>
@@ -86,21 +91,27 @@ export default function ScopeFilterPanel({
 function ScopeFilterGroup({
   label,
   children,
-  className = '',
 }: {
   label: string;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <div role="group" aria-label={label} className={`min-w-0 space-y-2 ${className}`.trim()}>
-      <p className="text-sm text-[color:var(--color-text-muted)]">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
+    <div role="group" aria-label={label} className="min-w-0 space-y-2.5">
+      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{label}</p>
+      {children}
     </div>
   );
 }
 
-function ScopeFilterButton({
+export function SegmentedControl({ children }: { children: ReactNode }) {
+  return (
+    <div className="inline-flex items-center rounded-full border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.7)] p-[3px] shadow-[inset_0_1px_0_rgba(255,235,200,0.04)]">
+      {children}
+    </div>
+  );
+}
+
+export function SegmentedButton({
   active,
   onClick,
   children,
@@ -114,10 +125,10 @@ function ScopeFilterButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex min-h-10 items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium transition ${
+      className={`relative shrink-0 rounded-full px-3.5 py-1.5 text-[0.78rem] font-semibold uppercase tracking-[0.12em] transition ${
         active
-          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:#130f08] shadow-[0_8px_20px_rgba(212,162,76,0.18)]'
-          : 'border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.58)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
+          ? 'bg-[color:var(--color-accent)] text-[color:#100c06] shadow-[0_4px_12px_rgba(232,185,74,0.32)]'
+          : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-base)]'
       }`}
     >
       {children}
@@ -125,23 +136,57 @@ function ScopeFilterButton({
   );
 }
 
-function ScopeHeroOptionLabel({ hero }: { hero: string }) {
+function HeroFilterButton({
+  hero,
+  active,
+  onClick,
+}: {
+  hero: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  if (hero === ALL_HEROES) {
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className={`inline-flex h-9 items-center rounded-md border px-3.5 font-mono text-[0.74rem] font-semibold uppercase tracking-[0.16em] transition ${
+          active
+            ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.18)] text-[color:var(--color-text-base)] shadow-[inset_0_0_0_1px_rgba(232,185,74,0.32)]'
+            : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent-deep)] hover:text-[color:var(--color-text-base)]'
+        }`}
+      >
+        All
+      </button>
+    );
+  }
+
+  const color = getHeroColor(hero);
   const shortLabel = getHeroShortLabel(hero);
 
   return (
-    <span
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
       title={hero}
-      className="inline-flex items-center gap-2 font-semibold tracking-[0.1em] text-inherit"
-      data-hero-short-label={shortLabel}
+      className={`group inline-flex h-9 items-center gap-2 rounded-md border pl-2 pr-3.5 font-mono text-[0.74rem] font-semibold uppercase tracking-[0.16em] transition ${
+        active
+          ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.14)] text-[color:var(--color-text-base)] shadow-[inset_0_0_0_1px_rgba(232,185,74,0.3)]'
+          : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent-deep)] hover:text-[color:var(--color-text-base)]'
+      }`}
     >
       <span
-        data-hero-color-dot={hero}
-        className="h-2.5 w-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: getHeroColor(hero) }}
+        className="h-4 w-1 shrink-0 rounded-sm transition-transform group-hover:scale-y-110"
+        style={{
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}55`,
+        }}
         aria-hidden="true"
       />
       <span aria-hidden="true">{shortLabel}</span>
       <span className="sr-only">{hero}</span>
-    </span>
+    </button>
   );
 }

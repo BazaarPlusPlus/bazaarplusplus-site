@@ -19,7 +19,7 @@ type RuntimeMetricsClientOptions = {
 };
 
 const DEFAULT_METRICS_BASE_URL =
-  import.meta.env.VITE_METRICS_BASE ?? '/metrics';
+  import.meta.env.VITE_METRICS_BASE ?? 'https://bpp-metrics.bazaarplusplus.com';
 const DEFAULT_CARD_DICTIONARY_URL =
   import.meta.env.VITE_CARD_DICTIONARY_URL ??
   '/card_dict_with_url.json';
@@ -28,8 +28,8 @@ function normalizeBaseUrl(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;
 }
 
-function resolveSource(metricsBaseUrl: string): MetricsSource {
-  return metricsBaseUrl.startsWith('/') ? 'local' : 'remote';
+function resolveSource(): MetricsSource {
+  return 'remote';
 }
 
 export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions = {}) {
@@ -52,7 +52,7 @@ export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions 
   }
 
   return {
-    getSource: () => resolveSource(metricsBaseUrl),
+    getSource: resolveSource,
     getCardDictionary: () => loadJson<CardDictionary>(cardDictionaryUrl),
     getManifest: () => loadMetric<ManifestPayload>('manifest.json'),
     getHeroOverview: (window: MetricWindow, tier: RatingTier) =>

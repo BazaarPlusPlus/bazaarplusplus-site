@@ -129,9 +129,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
                 <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--color-pos)] opacity-50" />
                 <span className="relative h-2 w-2 rounded-full bg-[color:var(--color-pos)] shadow-[0_0_10px_rgba(109,191,122,0.7)]" />
               </span>
-              <span className="text-[color:var(--color-text-base)]">
-                {liveFeedSource === 'local' ? 'Local feed' : 'Live feed'}
-              </span>
+              <span className="text-[color:var(--color-text-base)]">Live feed</span>
             </span>
           ) : null}
 

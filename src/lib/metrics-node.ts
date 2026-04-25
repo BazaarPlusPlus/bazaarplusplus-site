@@ -15,9 +15,8 @@ import type {
 type FetchLike = typeof fetch;
 
 type MetricsRepositoryOptions = {
-  localMetricsDir?: string;
-  localCardDictionaryPath?: string;
   remoteBaseUrl?: string;
+  remoteCardDictionaryUrl?: string;
   fetchImpl?: FetchLike;
 };
 
@@ -34,36 +33,14 @@ function normalizeRemoteBaseUrl(value: string): string {
 }
 
 export async function createMetricsRepository(options: MetricsRepositoryOptions = {}) {
-  const [{ access, readFile }, { constants }, { resolve }] = await Promise.all([
-    import('node:fs/promises'),
-    import('node:fs'),
-    import('node:path'),
-  ]);
-  const localMetricsDir =
-    options.localMetricsDir ?? resolve(process.cwd(), '../analyzers/data/metrics');
-  const localCardDictionaryPath =
-    options.localCardDictionaryPath ?? resolve(process.cwd(), '../analyzers/data/card_dict_with_url.json');
   const remoteBaseUrl = normalizeRemoteBaseUrl(
     options.remoteBaseUrl ?? DEFAULT_REMOTE_BASE_URL
   );
+  const remoteCardDictionaryUrl =
+    options.remoteCardDictionaryUrl ?? DEFAULT_REMOTE_CARD_DICTIONARY_URL;
   const fetchImpl = options.fetchImpl ?? fetch;
 
-  async function pathExists(path: string): Promise<boolean> {
-    try {
-      await access(path, constants.R_OK);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async function loadFromLocal<T>(relativePath: string): Promise<T> {
-    const localPath = resolve(localMetricsDir, relativePath);
-    const content = await readFile(localPath, 'utf-8');
-    return JSON.parse(content) as T;
-  }
-
-  async function loadFromRemote<T>(relativePath: string): Promise<T> {
+  async function loadJson<T>(relativePath: string): Promise<T> {
     const response = await fetchImpl(`${remoteBaseUrl}${relativePath}`);
 
     if (!response.ok) {
@@ -73,33 +50,12 @@ export async function createMetricsRepository(options: MetricsRepositoryOptions 
     return (await response.json()) as T;
   }
 
-  async function loadJson<T>(relativePath: string): Promise<T> {
-    if (await pathExists(localMetricsDir)) {
-      try {
-        return await loadFromLocal<T>(relativePath);
-      } catch (error) {
-        const code = error instanceof Error && 'code' in error ? error.code : undefined;
-
-        if (code !== 'ENOENT') {
-          throw error;
-        }
-      }
-    }
-
-    return loadFromRemote<T>(relativePath);
-  }
-
   async function getSource(): Promise<MetricsSource> {
-    return (await pathExists(localMetricsDir)) ? 'local' : 'remote';
+    return 'remote';
   }
 
   async function getCardDictionary(): Promise<CardDictionary> {
-    if (await pathExists(localCardDictionaryPath)) {
-      const content = await readFile(localCardDictionaryPath, 'utf-8');
-      return JSON.parse(content) as CardDictionary;
-    }
-
-    const response = await fetchImpl(DEFAULT_REMOTE_CARD_DICTIONARY_URL);
+    const response = await fetchImpl(remoteCardDictionaryUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch card dictionary: ${response.status}`);
     }

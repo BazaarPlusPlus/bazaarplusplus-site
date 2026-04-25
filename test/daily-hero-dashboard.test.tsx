@@ -260,7 +260,7 @@ describe('DailyHeroDashboard', () => {
     const { container } = render(
       <DailyHeroDashboard
         locale="en"
-        source="local"
+        source="remote"
         availableWindows={['1d', '3d', '7d']}
         availableTiers={['all', 'low', 'mid', 'high']}
         initialSelectedWindow="1d"

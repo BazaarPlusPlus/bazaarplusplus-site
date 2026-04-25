@@ -1,6 +1,6 @@
 export type MetricWindow = '1d' | '3d' | '7d';
 export type RatingTier = 'all' | 'low' | 'mid' | 'high';
-export type MetricsSource = 'local' | 'remote';
+export type MetricsSource = 'remote';
 export type Locale = 'en' | 'zh';
 export type CardMetric = 'winrate' | 'uplift' | 'inclusion';
 

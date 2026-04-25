@@ -131,7 +131,7 @@ describe('FinalBuildDashboard', () => {
         manifest={manifest}
         initialSelectedTier="all"
         initialSelectedWindow="3d"
-        source="local"
+        source="remote"
         rowsByWindow={{
           '1d': {
             all: { rowCount: 1, rows: allRows },

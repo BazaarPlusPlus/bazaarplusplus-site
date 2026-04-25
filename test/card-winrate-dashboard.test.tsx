@@ -143,7 +143,7 @@ describe('CardWinrateDashboard', () => {
         initialSelectedMetric="winrate"
         initialSelectedTier="all"
         initialSelectedWindow="1d"
-        source="local"
+        source="remote"
         winrateByWindow={{
           '1d': {
             all: { rowCount: 1, rows: winrateRows },

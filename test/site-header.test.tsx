@@ -15,7 +15,7 @@ describe('SiteHeader', () => {
   });
 
   test('renders primary and secondary nav with stats live feed pill', () => {
-    render(<SiteHeader activeSection="cards" locale="zh" liveFeedSource="local" />);
+    render(<SiteHeader activeSection="cards" locale="zh" liveFeedSource="remote" />);
 
     expect(screen.getByRole('link', { name: 'Heroes' })).toHaveAttribute('href', '/?lang=zh');
     expect(screen.getByRole('link', { name: 'Cards' })).toHaveAttribute('href', '/cards?lang=zh');
@@ -25,26 +25,19 @@ describe('SiteHeader', () => {
     expect(screen.getByRole('link', { name: '赞助' })).toHaveAttribute('href', '/support?lang=zh');
     expect(screen.queryByRole('link', { name: '支持者' })).not.toBeInTheDocument();
 
-    expect(screen.getByText('Local feed')).toBeInTheDocument();
+    expect(screen.getByText('Live feed')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Cards' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('hides live feed pill on info pages and uses english labels by default', () => {
     render(<SiteHeader activeSection="download" locale="en" />);
 
-    expect(screen.queryByText('Local feed')).not.toBeInTheDocument();
     expect(screen.queryByText('Live feed')).not.toBeInTheDocument();
 
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('href', '/download');
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute('href', '/support');
     expect(screen.queryByRole('link', { name: 'Supporters' })).not.toBeInTheDocument();
-  });
-
-  test('shows remote live feed label for remote sources', () => {
-    render(<SiteHeader activeSection="heroes" locale="en" liveFeedSource="remote" />);
-
-    expect(screen.getByText('Live feed')).toBeInTheDocument();
   });
 
   test('language toggle highlights current locale and links to other locale preserving path + query', () => {

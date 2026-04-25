@@ -5,6 +5,26 @@ import { describe, expect, test, vi } from 'vitest';
 import { createRuntimeMetricsClient } from '../src/lib/metrics-client';
 
 describe('createRuntimeMetricsClient', () => {
+  test('uses the remote metrics base URL by default', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        generatedAt: '2026-04-25T14:06:00Z',
+        current_patch_id: null,
+        windows: {},
+        files: [],
+      }),
+    })) as unknown as typeof fetch;
+    const client = createRuntimeMetricsClient({ fetchImpl });
+
+    await client.getManifest();
+
+    expect(client.getSource()).toBe('remote');
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://bpp-metrics.bazaarplusplus.com/manifest.json'
+    );
+  });
+
   test('loads metric JSON from the configured metrics base URL', async () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
@@ -44,7 +64,7 @@ describe('createRuntimeMetricsClient', () => {
           : {},
     })) as unknown as typeof fetch;
     const client = createRuntimeMetricsClient({
-      metricsBaseUrl: '/metrics',
+      metricsBaseUrl: 'https://metrics.example.com/root/',
       cardDictionaryUrl: 'https://static.example.com/card_dict_with_url.json',
       fetchImpl,
     });

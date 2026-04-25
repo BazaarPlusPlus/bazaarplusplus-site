@@ -28,6 +28,7 @@ import {
   type BuildsPageData,
   type CardsPageData,
   type HeroOverviewPageData,
+  type PageLoadProgress,
 } from './spa/data';
 
 type BrowserLocation = {
@@ -59,7 +60,16 @@ function getInitialTier(options: RatingTier[], search: string): RatingTier {
   return options.includes(requestedTier) ? requestedTier : options[0] ?? 'all';
 }
 
-function LoadingScreen() {
+type LoadingScreenProps = {
+  progress?: PageLoadProgress;
+};
+
+export function LoadingScreen({ progress }: LoadingScreenProps) {
+  const progressPercent =
+    progress && progress.total > 0
+      ? Math.min(100, Math.round((progress.completed / progress.total) * 100))
+      : undefined;
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-6 px-6 py-10">
       <div className="flex items-center gap-3">
@@ -71,8 +81,29 @@ function LoadingScreen() {
           tallying the bazaar…
         </span>
       </div>
-      <div className="h-[2px] w-48 overflow-hidden rounded-full bg-[color:var(--color-border-soft)]">
-        <div className="shimmer h-full w-full" />
+      <div className="grid w-64 gap-2">
+        <div className="flex items-center justify-between gap-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
+          <span>{progress ? 'Loading data' : 'Connecting'}</span>
+          {progress ? <span className="tnum">{progress.completed} / {progress.total}</span> : null}
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Data loading progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+          className="h-[3px] overflow-hidden rounded-full bg-[color:var(--color-border-soft)]"
+        >
+          <div
+            className={progress ? 'h-full rounded-full bg-[color:var(--color-accent)] transition-[width] duration-300' : 'shimmer h-full w-full'}
+            style={progressPercent != null ? { width: `${progressPercent}%` } : undefined}
+          />
+        </div>
+        {progress ? (
+          <p className="truncate text-center text-xs text-[color:var(--color-text-muted)]">
+            {progress.label}
+          </p>
+        ) : null}
       </div>
     </main>
   );
@@ -93,7 +124,7 @@ function ErrorScreen({ error }: { error: unknown }) {
       </p>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href="/"
+        href="/heroes"
       >
         ← Back to hero overview
       </a>
@@ -111,7 +142,7 @@ function NotFoundScreen() {
       </h1>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href="/"
+        href="/heroes"
       >
         ← Back to hero overview
       </a>
@@ -138,13 +169,14 @@ function HeroOverviewPage({
   locale: Locale;
   search: string;
 }) {
+  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['hero-overview'],
-    () => loadHeroOverviewPageData(client)
+    () => loadHeroOverviewPageData(client, { onProgress: setProgress })
   );
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen progress={progress} />;
   }
 
   if (!data) {
@@ -189,13 +221,14 @@ function CardsPage({
   locale: Locale;
   search: string;
 }) {
+  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['cards', locale],
-    () => loadCardsPageData(client, locale)
+    () => loadCardsPageData(client, locale, { onProgress: setProgress })
   );
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen progress={progress} />;
   }
 
   if (!data) {
@@ -261,13 +294,14 @@ function BuildsPage({
   locale: Locale;
   search: string;
 }) {
+  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['builds', locale],
-    () => loadBuildsPageData(client, locale)
+    () => loadBuildsPageData(client, locale, { onProgress: setProgress })
   );
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen progress={progress} />;
   }
 
   if (!data) {

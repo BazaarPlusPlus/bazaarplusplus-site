@@ -4,12 +4,13 @@ import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/lib/sp
 
 describe('spa router', () => {
   test('resolves top-level stats routes', () => {
-    expect(resolveSpaRoute('/')).toEqual({ page: 'heroes' });
+    expect(resolveSpaRoute('/heroes')).toEqual({ page: 'heroes' });
     expect(resolveSpaRoute('/cards')).toEqual({ page: 'cards' });
     expect(resolveSpaRoute('/builds')).toEqual({ page: 'builds' });
   });
 
   test('resolves info pages', () => {
+    expect(resolveSpaRoute('/')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
     expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
@@ -35,6 +36,7 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/heroes/Unknown')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/archetypes')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });
+    expect(isSpaRoutePath('/heroes')).toBe(true);
     expect(isSpaRoutePath('/cards')).toBe(true);
     expect(isSpaRoutePath('/download')).toBe(true);
     expect(isSpaRoutePath('/support')).toBe(true);

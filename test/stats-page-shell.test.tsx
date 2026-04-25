@@ -23,7 +23,7 @@ describe('StatsPageShell', () => {
     expect(cardsLink).toHaveAttribute('href', '/cards?lang=zh');
     expect(screen.getByRole('link', { name: 'Heroes' })).toHaveAttribute(
       'href',
-      '/?lang=zh'
+      '/heroes?lang=zh'
     );
     expect(screen.getByRole('link', { name: 'Builds' })).toHaveAttribute(
       'href',

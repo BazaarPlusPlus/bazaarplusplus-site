@@ -24,6 +24,10 @@ export function resolveSpaRoute(pathname: string): SpaRoute {
   const resolved = CANONICAL_PATHS[normalized] ?? normalized;
 
   if (resolved === '/') {
+    return { page: 'support' };
+  }
+
+  if (resolved === '/heroes') {
     return { page: 'heroes' };
   }
 

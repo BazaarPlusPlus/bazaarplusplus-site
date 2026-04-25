@@ -17,7 +17,7 @@ type StatsNavItem = {
 };
 
 const STATS_NAV_ITEMS: StatsNavItem[] = [
-  { key: 'heroes', label: 'Heroes', numeral: 'I', href: '/' },
+  { key: 'heroes', label: 'Heroes', numeral: 'I', href: '/heroes' },
   { key: 'cards', label: 'Cards', numeral: 'II', href: '/cards' },
   { key: 'builds', label: 'Builds', numeral: 'III', href: '/builds' },
 ];
@@ -76,11 +76,14 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
         >
           <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
             <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(232,185,74,0.32),transparent_72%)] blur-md transition-opacity group-hover:opacity-100" />
-            <img
-              src="/bazaarplusplus-icon.png"
-              alt=""
-              className="relative h-11 w-11 object-contain drop-shadow-[0_0_18px_rgba(232,185,74,0.32)]"
-            />
+            <picture className="relative h-11 w-11">
+              <source srcSet="/bazaarplusplus-icon.webp" type="image/webp" />
+              <img
+                src="/bazaarplusplus-icon.png"
+                alt=""
+                className="h-11 w-11 object-contain drop-shadow-[0_0_18px_rgba(232,185,74,0.32)]"
+              />
+            </picture>
           </span>
           <span className="grid leading-none">
             <span className="font-display text-[1.32rem] font-semibold tracking-[-0.01em] text-[color:var(--color-accent-bright)]">

@@ -1,5 +1,5 @@
 import { buildLocalizedHref } from '../lib/dashboard';
-import type { Locale, MetricsSource } from '../lib/metrics';
+import { DEFAULT_LOCALE, type Locale, type MetricsSource } from '../lib/metrics';
 import { getSiteCopy } from '../lib/site-copy';
 
 export type SiteHeaderActiveSection =
@@ -11,15 +11,14 @@ export type SiteHeaderActiveSection =
 
 type StatsNavItem = {
   key: 'heroes' | 'cards' | 'builds';
-  label: string;
   numeral: string;
   href: string;
 };
 
 const STATS_NAV_ITEMS: StatsNavItem[] = [
-  { key: 'heroes', label: 'Heroes', numeral: 'I', href: '/heroes' },
-  { key: 'cards', label: 'Cards', numeral: 'II', href: '/cards' },
-  { key: 'builds', label: 'Builds', numeral: 'III', href: '/builds' },
+  { key: 'heroes', numeral: 'I', href: '/heroes' },
+  { key: 'cards', numeral: 'II', href: '/cards' },
+  { key: 'builds', numeral: 'III', href: '/builds' },
 ];
 
 type InfoNavItem = {
@@ -50,7 +49,7 @@ function buildLocaleToggleHref(targetLocale: Locale): string {
   }
 
   const url = new URL(window.location.href);
-  if (targetLocale === 'en') {
+  if (targetLocale === DEFAULT_LOCALE) {
     url.searchParams.delete('lang');
   } else {
     url.searchParams.set('lang', targetLocale);
@@ -95,6 +94,9 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
         <nav aria-label="Primary" className="flex min-w-0 items-center justify-center gap-1">
           {STATS_NAV_ITEMS.map((item) => {
             const active = item.key === activeSection;
+            const label = copy.primaryNav[item.key];
+            const labelTypography =
+              locale === 'zh' ? 'tracking-normal' : 'tracking-[0.04em]';
             return (
               <a
                 key={item.key}
@@ -116,7 +118,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
                 >
                   {item.numeral}
                 </span>
-                <span className="tracking-[0.06em]">{item.label}</span>
+                <span className={labelTypography}>{label}</span>
                 {active ? (
                   <span className="pointer-events-none absolute inset-x-3 -bottom-[18px] h-[2px] rounded-full bg-[color:var(--color-accent)] shadow-[0_0_14px_rgba(232,185,74,0.55)]" />
                 ) : null}

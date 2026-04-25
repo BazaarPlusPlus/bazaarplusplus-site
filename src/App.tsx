@@ -20,6 +20,7 @@ import {
   type RatingTier,
 } from './lib/metrics';
 import { createRuntimeMetricsClient, type RuntimeMetricsClient } from './lib/metrics-client';
+import { getPageTitle } from './lib/site-copy';
 import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from './lib/spa-router';
 import {
   loadBuildsPageData,
@@ -341,6 +342,11 @@ export default function App() {
   const [location, setLocation] = useState<BrowserLocation>(() => readBrowserLocation());
   const route = resolveSpaRoute(location.pathname);
   const locale = readLocale(location.search);
+
+  useEffect(() => {
+    document.title = getPageTitle(route.page, locale);
+    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
+  }, [route.page, locale]);
 
   useEffect(() => {
     const canonical = getCanonicalPath(location.pathname);

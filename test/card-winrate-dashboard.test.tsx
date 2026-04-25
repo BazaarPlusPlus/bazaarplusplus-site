@@ -11,7 +11,7 @@ import type {
 
 describe('CardWinrateDashboard', () => {
   test('switches card workspace views and ignores removed phase state from the URL', async () => {
-    window.history.replaceState({}, '', '/cards?w=3d&t=high&m=phase&pm=inclusion&hero=Mak&lang=zh');
+    window.history.replaceState({}, '', '/cards?w=3d&t=high&m=phase&pm=inclusion&hero=Mak');
 
     const manifest: ManifestPayload = {
       generatedAt: '2026-04-18T18:57:46Z',
@@ -223,7 +223,7 @@ describe('CardWinrateDashboard', () => {
     expect(screen.getAllByRole('button', { name: 'Uplift' })[0]).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('+28.4%')).toBeInTheDocument();
     expect(window.location.search).toContain('m=uplift');
-    expect(window.location.search).toContain('lang=zh');
+    expect(window.location.search).not.toContain('lang=');
     expect(window.location.search).not.toContain('pm=');
   });
 });

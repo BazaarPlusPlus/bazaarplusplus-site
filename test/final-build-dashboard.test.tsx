@@ -182,6 +182,6 @@ describe('FinalBuildDashboard', () => {
       .getAllByRole('row')
       .filter((row) => row.textContent?.includes('Dooley') || row.textContent?.includes('Vanessa'));
     expect(dataRows[0]?.textContent).toContain('Vanessa');
-    expect(window.location.search).toBe('');
+    expect(window.location.search).toBe('?lang=en');
   });
 });

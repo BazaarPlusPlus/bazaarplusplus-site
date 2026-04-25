@@ -19,15 +19,15 @@ describe('StatsPageShell', () => {
       </StatsPageShell>
     );
 
-    const cardsLink = screen.getByRole('link', { name: 'Cards' });
-    expect(cardsLink).toHaveAttribute('href', '/cards?lang=zh');
-    expect(screen.getByRole('link', { name: 'Heroes' })).toHaveAttribute(
+    const cardsLink = screen.getByRole('link', { name: '卡牌数据' });
+    expect(cardsLink).toHaveAttribute('href', '/cards');
+    expect(screen.getByRole('link', { name: '英雄数据' })).toHaveAttribute(
       'href',
-      '/heroes?lang=zh'
+      '/heroes'
     );
-    expect(screen.getByRole('link', { name: 'Builds' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '终局构筑' })).toHaveAttribute(
       'href',
-      '/builds?lang=zh'
+      '/builds'
     );
     expect(
       within(screen.getByRole('navigation', { name: 'Primary' })).queryByText('Analytics')

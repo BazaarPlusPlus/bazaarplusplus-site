@@ -4,6 +4,8 @@ export type MetricsSource = 'remote';
 export type Locale = 'en' | 'zh';
 export type CardMetric = 'winrate' | 'uplift' | 'inclusion';
 
+export const DEFAULT_LOCALE: Locale = 'zh';
+
 export type ManifestWindowInfo = {
   start: string;
   end: string;
@@ -227,7 +229,7 @@ export function parseRatingTier(value: string | null): RatingTier {
 }
 
 export function parseLocale(value: string | null): Locale {
-  return isLocale(value) ? value : 'en';
+  return isLocale(value) ? value : DEFAULT_LOCALE;
 }
 
 export function parseCardMetric(value: string | null): CardMetric {

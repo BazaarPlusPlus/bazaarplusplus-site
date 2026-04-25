@@ -1,4 +1,4 @@
-import type { CardMetric, Locale, MetricWindow, RatingTier } from './metrics';
+import { DEFAULT_LOCALE, type CardMetric, type Locale, type MetricWindow, type RatingTier } from './metrics';
 
 export const WINDOW_LABELS: Record<MetricWindow, string> = {
   '1d': '1D',
@@ -67,7 +67,7 @@ export function buildLocalizedHref(
     search.set('hero', params.hero);
   }
 
-  if (params.lang && params.lang !== 'en') {
+  if (params.lang && params.lang !== DEFAULT_LOCALE) {
     search.set('lang', params.lang);
   }
 

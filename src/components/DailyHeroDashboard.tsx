@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
-import type {
-  HeroOverviewPayload,
-  HeroWinrateDailyPayload,
-  Locale,
-  MetricsSource,
-  MetricWindow,
-  RatingTier,
+import {
+  DEFAULT_LOCALE,
+  type HeroOverviewPayload,
+  type HeroWinrateDailyPayload,
+  type Locale,
+  type MetricsSource,
+  type MetricWindow,
+  type RatingTier,
 } from '../lib/metrics';
 import {
   WINDOW_LABELS,
@@ -468,8 +469,10 @@ export default function DailyHeroDashboard({
       params.delete('t');
     }
 
-    if (locale !== 'en') {
+    if (locale !== DEFAULT_LOCALE) {
       params.set('lang', locale);
+    } else {
+      params.delete('lang');
     }
 
     const query = params.toString();

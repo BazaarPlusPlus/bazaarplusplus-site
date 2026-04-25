@@ -1,9 +1,19 @@
 import type { Locale } from './metrics';
 
+export type PrimaryNavCopy = {
+  heroes: string;
+  cards: string;
+  builds: string;
+};
+
 export type SecondaryNavCopy = {
   download: string;
   support: string;
 };
+
+export type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'not-found';
+
+export type PageTitleCopy = Record<PageTitleKey, string>;
 
 export type DownloadPageCopy = {
   eyebrow: string;
@@ -55,15 +65,30 @@ export type SupportPageCopy = {
 };
 
 export type LocalizedSiteCopy = {
+  primaryNav: PrimaryNavCopy;
   nav: SecondaryNavCopy;
+  pageTitles: PageTitleCopy;
   download: DownloadPageCopy;
   support: SupportPageCopy;
 };
 
 const zh: LocalizedSiteCopy = {
+  primaryNav: {
+    heroes: '英雄数据',
+    cards: '卡牌数据',
+    builds: '终局构筑',
+  },
   nav: {
     download: '下载',
     support: '赞助',
+  },
+  pageTitles: {
+    heroes: '英雄数据',
+    cards: '卡牌数据',
+    builds: '终局构筑',
+    download: '下载',
+    support: '赞助',
+    'not-found': '页面不存在',
   },
   download: {
     eyebrow: '客户端下载',
@@ -118,9 +143,22 @@ const zh: LocalizedSiteCopy = {
 };
 
 const en: LocalizedSiteCopy = {
+  primaryNav: {
+    heroes: 'Hero Stats',
+    cards: 'Card Stats',
+    builds: 'Final Builds',
+  },
   nav: {
     download: 'Download',
     support: 'Support',
+  },
+  pageTitles: {
+    heroes: 'Hero Stats',
+    cards: 'Card Stats',
+    builds: 'Final Builds',
+    download: 'Download',
+    support: 'Support',
+    'not-found': 'Page Not Found',
   },
   download: {
     eyebrow: 'Client downloads',
@@ -178,6 +216,10 @@ const messages: Record<Locale, LocalizedSiteCopy> = { zh, en };
 
 export function getSiteCopy(locale: Locale): LocalizedSiteCopy {
   return messages[locale];
+}
+
+export function getPageTitle(page: PageTitleKey, locale: Locale): string {
+  return `${messages[locale].pageTitles[page]} | BazaarPlusPlus`;
 }
 
 export const KOFI_URL = 'https://ko-fi.com/cauyxy';

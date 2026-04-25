@@ -21,11 +21,11 @@ describe('MetricFilterBar', () => {
     expect(screen.getAllByText('Card winrate')).toHaveLength(1);
     expect(screen.getByRole('link', { name: '1D' })).toHaveAttribute(
       'href',
-      '/cards?t=high&lang=zh'
+      '/cards?t=high'
     );
     expect(screen.getByRole('link', { name: 'All players' })).toHaveAttribute(
       'href',
-      '/cards?w=3d&lang=zh'
+      '/cards?w=3d'
     );
     expect(screen.getByRole('link', { name: 'High rank' }).className).toContain(
       'text-[color:#130f08]'

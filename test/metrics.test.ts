@@ -44,7 +44,8 @@ describe('createMetricsRepository', () => {
 
     expect(parseLocale('zh')).toBe('zh');
     expect(parseLocale('en')).toBe('en');
-    expect(parseLocale('ja')).toBe('en');
+    expect(parseLocale(null)).toBe('zh');
+    expect(parseLocale('ja')).toBe('zh');
     expect(parseCardMetric('uplift')).toBe('uplift');
     expect(parseCardMetric('inclusion')).toBe('inclusion');
     expect(parseCardMetric('phase')).toBe('winrate');

@@ -282,25 +282,12 @@ describe('DailyHeroDashboard', () => {
     const snapshotSection = screen.getByText('Latest hero snapshot').closest('section');
     expect(trendSection).not.toBeNull();
     expect(snapshotSection).not.toBeNull();
-    expect(within(trendSection!).getByTestId('trend-layout').className).toContain(
-      'lg:grid-cols-[minmax(0,1fr)_18rem]'
-    );
-    expect(within(trendSection!).getByTestId('trend-movement-rail').className).toContain('lg:w-72');
-    expect(within(trendSection!).getByText('Risers')).toBeInTheDocument();
-    expect(within(trendSection!).getByText('Fallers')).toBeInTheDocument();
+    expect(within(trendSection!).getByTestId('trend-layout').className).toContain('min-w-0');
+    expect(within(trendSection!).queryByTestId('trend-movement-rail')).not.toBeInTheDocument();
+    expect(within(trendSection!).queryByText('Risers')).not.toBeInTheDocument();
+    expect(within(trendSection!).queryByText('Fallers')).not.toBeInTheDocument();
+    expect(within(trendSection!).queryByText('Hero movement')).not.toBeInTheDocument();
     expect(within(trendSection!).queryByText('Current snapshot')).not.toBeInTheDocument();
-    expect(within(trendSection!).getByText('+4.5pp')).toBeInTheDocument();
-    expect(within(trendSection!).getByText('-0.5pp')).toBeInTheDocument();
-    expect(within(trendSection!).getByText('Latest 42.0%')).toBeInTheDocument();
-    expect(within(trendSection!).getByText('Latest 41.4%')).toBeInTheDocument();
-    expect(within(trendSection!).getByRole('link', { name: /Stelle movement/i })).toHaveAttribute(
-      'href',
-      '/heroes/Stelle?w=7d'
-    );
-    expect(within(trendSection!).getByRole('link', { name: /Vanessa movement/i })).toHaveAttribute(
-      'href',
-      '/heroes/Vanessa?w=7d'
-    );
     expect(within(trendSection!).queryByRole('button', { name: '1D' })).not.toBeInTheDocument();
     expect(within(trendSection!).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(trendSection!).getByRole('button', { name: 'Mid' })).toHaveAttribute('aria-pressed', 'false');
@@ -378,48 +365,4 @@ describe('DailyHeroDashboard', () => {
     expect(dataRows[0]?.textContent).toContain('Stelle');
   });
 
-  test('shows a neutral movement state when there is not enough trend history', () => {
-    window.history.replaceState({}, '', '/');
-    const generatedAt = '2026-04-18T18:57:46Z';
-    const dailyByTier: Partial<Record<RatingTier, HeroWinrateDailyPayload>> = {
-      all: createDailyPayload(generatedAt, [
-        {
-          hero: 'Stelle',
-          day: '2026-04-12T16:00:00Z',
-          completed_runs: 450,
-          wins_10w: 189,
-          win_rate: 0.42,
-          win_rate_wilson_lower: 0.38,
-        },
-      ]),
-    };
-    const overviewByWindow = {
-      '1d': {
-        all: createOverviewPayload(generatedAt, 'Stelle', 100, {
-          perfect: 10,
-          gold: 40,
-          silver: 20,
-          bronze: 15,
-          none: 15,
-        }, 0.42),
-      },
-      '3d': {},
-      '7d': {},
-    } satisfies Record<'1d' | '3d' | '7d', Partial<Record<RatingTier, HeroOverviewPayload>>>;
-
-    render(
-      <DailyHeroDashboard
-        locale="en"
-        source="local"
-        availableWindows={['1d', '3d', '7d']}
-        availableTiers={['all']}
-        initialSelectedWindow="1d"
-        initialSelectedTier="all"
-        dailyByTier={dailyByTier}
-        overviewByWindow={overviewByWindow}
-      />
-    );
-
-    expect(screen.getByText('Not enough trend history')).toBeInTheDocument();
-  });
 });

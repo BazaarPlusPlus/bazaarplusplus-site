@@ -15,7 +15,6 @@ import {
   formatPercent,
   formatShortDate,
 } from '../lib/dashboard';
-import { buildHeroMovementRows, type HeroMovementRow } from '../lib/hero-movement';
 import { buildHeroHref, getHeroColor, getHeroShortLabel } from '../lib/heroes';
 import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
 import HeroBadge from './HeroBadge';
@@ -99,7 +98,6 @@ const TREND_TIER_LABELS: Record<TrendTier, string> = {
 };
 const TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
 const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '12%', '11%', '11%', '12%', '12%', '12%'];
-const MOVEMENT_ROW_LIMIT = 3;
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -195,23 +193,6 @@ function buildTierRate(counts: Record<string, number> | undefined, key: string, 
   }
 
   return (counts[key] ?? 0) / denominator;
-}
-
-function formatSignedPercentagePoints(value: number): string {
-  const sign = value >= 0 ? '+' : '';
-  return `${sign}${(value * 100).toFixed(1)}pp`;
-}
-
-function getMovementLink(
-  row: HeroMovementRow,
-  selectedTier: RatingTier,
-  locale: Locale
-): string {
-  return buildHeroHref(row.hero, {
-    w: TREND_WINDOW,
-    t: selectedTier,
-    lang: locale,
-  });
 }
 
 function buildChartState(
@@ -485,25 +466,6 @@ export default function DailyHeroDashboard({
       }),
     [detailRows, sortState]
   );
-  const movementRows = useMemo(
-    () => buildHeroMovementRows(trendDailyPayload?.rows ?? [], trendVisibleDays),
-    [trendDailyPayload, trendVisibleDays]
-  );
-  const risingRows = useMemo(
-    () => movementRows.filter((row) => row.delta > 0).slice(0, MOVEMENT_ROW_LIMIT),
-    [movementRows]
-  );
-  const fallingRows = useMemo(
-    () =>
-      [...movementRows]
-        .filter((row) => row.delta < 0)
-        .sort((a, b) => a.delta - b.delta || a.hero.localeCompare(b.hero))
-        .slice(0, MOVEMENT_ROW_LIMIT),
-    [movementRows]
-  );
-  const hasEnoughTrendHistory = trendVisibleDays.length >= 2;
-  const hasHeroMovement = movementRows.some((row) => row.delta !== 0);
-
   return (
     <StatsPageShell
       activeSection="heroes"
@@ -553,7 +515,7 @@ export default function DailyHeroDashboard({
 
           <div
             data-testid="trend-layout"
-            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start"
+            className="grid min-w-0 gap-3"
           >
             <div className="grid min-w-0 gap-3">
               <div
@@ -765,112 +727,6 @@ export default function DailyHeroDashboard({
                 ))}
               </div>
             </div>
-
-            <aside
-              data-testid="trend-movement-rail"
-              className="grid gap-3 lg:min-h-[360px] lg:w-72 lg:grid-rows-2"
-            >
-              {hasEnoughTrendHistory && hasHeroMovement ? (
-                <>
-                  <section className="flex min-h-[168px] flex-col rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
-                        Risers
-                      </h3>
-                      <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
-                        {WINDOW_LABELS[TREND_WINDOW]}
-                      </span>
-                    </div>
-                    {risingRows.length > 0 ? (
-                      <div className="mt-3 grid flex-1 content-start gap-2">
-                        {risingRows.map((row) => (
-                          <a
-                            key={`riser-${row.hero}`}
-                            href={getMovementLink(row, activeTrendTier, locale)}
-                            aria-label={`${row.hero} movement ${formatSignedPercentagePoints(row.delta)}`}
-                            onMouseEnter={() => setSelectedTrendHero(row.hero)}
-                            onFocus={() => setSelectedTrendHero(row.hero)}
-                            className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:rgba(58,47,31,0.7)] bg-[color:rgba(19,15,8,0.64)] px-3 py-2 transition hover:border-[color:var(--color-accent)]"
-                          >
-                            <HeroBadge
-                              hero={row.hero}
-                              size="sm"
-                              selected={row.hero === focusedTrendHero?.hero}
-                            />
-                            <span className="grid text-right">
-                              <span className="tnum text-sm font-semibold text-[color:var(--color-pos)]">
-                                {formatSignedPercentagePoints(row.delta)}
-                              </span>
-                              <span className="tnum text-xs text-[color:var(--color-text-muted)]">
-                                Latest {formatPercent(row.latestWinRate)}
-                              </span>
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
-                        No risers in this window
-                      </p>
-                    )}
-                  </section>
-
-                  <section className="flex min-h-[168px] flex-col rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
-                        Fallers
-                      </h3>
-                      <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
-                        {WINDOW_LABELS[TREND_WINDOW]}
-                      </span>
-                    </div>
-                    {fallingRows.length > 0 ? (
-                      <div className="mt-3 grid flex-1 content-start gap-2">
-                        {fallingRows.map((row) => (
-                          <a
-                            key={`faller-${row.hero}`}
-                            href={getMovementLink(row, activeTrendTier, locale)}
-                            aria-label={`${row.hero} movement ${formatSignedPercentagePoints(row.delta)}`}
-                            onMouseEnter={() => setSelectedTrendHero(row.hero)}
-                            onFocus={() => setSelectedTrendHero(row.hero)}
-                            className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:rgba(58,47,31,0.7)] bg-[color:rgba(19,15,8,0.64)] px-3 py-2 transition hover:border-[color:var(--color-accent)]"
-                          >
-                            <HeroBadge
-                              hero={row.hero}
-                              size="sm"
-                              selected={row.hero === focusedTrendHero?.hero}
-                            />
-                            <span className="grid text-right">
-                              <span className="tnum text-sm font-semibold text-[color:var(--color-neg)]">
-                                {formatSignedPercentagePoints(row.delta)}
-                              </span>
-                              <span className="tnum text-xs text-[color:var(--color-text-muted)]">
-                                Latest {formatPercent(row.latestWinRate)}
-                              </span>
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
-                        No fallers in this window
-                      </p>
-                    )}
-                  </section>
-                </>
-              ) : (
-                <section className="flex min-h-[168px] flex-col justify-center rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4 lg:row-span-2">
-                  <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
-                    Hero movement
-                  </h3>
-                  <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
-                    {hasEnoughTrendHistory
-                      ? 'No hero movement in this window'
-                      : 'Not enough trend history'}
-                  </p>
-                </section>
-              )}
-            </aside>
           </div>
         </section>
 

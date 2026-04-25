@@ -8,6 +8,7 @@ type VirtualizedMetricTableProps<T> = {
   viewportHeight: number;
   overscan?: number;
   columnCount: number;
+  columnWidths?: string[];
   getRowKey: (row: T, index: number) => string;
   renderRow: (row: T, index: number) => ReactNode;
 };
@@ -20,6 +21,7 @@ export default function VirtualizedMetricTable<T>({
   viewportHeight,
   overscan = 3,
   columnCount,
+  columnWidths = [],
   getRowKey,
   renderRow,
 }: VirtualizedMetricTableProps<T>) {
@@ -38,7 +40,14 @@ export default function VirtualizedMetricTable<T>({
       style={{ height: `${viewportHeight}px` }}
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
-      <table aria-label={ariaLabel} className="min-w-full border-collapse">
+      <table aria-label={ariaLabel} className="min-w-full table-fixed border-collapse">
+        {columnWidths.length > 0 ? (
+          <colgroup>
+            {columnWidths.map((width, index) => (
+              <col key={`${index}:${width}`} style={{ width }} />
+            ))}
+          </colgroup>
+        ) : null}
         <thead className="sticky top-0 z-10 bg-[color:rgba(212,162,76,0.12)] text-left text-xs uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] backdrop-blur">
           {columns}
         </thead>

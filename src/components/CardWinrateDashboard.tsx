@@ -88,6 +88,13 @@ const PHASE_TABS: Array<{ key: CardPhaseMetric; label: string }> = [
   { key: 'inclusion', label: 'Inclusion' },
 ];
 
+const CARD_WINRATE_COLUMN_WIDTHS = ['10%', '13%', '25%', '13%', '13%', '12%', '14%'];
+const CARD_UPLIFT_COLUMN_WIDTHS = ['9%', '12%', '22%', '11%', '11%', '11%', '12%', '12%'];
+const CARD_INCLUSION_COLUMN_WIDTHS = ['10%', '13%', '25%', '13%', '13%', '16%', '10%'];
+const CARD_PHASE_VALUE_COLUMN_WIDTHS = ['9%', '12%', '21%', '10%', '12%', '12%', '10%', '14%'];
+const CARD_PHASE_INCLUSION_COLUMN_WIDTHS = ['10%', '13%', '22%', '11%', '13%', '15%', '16%'];
+const CARD_ENCHANT_COLUMN_WIDTHS = ['8%', '12%', '20%', '11%', '11%', '10%', '8%', '11%', '9%'];
+
 type CardSortKey =
   | 'hero'
   | 'name'
@@ -131,6 +138,31 @@ function getDefaultCardSort(
   }
 
   return { key: 'appearances', direction: 'desc' };
+}
+
+function getCardTableColumnWidths(
+  metric: CardMetric,
+  phaseMetric: CardPhaseMetric
+): string[] {
+  if (metric === 'uplift') {
+    return CARD_UPLIFT_COLUMN_WIDTHS;
+  }
+
+  if (metric === 'inclusion') {
+    return CARD_INCLUSION_COLUMN_WIDTHS;
+  }
+
+  if (metric === 'phase') {
+    return phaseMetric === 'inclusion'
+      ? CARD_PHASE_INCLUSION_COLUMN_WIDTHS
+      : CARD_PHASE_VALUE_COLUMN_WIDTHS;
+  }
+
+  if (metric === 'enchants') {
+    return CARD_ENCHANT_COLUMN_WIDTHS;
+  }
+
+  return CARD_WINRATE_COLUMN_WIDTHS;
 }
 
 function getMetricDataLabel(metric: CardMetric, phaseMetric: CardPhaseMetric): string {
@@ -465,6 +497,7 @@ export default function CardWinrateDashboard({
           : selectedMetric === 'enchants'
             ? 9
             : 7;
+  const columnWidths = getCardTableColumnWidths(selectedMetric, selectedPhaseMetric);
 
   return (
     <StatsPageShell
@@ -568,7 +601,8 @@ export default function CardWinrateDashboard({
       <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
         <VirtualizedMetricTable
           ariaLabel={metricTitle}
-          columnCount={columnCount - 1}
+          columnCount={columnCount}
+          columnWidths={columnWidths}
           rows={sortedRows}
           rowHeight={88}
           viewportHeight={880}

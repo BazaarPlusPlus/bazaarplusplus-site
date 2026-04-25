@@ -106,6 +106,7 @@ describe('FinalBuildDashboard', () => {
 
     expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('cell', { name: 'Mak' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'P75 days' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '1D' }));
     expect(screen.getByRole('cell', { name: 'Dooley' })).toBeInTheDocument();

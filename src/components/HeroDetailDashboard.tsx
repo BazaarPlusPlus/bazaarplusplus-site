@@ -69,7 +69,6 @@ type HeroDetailRow = {
   runsTotal: number | null;
   wins10w: number;
   winRate: number;
-  p75DaysFor10w: number | null;
   perfectRate: number | null;
   goldRate: number | null;
 };
@@ -96,6 +95,8 @@ const WINDOW_DAY_COUNT: Record<MetricWindow, number> = {
   '7d': 7,
 };
 const TREND_WINDOW: MetricWindow = '7d';
+const HERO_CARD_WINRATE_COLUMN_WIDTHS = ['12%', '32%', '14%', '14%', '12%', '16%'];
+const HERO_CARD_UPLIFT_COLUMN_WIDTHS = ['12%', '28%', '12%', '12%', '12%', '12%', '12%'];
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -143,6 +144,10 @@ function getTierOptions(
   );
 }
 
+function getHeroCardColumnWidths(metric: CardMetric): string[] {
+  return metric === 'uplift' ? HERO_CARD_UPLIFT_COLUMN_WIDTHS : HERO_CARD_WINRATE_COLUMN_WIDTHS;
+}
+
 function buildHeroState(
   hero: HeroName,
   dailyPayload: HeroWinrateDailyPayload | undefined,
@@ -181,7 +186,6 @@ function buildHeroState(
           runsTotal: overview?.runs_total ?? null,
           wins10w: latestRow.wins_10w,
           winRate: latestRow.win_rate,
-          p75DaysFor10w: overview?.p75_run_days_for_10w ?? null,
           perfectRate: buildTierRate(
             overview?.victory_tier_counts,
             'perfect',
@@ -436,7 +440,8 @@ export default function HeroDetailDashboard({
           ) : (
             <VirtualizedMetricTable
               ariaLabel={`${hero} card analysis`}
-              columnCount={selectedMetric === 'uplift' ? 6 : 5}
+              columnCount={selectedMetric === 'uplift' ? 7 : 6}
+              columnWidths={getHeroCardColumnWidths(selectedMetric)}
               rows={cardRows}
               rowHeight={88}
               viewportHeight={704}

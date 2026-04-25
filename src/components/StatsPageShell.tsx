@@ -78,7 +78,7 @@ export default function StatsPageShell({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">{summary}</div>
+        {summary ? <div className="grid gap-4 sm:grid-cols-3">{summary}</div> : null}
       </section>
 
       {filters}

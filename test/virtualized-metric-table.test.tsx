@@ -23,6 +23,7 @@ describe('VirtualizedMetricTable', () => {
         viewportHeight={160}
         overscan={1}
         columnCount={1}
+        columnWidths={['12rem']}
         getRowKey={(row) => row.id}
         renderRow={(row) => (
           <tr className="metric-row">
@@ -33,6 +34,9 @@ describe('VirtualizedMetricTable', () => {
     );
 
     expect(screen.getByText('Row 1')).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'Test table' });
+    expect(table.className).toContain('table-fixed');
+    expect(table.querySelector('col')?.getAttribute('style')).toContain('width: 12rem');
     expect(screen.queryByText('Row 30')).not.toBeInTheDocument();
     expect(document.querySelectorAll('tbody .metric-row').length).toBeLessThan(12);
 

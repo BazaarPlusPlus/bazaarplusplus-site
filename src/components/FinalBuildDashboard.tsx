@@ -43,7 +43,9 @@ type FinalBuildDashboardProps = {
   rowsByWindow: Partial<Record<MetricWindow, Partial<Record<RatingTier, ViewPayload<FinalBuildViewRow>>>>>;
 };
 
-type BuildSortKey = 'hero' | 'runCount' | 'p75Days' | 'goldScore' | 'rank';
+type BuildSortKey = 'hero' | 'runCount' | 'goldScore' | 'rank';
+
+const FINAL_BUILD_COLUMN_WIDTHS = ['16%', '50%', '12%', '14%', '8%'];
 
 function formatGoldScore(value: number): string {
   return value.toFixed(3);
@@ -103,7 +105,6 @@ export default function FinalBuildDashboard({
       sortRows(rows, sortState, {
         hero: (row) => row.hero,
         runCount: (row) => row.run_count,
-        p75Days: (row) => row.p75_run_days,
         goldScore: (row) => row.gold_score,
         rank: (row) => row.rank,
       }),
@@ -114,7 +115,6 @@ export default function FinalBuildDashboard({
       sortRows(rows, { key: 'rank', direction: 'asc' }, {
         hero: (row) => row.hero,
         runCount: (row) => row.run_count,
-        p75Days: (row) => row.p75_run_days,
         goldScore: (row) => row.gold_score,
         rank: (row) => row.rank,
       })[0],
@@ -164,7 +164,8 @@ export default function FinalBuildDashboard({
       <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
         <VirtualizedMetricTable
           ariaLabel="Final builds"
-          columnCount={6}
+          columnCount={5}
+          columnWidths={FINAL_BUILD_COLUMN_WIDTHS}
           rows={sortedRows}
           rowHeight={88}
           viewportHeight={880}
@@ -183,12 +184,6 @@ export default function FinalBuildDashboard({
                 className="px-5 py-4"
                 activeDirection={sortState.key === 'runCount' ? sortState.direction : undefined}
                 onToggle={() => setSortState((current) => toggleSort(current, 'runCount', 'desc'))}
-              />
-              <SortableHeader
-                label="P75 days"
-                className="px-5 py-4"
-                activeDirection={sortState.key === 'p75Days' ? sortState.direction : undefined}
-                onToggle={() => setSortState((current) => toggleSort(current, 'p75Days', 'desc'))}
               />
               <SortableHeader
                 label="Gold score"
@@ -216,9 +211,6 @@ export default function FinalBuildDashboard({
                 <FinalBuildCardStrip cards={row.build_cards} title={row.card_names.join(', ')} />
               </td>
               <td className="px-5 py-4 tnum">{formatInteger(row.run_count)}</td>
-              <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                {row.p75_run_days == null ? 'N/A' : row.p75_run_days}
-              </td>
               <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
                 {formatGoldScore(row.gold_score)}
               </td>

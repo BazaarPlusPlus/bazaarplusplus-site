@@ -4,34 +4,27 @@ import { useQuery } from '@tanstack/react-query';
 import CardWinrateDashboard from './components/CardWinrateDashboard';
 import DailyHeroDashboard from './components/DailyHeroDashboard';
 import FinalBuildDashboard from './components/FinalBuildDashboard';
-import HeroDetailDashboard from './components/HeroDetailDashboard';
 import {
   getAvailableTiers,
-  getAvailableTiersForWindowlessMetric,
   getAvailableWindows,
-  getCommonAvailableTiers,
   parseCardMetric,
-  parseCardPhaseMetric,
   parseLocale,
   parseMetricWindow,
   parseRatingTier,
   type CardMetric,
-  type CardPhaseMetric,
   type Locale,
   type ManifestPayload,
   type MetricWindow,
   type RatingTier,
 } from './lib/metrics';
 import { createRuntimeMetricsClient, type RuntimeMetricsClient } from './lib/metrics-client';
-import { isSpaRoutePath, resolveSpaRoute, type SpaRoute } from './lib/spa-router';
+import { isSpaRoutePath, resolveSpaRoute } from './lib/spa-router';
 import {
   loadBuildsPageData,
   loadCardsPageData,
-  loadHeroDetailPageData,
   loadHeroOverviewPageData,
   type BuildsPageData,
   type CardsPageData,
-  type HeroDetailPageData,
   type HeroOverviewPageData,
 } from './spa/data';
 
@@ -62,14 +55,6 @@ function getInitialWindow(manifest: ManifestPayload, search: string): MetricWind
 function getInitialTier(options: RatingTier[], search: string): RatingTier {
   const requestedTier = parseRatingTier(new URLSearchParams(search).get('t'));
   return options.includes(requestedTier) ? requestedTier : options[0] ?? 'all';
-}
-
-function getInitialCardMetric(search: string): CardMetric {
-  return parseCardMetric(new URLSearchParams(search).get('m'));
-}
-
-function getInitialCardPhaseMetric(search: string): CardPhaseMetric {
-  return parseCardPhaseMetric(new URLSearchParams(search).get('pm'));
 }
 
 function LoadingScreen() {
@@ -207,14 +192,6 @@ function getCardMetricLabels(metric: CardMetric): string[] {
     return ['item_inclusion'];
   }
 
-  if (metric === 'phase') {
-    return ['item_phase_value', 'item_phase_inclusion'];
-  }
-
-  if (metric === 'enchants') {
-    return ['enchant_uplift'];
-  }
-
   return ['item_winrate'];
 }
 
@@ -229,13 +206,13 @@ function CardsDashboard({
 }) {
   const params = new URLSearchParams(search);
   const requestedMetric = parseCardMetric(params.get('m'));
-  const requestedPhaseMetric = parseCardPhaseMetric(params.get('pm'));
   const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialMetricLabels = getCardMetricLabels(requestedMetric);
-  const initialTierOptions =
-    initialMetricLabels.length === 1
-      ? getAvailableTiers(data.manifest, initialSelectedWindow, initialMetricLabels[0]!)
-      : getCommonAvailableTiers(data.manifest, initialSelectedWindow, initialMetricLabels);
+  const initialMetricLabel = getCardMetricLabels(requestedMetric)[0] ?? 'item_winrate';
+  const initialTierOptions = getAvailableTiers(
+    data.manifest,
+    initialSelectedWindow,
+    initialMetricLabel
+  );
   const initialSelectedTier = getInitialTier(initialTierOptions, search);
 
   return (
@@ -243,16 +220,12 @@ function CardsDashboard({
       locale={locale}
       manifest={data.manifest}
       initialSelectedMetric={requestedMetric}
-      initialSelectedPhaseMetric={requestedPhaseMetric}
       initialSelectedWindow={initialSelectedWindow}
       initialSelectedTier={initialSelectedTier}
       source={data.source}
       winrateByWindow={data.winrateByWindow}
       upliftByWindow={data.upliftByWindow}
       inclusionByWindow={data.inclusionByWindow}
-      phaseValueByWindow={data.phaseValueByWindow}
-      phaseInclusionByWindow={data.phaseInclusionByWindow}
-      enchantByWindow={data.enchantByWindow}
     />
   );
 }
@@ -307,66 +280,6 @@ function BuildsDashboard({
   );
 }
 
-function HeroDetailPage({
-  client,
-  locale,
-  route,
-  search,
-}: {
-  client: RuntimeMetricsClient;
-  locale: Locale;
-  route: Extract<SpaRoute, { page: 'hero-detail' }>;
-  search: string;
-}) {
-  const { data, error, isLoading } = usePageQuery(
-    ['hero-detail', locale],
-    () => loadHeroDetailPageData(client, locale)
-  );
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  if (!data) {
-    return <ErrorScreen error={error} />;
-  }
-
-  return <HeroDetailDashboardView data={data} locale={locale} route={route} search={search} />;
-}
-
-function HeroDetailDashboardView({
-  data,
-  locale,
-  route,
-  search,
-}: {
-  data: HeroDetailPageData;
-  locale: Locale;
-  route: Extract<SpaRoute, { page: 'hero-detail' }>;
-  search: string;
-}) {
-  const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const dailyTiers = getAvailableTiersForWindowlessMetric(data.manifest, 'hero_winrate_daily');
-  const initialSelectedTier = getInitialTier(dailyTiers, search);
-  const initialSelectedMetric = getInitialCardMetric(search);
-
-  return (
-    <HeroDetailDashboard
-      hero={route.hero}
-      locale={locale}
-      manifest={data.manifest}
-      source={data.source}
-      initialSelectedWindow={initialSelectedWindow}
-      initialSelectedTier={initialSelectedTier}
-      initialSelectedMetric={initialSelectedMetric}
-      dailyByTier={data.dailyByTier}
-      overviewByWindow={data.overviewByWindow}
-      winrateByWindow={data.winrateByWindow}
-      upliftByWindow={data.upliftByWindow}
-    />
-  );
-}
-
 export default function App() {
   const client = useMemo(() => createRuntimeMetricsClient(), []);
   const [location, setLocation] = useState<BrowserLocation>(() => readBrowserLocation());
@@ -417,10 +330,6 @@ export default function App() {
 
   if (route.page === 'builds') {
     return <BuildsPage client={client} locale={locale} search={location.search} />;
-  }
-
-  if (route.page === 'hero-detail') {
-    return <HeroDetailPage client={client} locale={locale} route={route} search={location.search} />;
   }
 
   return <NotFoundScreen />;

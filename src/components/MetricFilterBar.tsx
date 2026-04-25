@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react';
+
 import type { CardMetric, Locale, MetricWindow, RatingTier } from '../lib/metrics';
 import { TIER_LABELS, WINDOW_LABELS, buildLocalizedHref } from '../lib/dashboard';
+import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
 
 type MetricFilterBarProps = {
   locale: Locale;
@@ -11,9 +14,12 @@ type MetricFilterBarProps = {
   selectedWindow: MetricWindow;
   selectedTier: RatingTier;
   selectedMetric?: CardMetric;
+  heroOptions?: string[];
+  selectedHero?: string;
   compact?: boolean;
   onWindowSelect?: (window: MetricWindow) => void;
   onTierSelect?: (tier: RatingTier) => void;
+  onHeroSelect?: (hero: string) => void;
 };
 
 export default function MetricFilterBar({
@@ -26,10 +32,15 @@ export default function MetricFilterBar({
   selectedWindow,
   selectedTier,
   selectedMetric,
+  heroOptions = [],
+  selectedHero = 'all',
   compact = false,
   onWindowSelect,
   onTierSelect,
+  onHeroSelect,
 }: MetricFilterBarProps) {
+  const showHeroFilter = heroOptions.length > 0;
+
   if (compact) {
     return (
       <section className="grid gap-3 rounded-[20px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(19,15,8,0.6)] px-4 py-4 sm:px-5">
@@ -77,6 +88,25 @@ export default function MetricFilterBar({
             renderLabel={(tier) => TIER_LABELS[tier]}
             onSelect={onTierSelect}
           />
+          {showHeroFilter ? (
+            <FilterGroup
+              compact
+              label="Hero"
+              options={heroOptions}
+              selected={selectedHero}
+              buildHref={(hero) =>
+                buildLocalizedHref(routeBase, {
+                  w: selectedWindow,
+                  t: selectedTier,
+                  m: selectedMetric,
+                  hero,
+                  lang: locale,
+                })
+              }
+              renderLabel={(hero) => renderHeroFilterLabel(hero, true)}
+              onSelect={onHeroSelect}
+            />
+          ) : null}
         </div>
       </section>
     );
@@ -96,7 +126,7 @@ export default function MetricFilterBar({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={`grid gap-3 ${showHeroFilter ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <FilterGroup
           label="Window"
           options={windowOptions}
@@ -127,6 +157,24 @@ export default function MetricFilterBar({
           renderLabel={(tier) => TIER_LABELS[tier]}
           onSelect={onTierSelect}
         />
+        {showHeroFilter ? (
+          <FilterGroup
+            label="Hero"
+            options={heroOptions}
+            selected={selectedHero}
+            buildHref={(hero) =>
+              buildLocalizedHref(routeBase, {
+                w: selectedWindow,
+                t: selectedTier,
+                m: selectedMetric,
+                hero,
+                lang: locale,
+              })
+            }
+            renderLabel={(hero) => renderHeroFilterLabel(hero, false)}
+            onSelect={onHeroSelect}
+          />
+        ) : null}
       </div>
     </section>
   );
@@ -146,7 +194,7 @@ function FilterGroup<T extends string>({
   options: T[];
   selected: T;
   buildHref: (value: T) => string;
-  renderLabel: (value: T) => string;
+  renderLabel: (value: T) => ReactNode;
   onSelect?: (value: T) => void;
 }) {
   return (
@@ -185,5 +233,34 @@ function FilterGroup<T extends string>({
         })}
       </div>
     </div>
+  );
+}
+
+function renderHeroFilterLabel(hero: string, compact: boolean): ReactNode {
+  if (hero === 'all') {
+    return 'All heroes';
+  }
+
+  return <HeroFilterLabel hero={hero} compact={compact} />;
+}
+
+function HeroFilterLabel({ hero, compact }: { hero: string; compact: boolean }) {
+  const shortLabel = getHeroShortLabel(hero);
+
+  return (
+    <span
+      title={hero}
+      className={`inline-flex min-w-0 items-center ${compact ? 'gap-1.5' : 'gap-2'} font-semibold tracking-[0.1em] text-inherit`}
+      data-hero-short-label={shortLabel}
+    >
+      <span
+        data-hero-color-dot={hero}
+        className={`${compact ? 'h-2 w-2' : 'h-2.5 w-2.5'} shrink-0 rounded-full`}
+        style={{ backgroundColor: getHeroColor(hero) }}
+        aria-hidden="true"
+      />
+      <span aria-hidden="true">{shortLabel}</span>
+      <span className="sr-only">{hero}</span>
+    </span>
   );
 }

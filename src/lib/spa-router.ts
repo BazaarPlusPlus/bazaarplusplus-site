@@ -1,10 +1,7 @@
-import { isHeroName, type HeroName } from './heroes';
-
 export type SpaRoute =
   | { page: 'heroes' }
   | { page: 'cards' }
   | { page: 'builds' }
-  | { page: 'hero-detail'; hero: HeroName }
   | { page: 'not-found' };
 
 export function resolveSpaRoute(pathname: string): SpaRoute {
@@ -20,12 +17,6 @@ export function resolveSpaRoute(pathname: string): SpaRoute {
 
   if (normalized === '/builds') {
     return { page: 'builds' };
-  }
-
-  const heroMatch = normalized.match(/^\/heroes\/([^/]+)$/);
-  if (heroMatch) {
-    const hero = decodeURIComponent(heroMatch[1] ?? '');
-    return isHeroName(hero) ? { page: 'hero-detail', hero } : { page: 'not-found' };
   }
 
   return { page: 'not-found' };

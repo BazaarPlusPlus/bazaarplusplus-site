@@ -2,8 +2,7 @@ export type MetricWindow = '1d' | '3d' | '7d';
 export type RatingTier = 'all' | 'low' | 'mid' | 'high';
 export type MetricsSource = 'local' | 'remote';
 export type Locale = 'en' | 'zh';
-export type CardMetric = 'winrate' | 'uplift' | 'inclusion' | 'phase' | 'enchants';
-export type CardPhaseMetric = 'value' | 'inclusion';
+export type CardMetric = 'winrate' | 'uplift' | 'inclusion';
 
 export type ManifestWindowInfo = {
   start: string;
@@ -125,77 +124,6 @@ export type ItemInclusionViewRow = ItemInclusionRow & {
   card_size: 'small' | 'medium' | 'large';
 };
 
-export type PhaseKey = 'early' | 'mid' | 'late';
-
-export type PhaseValueRow = {
-  hero: string;
-  template_id: string;
-  phase: PhaseKey;
-  appearances: number;
-  wins: number;
-  win_rate: number;
-  win_rate_wilson_lower: number;
-};
-
-export type PhaseValuePayload = {
-  metric: 'item_phase_value';
-  generatedAt: string;
-  rowCount: number;
-  rows: PhaseValueRow[];
-};
-
-export type PhaseValueViewRow = PhaseValueRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
-};
-
-export type PhaseInclusionRow = {
-  hero: string;
-  template_id: string;
-  phase: PhaseKey;
-  hero_battles_in_phase: number;
-  battles_with_card: number;
-  inclusion_rate: number;
-};
-
-export type PhaseInclusionPayload = {
-  metric: 'item_phase_inclusion';
-  generatedAt: string;
-  rowCount: number;
-  rows: PhaseInclusionRow[];
-};
-
-export type PhaseInclusionViewRow = PhaseInclusionRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
-};
-
-export type EnchantUpliftRow = {
-  hero: string;
-  template_id: string;
-  enchant: string;
-  appearances: number;
-  wins: number;
-  win_rate: number;
-  win_rate_wilson_lower: number;
-  uplift_vs_unenchanted: number | null;
-};
-
-export type EnchantUpliftPayload = {
-  metric: 'enchant_uplift';
-  generatedAt: string;
-  rowCount: number;
-  rows: EnchantUpliftRow[];
-};
-
-export type EnchantUpliftViewRow = EnchantUpliftRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
-};
-
 export type FinalBuildRow = {
   hero: string;
   sig: string;
@@ -203,6 +131,23 @@ export type FinalBuildRow = {
   p75_run_days: number | null;
   gold_score: number;
   rank: number;
+  representative_battle_id?: string | null;
+  item_count?: number | null;
+  slot_count?: number | null;
+  is_complete_build?: boolean | null;
+  representative_user_account_id?: string | null;
+  representative_user_display_name?: string | null;
+  representative_user_run_count?: number | null;
+  items?: FinalBuildItem[];
+};
+
+export type FinalBuildItem = {
+  slot_index: number | null;
+  socket: number | null;
+  size: number | null;
+  template_id: string;
+  tier: string | null;
+  name: string | null;
 };
 
 export type FinalBuildsPayload = {
@@ -218,6 +163,9 @@ export type FinalBuildViewRow = FinalBuildRow & {
     name: string;
     imageUrl?: string;
     cardSize?: 'small' | 'medium' | 'large';
+    socket?: number;
+    slotSize?: number;
+    tier?: string | null;
   }>;
   card_names: string[];
 };
@@ -266,14 +214,8 @@ function isCardMetric(value: string | null): value is CardMetric {
   return (
     value === 'winrate' ||
     value === 'uplift' ||
-    value === 'inclusion' ||
-    value === 'phase' ||
-    value === 'enchants'
+    value === 'inclusion'
   );
-}
-
-function isCardPhaseMetric(value: string | null): value is CardPhaseMetric {
-  return value === 'value' || value === 'inclusion';
 }
 
 export function parseMetricWindow(value: string | null): MetricWindow {
@@ -290,10 +232,6 @@ export function parseLocale(value: string | null): Locale {
 
 export function parseCardMetric(value: string | null): CardMetric {
   return isCardMetric(value) ? value : 'winrate';
-}
-
-export function parseCardPhaseMetric(value: string | null): CardPhaseMetric {
-  return isCardPhaseMetric(value) ? value : 'value';
 }
 
 export function getAvailableTiers(
@@ -487,62 +425,59 @@ export function buildItemInclusionViewRows(
   }));
 }
 
-export function buildPhaseValueViewRows(
-  phaseValue: PhaseValuePayload,
-  cardDictionary: CardDictionary,
-  locale: Locale
-): PhaseValueViewRow[] {
-  return phaseValue.rows.map((row) => ({
-    ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
-  }));
-}
-
-export function buildPhaseInclusionViewRows(
-  phaseInclusion: PhaseInclusionPayload,
-  cardDictionary: CardDictionary,
-  locale: Locale
-): PhaseInclusionViewRow[] {
-  return phaseInclusion.rows.map((row) => ({
-    ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
-  }));
-}
-
-export function buildEnchantUpliftViewRows(
-  enchantUplift: EnchantUpliftPayload,
-  cardDictionary: CardDictionary,
-  locale: Locale
-): EnchantUpliftViewRow[] {
-  return enchantUplift.rows.map((row) => ({
-    ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
-  }));
-}
-
 export function buildFinalBuildViewRows(
   finalBuilds: FinalBuildsPayload,
   cardDictionary: CardDictionary,
   locale: Locale
 ): FinalBuildViewRow[] {
   return finalBuilds.rows.map((row) => {
-    const cardIds = row.sig.split('|').filter(Boolean);
+    const rawItems = (row.items ?? [])
+      .filter((item) => item.template_id)
+      .slice()
+      .sort((a, b) => {
+        const aSocket = a.socket ?? a.slot_index ?? Number.MAX_SAFE_INTEGER;
+        const bSocket = b.socket ?? b.slot_index ?? Number.MAX_SAFE_INTEGER;
+        if (aSocket !== bSocket) {
+          return aSocket - bSocket;
+        }
+
+        const aSlotIndex = a.slot_index ?? Number.MAX_SAFE_INTEGER;
+        const bSlotIndex = b.slot_index ?? Number.MAX_SAFE_INTEGER;
+        if (aSlotIndex !== bSlotIndex) {
+          return aSlotIndex - bSlotIndex;
+        }
+
+        return a.template_id.localeCompare(b.template_id);
+      });
+    const cardIds = rawItems.length > 0
+      ? rawItems.map((item) => item.template_id)
+      : row.sig.split('|').filter(Boolean);
+    const buildCards = rawItems.length > 0
+      ? rawItems.map((item) => {
+          const id = item.template_id;
+          const displayName = getCardDisplayName(cardDictionary, id, locale);
+
+          return {
+            id,
+            name: displayName === id && item.name ? item.name : displayName,
+            imageUrl: cardDictionary[id]?.image_url,
+            cardSize: getCardSize(cardDictionary[id]?.size),
+            socket: item.socket ?? undefined,
+            slotSize: item.size ?? undefined,
+            tier: item.tier,
+          };
+        })
+      : cardIds.map((id) => ({
+          id,
+          name: getCardDisplayName(cardDictionary, id, locale),
+          imageUrl: cardDictionary[id]?.image_url,
+          cardSize: getCardSize(cardDictionary[id]?.size),
+        }));
 
     return {
       ...row,
-      build_cards: cardIds.map((id) => ({
-        id,
-        name: getCardDisplayName(cardDictionary, id, locale),
-        imageUrl: cardDictionary[id]?.image_url,
-        cardSize: getCardSize(cardDictionary[id]?.size),
-      })),
-      card_names: cardIds.map((id) => getCardDisplayName(cardDictionary, id, locale)),
+      build_cards: buildCards,
+      card_names: buildCards.map((card) => card.name),
     };
   });
 }

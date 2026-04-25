@@ -10,24 +10,17 @@ import { type HeroOverviewPayload, type ManifestPayload } from '../src/lib/metri
 import type { CardWinratePayload } from '../src/lib/metrics';
 import type {
   CardDictionary,
-  EnchantUpliftPayload,
   FinalBuildsPayload,
   HeroWinrateDailyPayload,
   ItemInclusionPayload,
   ItemUpliftPayload,
-  PhaseInclusionPayload,
-  PhaseValuePayload,
 } from '../src/lib/metrics';
 import {
-  buildEnchantUpliftViewRows,
   buildFinalBuildViewRows,
   buildItemInclusionViewRows,
   buildItemUpliftViewRows,
-  buildPhaseInclusionViewRows,
-  buildPhaseValueViewRows,
   getCardDisplayName,
   parseCardMetric,
-  parseCardPhaseMetric,
   parseLocale,
 } from '../src/lib/metrics';
 
@@ -76,11 +69,9 @@ describe('createMetricsRepository', () => {
     expect(parseLocale('ja')).toBe('en');
     expect(parseCardMetric('uplift')).toBe('uplift');
     expect(parseCardMetric('inclusion')).toBe('inclusion');
-    expect(parseCardMetric('phase')).toBe('phase');
-    expect(parseCardMetric('enchants')).toBe('enchants');
-    expect(parseCardPhaseMetric('inclusion')).toBe('inclusion');
+    expect(parseCardMetric('phase')).toBe('winrate');
+    expect(parseCardMetric('enchants')).toBe('winrate');
     expect(parseCardMetric('weird')).toBe('winrate');
-    expect(parseCardPhaseMetric('weird')).toBe('value');
     expect(getCardDisplayName(dictionary, 'abc', 'zh')).toBe('琥珀核心');
     expect(getCardDisplayName(dictionary, 'localized', 'zh')).toBe('鹰之护符');
     expect(getCardDisplayName(dictionary, 'localized', 'en')).toBe('Eagle Talisman');
@@ -234,6 +225,78 @@ describe('createMetricsRepository', () => {
     expect(rows[0]?.build_cards[4]?.imageUrl).toBe('https://img.example/e.png');
   });
 
+  test('uses final build item layout and representative user fields from the raw payload', () => {
+    const payload: FinalBuildsPayload = {
+      metric: 'final_builds',
+      generatedAt: '2026-04-25T08:54:02Z',
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Dooley',
+          sig: 'card-a|card-b|card-c',
+          run_count: 4,
+          p75_run_days: 12,
+          gold_score: 0.14,
+          rank: 1,
+          representative_battle_id: 'battle-1',
+          item_count: 3,
+          slot_count: 10,
+          is_complete_build: true,
+          representative_user_account_id: 'acct-1',
+          representative_user_display_name: 'Socket Master',
+          representative_user_run_count: 3,
+          items: [
+            {
+              slot_index: 2,
+              socket: 6,
+              size: 4,
+              template_id: 'card-c',
+              tier: 'Diamond',
+              name: 'Caltrops',
+            },
+            {
+              slot_index: 0,
+              socket: 0,
+              size: 3,
+              template_id: 'card-a',
+              tier: 'Gold',
+              name: 'Amber Core',
+            },
+            {
+              slot_index: 1,
+              socket: 3,
+              size: 3,
+              template_id: 'card-b',
+              tier: 'Silver',
+              name: 'Eagle Talisman',
+            },
+          ],
+        },
+      ],
+    };
+    const cardDictionary: CardDictionary = {
+      'card-a': { name: { en: 'Amber Core' }, image_url: 'https://img.example/a.png' },
+      'card-b': { name: { en: 'Eagle Talisman' }, image_url: 'https://img.example/b.png' },
+      'card-c': { name: { en: 'Caltrops' }, image_url: 'https://img.example/c.png' },
+    };
+
+    const rows = buildFinalBuildViewRows(payload, cardDictionary, 'en');
+
+    expect(rows[0]?.representative_user_display_name).toBe('Socket Master');
+    expect(rows[0]?.representative_user_run_count).toBe(3);
+    expect(rows[0]?.build_cards.map((card) => card.id)).toEqual(['card-a', 'card-b', 'card-c']);
+    expect(rows[0]?.build_cards[0]).toMatchObject({
+      socket: 0,
+      slotSize: 3,
+      tier: 'Gold',
+    });
+    expect(rows[0]?.build_cards[1]).toMatchObject({
+      socket: 3,
+      slotSize: 3,
+      tier: 'Silver',
+    });
+  });
+
   test('reads daily hero winrate payloads without a window segment', async () => {
     const dir = await makeTempMetricsDir();
     const payload: HeroWinrateDailyPayload = {
@@ -316,7 +379,7 @@ describe('createMetricsRepository', () => {
     expect(rows[0]?.image_url).toBe('https://img.example/a.png');
   });
 
-  test('reads inclusion, phase, and enchant payloads and resolves card metadata', async () => {
+  test('reads inclusion payloads and resolves card metadata', async () => {
     const dir = await makeTempMetricsDir();
     const cardDictionary: CardDictionary = {
       'card-a': {
@@ -339,66 +402,8 @@ describe('createMetricsRepository', () => {
         },
       ],
     };
-    const phaseValue: PhaseValuePayload = {
-      metric: 'item_phase_value',
-      generatedAt: '2026-04-18T18:57:46Z',
-      rowCount: 1,
-      rows: [
-        {
-          hero: 'Mak',
-          template_id: 'card-a',
-          phase: 'early',
-          appearances: 63,
-          wins: 32,
-          win_rate: 0.5079365079,
-          win_rate_wilson_lower: 0.3876267711,
-        },
-      ],
-    };
-    const phaseInclusion: PhaseInclusionPayload = {
-      metric: 'item_phase_inclusion',
-      generatedAt: '2026-04-18T18:57:46Z',
-      rowCount: 1,
-      rows: [
-        {
-          hero: 'Mak',
-          template_id: 'card-a',
-          phase: 'early',
-          hero_battles_in_phase: 44512,
-          battles_with_card: 11203,
-          inclusion_rate: 0.2516831416,
-        },
-      ],
-    };
-    const enchant: EnchantUpliftPayload = {
-      metric: 'enchant_uplift',
-      generatedAt: '2026-04-18T18:57:46Z',
-      rowCount: 1,
-      rows: [
-        {
-          hero: 'Mak',
-          template_id: 'card-a',
-          enchant: 'Toxic',
-          appearances: 53,
-          wins: 47,
-          win_rate: 0.8867924528,
-          win_rate_wilson_lower: 0.774232297,
-          uplift_vs_unenchanted: 0.1132,
-        },
-      ],
-    };
-
     await mkdir(join(dir, 'item_inclusion', '3d'), { recursive: true });
-    await mkdir(join(dir, 'item_phase_value', '3d'), { recursive: true });
-    await mkdir(join(dir, 'item_phase_inclusion', '3d'), { recursive: true });
-    await mkdir(join(dir, 'enchant_uplift', '3d'), { recursive: true });
     await writeFile(join(dir, 'item_inclusion', '3d', 'high.json'), JSON.stringify(inclusion));
-    await writeFile(join(dir, 'item_phase_value', '3d', 'high.json'), JSON.stringify(phaseValue));
-    await writeFile(
-      join(dir, 'item_phase_inclusion', '3d', 'high.json'),
-      JSON.stringify(phaseInclusion)
-    );
-    await writeFile(join(dir, 'enchant_uplift', '3d', 'high.json'), JSON.stringify(enchant));
 
     const dictionaryDir = await makeTempMetricsDir();
     await writeFile(join(dictionaryDir, 'card_url.json'), JSON.stringify(cardDictionary));
@@ -411,18 +416,8 @@ describe('createMetricsRepository', () => {
     });
 
     await expect(repo.getItemInclusion('3d', 'high')).resolves.toEqual(inclusion);
-    await expect(repo.getPhaseValue('3d', 'high')).resolves.toEqual(phaseValue);
-    await expect(repo.getPhaseInclusion('3d', 'high')).resolves.toEqual(phaseInclusion);
-    await expect(repo.getEnchantUplift('3d', 'high')).resolves.toEqual(enchant);
 
     expect(buildItemInclusionViewRows(inclusion, cardDictionary, 'en')[0]?.display_name).toBe(
-      'Amber Core'
-    );
-    expect(buildPhaseValueViewRows(phaseValue, cardDictionary, 'en')[0]?.card_size).toBe('large');
-    expect(buildPhaseInclusionViewRows(phaseInclusion, cardDictionary, 'en')[0]?.display_name).toBe(
-      'Amber Core'
-    );
-    expect(buildEnchantUpliftViewRows(enchant, cardDictionary, 'en')[0]?.display_name).toBe(
       'Amber Core'
     );
   });

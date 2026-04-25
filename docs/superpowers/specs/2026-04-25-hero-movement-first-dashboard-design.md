@@ -15,7 +15,7 @@ Latest local metrics observed during design:
 - generated at `2026-04-25T08:54:02Z`
 - windows: `1d`, `3d`, `7d`
 - primary homepage inputs: `hero_winrate_daily` and `hero_overview`
-- supporting metrics available below the fold or on existing detail pages: `item_winrate`, `item_uplift`, `item_inclusion`, `item_phase_value`, `item_phase_inclusion`, `enchant_uplift`, `final_builds`, `tier_curve`
+- supporting metrics available below the fold or on existing detail pages: `item_winrate`, `item_uplift`, `item_inclusion`, `item_phase_value`, `item_phase_inclusion`, `final_builds`, `tier_curve`
 
 Relevant `1d/all` and daily movement signals from the latest data:
 
@@ -47,7 +47,6 @@ Out of scope for the first screen:
 - card recommendations
 - build recommendations
 - `tier_curve` visualization
-- enchant analysis
 - broad insight feed combining every metric type
 - AI-generated explanations
 

@@ -9,15 +9,9 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/builds')).toEqual({ page: 'builds' });
   });
 
-  test('resolves valid hero detail routes', () => {
-    expect(resolveSpaRoute('/heroes/Mak')).toEqual({ page: 'hero-detail', hero: 'Mak' });
-    expect(resolveSpaRoute('/heroes/Pygmalien')).toEqual({
-      page: 'hero-detail',
-      hero: 'Pygmalien',
-    });
-  });
-
   test('rejects unknown routes and unknown heroes', () => {
+    expect(resolveSpaRoute('/heroes/Mak')).toEqual({ page: 'not-found' });
+    expect(resolveSpaRoute('/heroes/Pygmalien')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/heroes/Unknown')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/archetypes')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });

@@ -9,13 +9,12 @@ import type {
   RatingTier,
 } from '../lib/metrics';
 import {
-  TIER_LABELS,
   WINDOW_LABELS,
   formatInteger,
   formatPercent,
   formatShortDate,
 } from '../lib/dashboard';
-import { buildHeroHref, getHeroColor, getHeroShortLabel } from '../lib/heroes';
+import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
 import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
 import HeroBadge from './HeroBadge';
 import SortableHeader from './SortableHeader';
@@ -96,8 +95,7 @@ const TREND_TIER_LABELS: Record<TrendTier, string> = {
   mid: 'Mid',
   high: 'High',
 };
-const TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
-const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '12%', '11%', '11%', '12%', '12%', '12%'];
+const SNAPSHOT_COLUMN_WIDTHS = ['20%', '12%', '12%', '12%', '11%', '11%', '11%', '11%'];
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -317,6 +315,14 @@ export default function DailyHeroDashboard({
     direction: 'desc',
   });
 
+  const snapshotTierOptions = useMemo(
+    () => TREND_TIER_OPTIONS.filter((tierOption) => availableTiers.includes(tierOption)),
+    [availableTiers]
+  );
+  const fallbackSnapshotTier = snapshotTierOptions[0] ?? 'all';
+  const activeSnapshotTier = snapshotTierOptions.includes(selectedTier as TrendTier)
+    ? (selectedTier as TrendTier)
+    : fallbackSnapshotTier;
   const trendTierOptions = useMemo(
     () =>
       TREND_TIER_OPTIONS.filter(
@@ -329,9 +335,13 @@ export default function DailyHeroDashboard({
     ? selectedTrendTier
     : fallbackTrendTier;
 
-  const snapshotDailyPayload = dailyByTier[selectedTier] ?? dailyByTier[availableTiers[0]];
+  const snapshotDailyPayload =
+    dailyByTier[activeSnapshotTier] ??
+    dailyByTier[fallbackSnapshotTier] ??
+    dailyByTier[availableTiers[0]];
   const snapshotOverviewPayload =
-    overviewByWindow[selectedWindow]?.[selectedTier] ??
+    overviewByWindow[selectedWindow]?.[activeSnapshotTier] ??
+    overviewByWindow[selectedWindow]?.[fallbackSnapshotTier] ??
     overviewByWindow[selectedWindow]?.[availableTiers[0]];
   const trendDailyPayload =
     dailyByTier[activeTrendTier] ??
@@ -390,6 +400,15 @@ export default function DailyHeroDashboard({
         );
 
   useEffect(() => {
+    if (
+      snapshotTierOptions.length > 0 &&
+      !snapshotTierOptions.includes(selectedTier as TrendTier)
+    ) {
+      setSelectedTier(fallbackSnapshotTier);
+    }
+  }, [fallbackSnapshotTier, selectedTier, snapshotTierOptions]);
+
+  useEffect(() => {
     if (trendTierOptions.length > 0 && !trendTierOptions.includes(selectedTrendTier)) {
       setSelectedTrendTier(trendTierOptions[0] ?? 'all');
     }
@@ -436,8 +455,8 @@ export default function DailyHeroDashboard({
       params.delete('w');
     }
 
-    if (selectedTier !== 'all') {
-      params.set('t', selectedTier);
+    if (activeSnapshotTier !== 'all') {
+      params.set('t', activeSnapshotTier);
     } else {
       params.delete('t');
     }
@@ -449,7 +468,7 @@ export default function DailyHeroDashboard({
     const query = params.toString();
     const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
     window.history.replaceState({}, '', nextUrl);
-  }, [locale, selectedTier, selectedWindow]);
+  }, [activeSnapshotTier, locale, selectedWindow]);
 
   const generatedAt = currentGeneratedAt || new Date().toISOString();
   const sortedDetailRows = useMemo(
@@ -696,13 +715,9 @@ export default function DailyHeroDashboard({
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
                 {trendSeries.map((heroSeries) => (
-                  <a
+                  <button
                     key={heroSeries.hero}
-                    href={buildHeroHref(heroSeries.hero, {
-                      w: TREND_WINDOW,
-                      t: activeTrendTier,
-                      lang: locale,
-                    })}
+                    type="button"
                     data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
                     onMouseEnter={() => setSelectedTrendHero(heroSeries.hero)}
                     onFocus={() => setSelectedTrendHero(heroSeries.hero)}
@@ -723,7 +738,7 @@ export default function DailyHeroDashboard({
                     <span className="font-medium tracking-[0.08em]">
                       {getHeroShortLabel(heroSeries.hero)}
                     </span>
-                  </a>
+                  </button>
                 ))}
               </div>
             </div>
@@ -740,8 +755,11 @@ export default function DailyHeroDashboard({
                 {latestDay ? formatShortDate(latestDay) : 'No data'}
               </h2>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              <div aria-label="Snapshot window" className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div
+                aria-label="Snapshot window"
+                className="inline-flex shrink-0 rounded-full border border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.42)] p-1"
+              >
                 {availableWindows.map((windowOption) => {
                   const active = windowOption === selectedWindow;
                   return (
@@ -750,10 +768,10 @@ export default function DailyHeroDashboard({
                       type="button"
                       aria-pressed={active}
                       onClick={() => setSelectedWindow(windowOption)}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition ${
                         active
-                          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:#130f08]'
-                          : 'border-[color:var(--color-border)] bg-transparent text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-text-base)]'
+                          ? 'bg-[color:var(--color-accent)] text-[color:#130f08]'
+                          : 'text-[color:var(--color-text-muted)] hover:bg-[color:rgba(212,162,76,0.12)] hover:text-[color:var(--color-text-base)]'
                       }`}
                     >
                       {WINDOW_LABELS[windowOption]}
@@ -761,102 +779,101 @@ export default function DailyHeroDashboard({
                   );
                 })}
               </div>
-              <div aria-label="Snapshot tier" className="flex flex-wrap gap-2">
-                {[...availableTiers]
-                  .sort((a, b) => TIER_ORDER.indexOf(a) - TIER_ORDER.indexOf(b))
-                  .map((tierOption) => {
-                    const active = tierOption === selectedTier;
-                    return (
-                      <button
-                        key={tierOption}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setSelectedTier(tierOption)}
-                        className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                          active
-                            ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:#130f08]'
-                            : 'border-[color:var(--color-border)] bg-transparent text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-text-base)]'
-                        }`}
-                      >
-                        {TIER_LABELS[tierOption]}
-                      </button>
-                    );
-                  })}
+              <div
+                aria-label="Snapshot tier"
+                className="inline-flex shrink-0 rounded-full border border-[color:rgba(58,47,31,0.82)] bg-[color:rgba(19,15,8,0.42)] p-1"
+              >
+                {snapshotTierOptions.map((tierOption) => {
+                  const active = tierOption === activeSnapshotTier;
+                  return (
+                    <button
+                      key={tierOption}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setSelectedTier(tierOption)}
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition ${
+                        active
+                          ? 'bg-[color:var(--color-accent)] text-[color:#130f08]'
+                          : 'text-[color:var(--color-text-muted)] hover:bg-[color:rgba(212,162,76,0.12)] hover:text-[color:var(--color-text-base)]'
+                      }`}
+                    >
+                      {TREND_TIER_LABELS[tierOption]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          <table className="min-w-full table-fixed border-collapse">
-            <colgroup>
-              {SNAPSHOT_COLUMN_WIDTHS.map((width, index) => (
-                <col key={`${index}:${width}`} style={{ width }} />
-              ))}
-            </colgroup>
-            <thead className="bg-[color:rgba(212,162,76,0.12)] text-left text-xs uppercase tracking-[0.22em] text-[color:var(--color-text-muted)]">
-              <tr>
-                <SortableHeader label="Hero" className="px-5 py-4" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
-                <SortableHeader label="10W rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
-                <SortableHeader label="Runs" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
-                <SortableHeader label="10 wins" className="px-5 py-4" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
-                <SortableHeader label="Perfect" className="px-5 py-4" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
-                <SortableHeader label="Gold" className="px-5 py-4" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
-                <SortableHeader label="Silver" className="px-5 py-4" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
-                <SortableHeader label="Bronze" className="px-5 py-4" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
-              </tr>
-            </thead>
-            <tbody>
-              {sortedDetailRows.map((row) => (
-                <tr
-                  key={`${row.day}:${row.hero}`}
-                  className="border-t border-[color:rgba(58,47,31,0.7)] text-sm text-[color:var(--color-text-base)]"
-                >
-                  <td className="px-5 py-4">
-                    <a
-                      href={buildHeroHref(row.hero, {
-                        w: selectedWindow,
-                        t: selectedTier,
-                        lang: locale,
-                      })}
-                      data-selected={row.hero === selectedSnapshotHero ? 'true' : 'false'}
-                      onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
-                      onFocus={() => setSelectedSnapshotHero(row.hero)}
-                      onClick={() => setSelectedSnapshotHero(row.hero)}
-                      className={`transition ${
-                        row.hero === selectedSnapshotHero
-                          ? 'text-[color:var(--color-accent-bright)]'
-                          : 'hover:text-[color:var(--color-accent-bright)]'
-                      }`}
-                    >
-                      <HeroBadge
-                        hero={row.hero}
-                        selected={row.hero === selectedSnapshotHero}
-                        size="sm"
-                      />
-                    </a>
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
-                    {formatPercent(row.winRate)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {row.runsTotal == null ? 'N/A' : formatInteger(row.runsTotal)}
-                  </td>
-                  <td className="px-5 py-4 tnum">{formatInteger(row.wins10w)}</td>
-                  <td className="px-5 py-4 tnum">
-                    {row.perfectRate === null ? 'N/A' : formatPercent(row.perfectRate)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {row.goldRate === null ? 'N/A' : formatPercent(row.goldRate)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {row.silverRate === null ? 'N/A' : formatPercent(row.silverRate)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {row.bronzeRate === null ? 'N/A' : formatPercent(row.bronzeRate)}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[780px] table-fixed border-collapse">
+              <colgroup>
+                {SNAPSHOT_COLUMN_WIDTHS.map((width, index) => (
+                  <col key={`${index}:${width}`} style={{ width }} />
+                ))}
+              </colgroup>
+              <thead className="bg-[color:rgba(212,162,76,0.12)] text-left text-[0.72rem] uppercase tracking-[0.08em] text-[color:var(--color-text-muted)]">
+                <tr>
+                  <SortableHeader label="Hero" className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
+                  <SortableHeader label="10W rate" className="px-5 py-3.5" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
+                  <SortableHeader label="Runs" className="px-5 py-3.5" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
+                  <SortableHeader label="10W wins" className="px-5 py-3.5" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
+                  <SortableHeader label="Perfect" className="px-5 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
+                  <SortableHeader label="Gold" className="px-5 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
+                  <SortableHeader label="Silver" className="px-5 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
+                  <SortableHeader label="Bronze" className="px-5 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sortedDetailRows.map((row) => (
+                  <tr
+                    key={`${row.day}:${row.hero}`}
+                    className="border-t border-[color:rgba(58,47,31,0.7)] text-sm text-[color:var(--color-text-base)]"
+                  >
+                    <td className="px-5 py-4">
+                      <button
+                        type="button"
+                        data-selected={row.hero === selectedSnapshotHero ? 'true' : 'false'}
+                        onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
+                        onFocus={() => setSelectedSnapshotHero(row.hero)}
+                        onClick={() => setSelectedSnapshotHero(row.hero)}
+                        className={`inline-flex bg-transparent p-0 text-left transition ${
+                          row.hero === selectedSnapshotHero
+                            ? 'text-[color:var(--color-accent-bright)]'
+                            : 'hover:text-[color:var(--color-accent-bright)]'
+                        }`}
+                      >
+                        <HeroBadge
+                          hero={row.hero}
+                          selected={row.hero === selectedSnapshotHero}
+                          size="sm"
+                        />
+                      </button>
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
+                      {formatPercent(row.winRate)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {row.runsTotal == null ? 'N/A' : formatInteger(row.runsTotal)}
+                    </td>
+                    <td className="px-5 py-4 tnum">{formatInteger(row.wins10w)}</td>
+                    <td className="px-5 py-4 tnum">
+                      {row.perfectRate === null ? 'N/A' : formatPercent(row.perfectRate)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {row.goldRate === null ? 'N/A' : formatPercent(row.goldRate)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {row.silverRate === null ? 'N/A' : formatPercent(row.silverRate)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {row.bronzeRate === null ? 'N/A' : formatPercent(row.bronzeRate)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </section>
     </StatsPageShell>

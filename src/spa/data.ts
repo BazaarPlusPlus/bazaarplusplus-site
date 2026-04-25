@@ -1,17 +1,13 @@
 import {
   buildCardWinrateViewRows,
-  buildEnchantUpliftViewRows,
   buildFinalBuildViewRows,
   buildItemInclusionViewRows,
   buildItemUpliftViewRows,
-  buildPhaseInclusionViewRows,
-  buildPhaseValueViewRows,
   getAvailableTiers,
   getAvailableTiersForWindowlessMetric,
   getAvailableWindows,
   getCommonAvailableTiers,
   type CardWinrateViewRow,
-  type EnchantUpliftViewRow,
   type FinalBuildViewRow,
   type HeroOverviewPayload,
   type HeroWinrateDailyPayload,
@@ -21,8 +17,6 @@ import {
   type ManifestPayload,
   type MetricsSource,
   type MetricWindow,
-  type PhaseInclusionViewRow,
-  type PhaseValueViewRow,
   type RatingTier,
 } from '../lib/metrics';
 import type { RuntimeMetricsClient } from '../lib/metrics-client';
@@ -51,20 +45,10 @@ export type CardsPageData = PageDataBase & {
   winrateByWindow: ViewWindowTierMap<CardWinrateViewRow>;
   upliftByWindow: ViewWindowTierMap<ItemUpliftViewRow>;
   inclusionByWindow: ViewWindowTierMap<ItemInclusionViewRow>;
-  phaseValueByWindow: ViewWindowTierMap<PhaseValueViewRow>;
-  phaseInclusionByWindow: ViewWindowTierMap<PhaseInclusionViewRow>;
-  enchantByWindow: ViewWindowTierMap<EnchantUpliftViewRow>;
 };
 
 export type BuildsPageData = PageDataBase & {
   rowsByWindow: ViewWindowTierMap<FinalBuildViewRow>;
-};
-
-export type HeroDetailPageData = PageDataBase & {
-  dailyByTier: Partial<Record<RatingTier, HeroWinrateDailyPayload>>;
-  overviewByWindow: WindowTierMap<HeroOverviewPayload>;
-  winrateByWindow: ViewWindowTierMap<CardWinrateViewRow>;
-  upliftByWindow: ViewWindowTierMap<ItemUpliftViewRow>;
 };
 
 async function loadWindowTierMap<T>(
@@ -165,9 +149,6 @@ export async function loadCardsPageData(
     winrateByWindow,
     upliftByWindow,
     inclusionByWindow,
-    phaseValueByWindow,
-    phaseInclusionByWindow,
-    enchantByWindow,
   ] = await Promise.all([
     loadMetricViewMap(manifest, 'item_winrate', client.getCardWinrate, (payload) =>
       buildCardWinrateViewRows(payload, cardDictionary, locale)
@@ -178,15 +159,6 @@ export async function loadCardsPageData(
     loadMetricViewMap(manifest, 'item_inclusion', client.getItemInclusion, (payload) =>
       buildItemInclusionViewRows(payload, cardDictionary, locale)
     ),
-    loadMetricViewMap(manifest, 'item_phase_value', client.getPhaseValue, (payload) =>
-      buildPhaseValueViewRows(payload, cardDictionary, locale)
-    ),
-    loadMetricViewMap(manifest, 'item_phase_inclusion', client.getPhaseInclusion, (payload) =>
-      buildPhaseInclusionViewRows(payload, cardDictionary, locale)
-    ),
-    loadMetricViewMap(manifest, 'enchant_uplift', client.getEnchantUplift, (payload) =>
-      buildEnchantUpliftViewRows(payload, cardDictionary, locale)
-    ),
   ]);
 
   return {
@@ -195,9 +167,6 @@ export async function loadCardsPageData(
     winrateByWindow,
     upliftByWindow,
     inclusionByWindow,
-    phaseValueByWindow,
-    phaseInclusionByWindow,
-    enchantByWindow,
   };
 }
 
@@ -217,38 +186,5 @@ export async function loadBuildsPageData(
     manifest,
     source: client.getSource(),
     rowsByWindow,
-  };
-}
-
-export async function loadHeroDetailPageData(
-  client: RuntimeMetricsClient,
-  locale: Locale
-): Promise<HeroDetailPageData> {
-  const [manifest, cardDictionary] = await Promise.all([
-    client.getManifest(),
-    client.getCardDictionary(),
-  ]);
-  const availableTiers = getAvailableTiersForWindowlessMetric(manifest, 'hero_winrate_daily');
-
-  const [dailyEntries, overviewByWindow, winrateByWindow, upliftByWindow] = await Promise.all([
-    Promise.all(
-      availableTiers.map(async (tier) => [tier, await client.getHeroWinrateDaily(tier)] as const)
-    ),
-    loadWindowTierMap(manifest, 'hero_overview', client.getHeroOverview),
-    loadMetricViewMap(manifest, 'item_winrate', client.getCardWinrate, (payload) =>
-      buildCardWinrateViewRows(payload, cardDictionary, locale)
-    ),
-    loadMetricViewMap(manifest, 'item_uplift', client.getItemUplift, (payload) =>
-      buildItemUpliftViewRows(payload, cardDictionary, locale)
-    ),
-  ]);
-
-  return {
-    manifest,
-    source: client.getSource(),
-    dailyByTier: Object.fromEntries(dailyEntries),
-    overviewByWindow,
-    winrateByWindow,
-    upliftByWindow,
   };
 }

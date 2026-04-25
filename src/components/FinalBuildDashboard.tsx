@@ -8,25 +8,23 @@ import type {
   MetricWindow,
   RatingTier,
 } from '../lib/metrics';
-import {
-  TIER_LABELS,
-  WINDOW_LABELS,
-  formatInteger,
-  formatShortDate,
-} from '../lib/dashboard';
+import { formatInteger } from '../lib/dashboard';
 import { getAvailableTiers } from '../lib/metrics';
 import {
+  ALL_HEROES,
+  getActiveHeroFilter,
+  getHeroFilterOptions,
   getWindowOptionsFromManifest,
+  readHeroSelection,
   readWindowTierSelection,
   syncFilterStateToUrl,
 } from '../lib/interactive-filters';
 import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
 import FinalBuildCardStrip from './FinalBuildCardStrip';
 import HeroBadge from './HeroBadge';
-import MetricFilterBar from './MetricFilterBar';
+import ScopeFilterPanel from './ScopeFilterPanel';
 import SortableHeader from './SortableHeader';
 import StatsPageShell from './StatsPageShell';
-import SummaryMetricCard from './SummaryMetricCard';
 import VirtualizedMetricTable from './VirtualizedMetricTable';
 
 type ViewPayload<T> = {
@@ -45,10 +43,18 @@ type FinalBuildDashboardProps = {
 
 type BuildSortKey = 'hero' | 'runCount' | 'goldScore' | 'rank';
 
-const FINAL_BUILD_COLUMN_WIDTHS = ['16%', '50%', '12%', '14%', '8%'];
+const FINAL_BUILD_COLUMN_WIDTHS = ['13%', '48%', '8%', '10%', '6%', '15%'];
 
 function formatGoldScore(value: number): string {
   return value.toFixed(3);
+}
+
+function formatRepresentativeRunCount(value: number | null | undefined): string | null {
+  if (typeof value !== 'number') {
+    return null;
+  }
+
+  return `${formatInteger(value)} ${value === 1 ? 'run' : 'runs'}`;
 }
 
 export default function FinalBuildDashboard({
@@ -76,6 +82,7 @@ export default function FinalBuildDashboard({
     key: 'rank',
     direction: 'asc',
   });
+  const [selectedHero, setSelectedHero] = useState(readHeroSelection);
   const tierOptions = useMemo(
     () => getAvailableTiers(manifest, selectedWindow, 'final_builds'),
     [manifest, selectedWindow]
@@ -87,38 +94,41 @@ export default function FinalBuildDashboard({
     }
   }, [selectedTier, tierOptions]);
 
+  const payload =
+    rowsByWindow[selectedWindow]?.[selectedTier] ??
+    rowsByWindow[selectedWindow]?.[tierOptions[0] ?? 'all'];
+  const rows = payload?.rows ?? [];
+  const heroOptions = useMemo(() => getHeroFilterOptions(rows), [rows]);
+  const activeHero = getActiveHeroFilter(heroOptions, selectedHero);
+  const filteredRows = useMemo(
+    () => (activeHero === ALL_HEROES ? rows : rows.filter((row) => row.hero === activeHero)),
+    [activeHero, rows]
+  );
+
+  useEffect(() => {
+    if (!heroOptions.includes(selectedHero)) {
+      setSelectedHero(ALL_HEROES);
+    }
+  }, [heroOptions, selectedHero]);
+
   useEffect(() => {
     syncFilterStateToUrl('/builds', {
       w: selectedWindow,
       t: selectedTier,
+      hero: activeHero,
       lang: locale,
     });
-  }, [locale, selectedTier, selectedWindow]);
+  }, [activeHero, locale, selectedTier, selectedWindow]);
 
-  const payload =
-    rowsByWindow[selectedWindow]?.[selectedTier] ??
-    rowsByWindow[selectedWindow]?.[tierOptions[0] ?? 'all'];
-  const rowCount = payload?.rowCount ?? 0;
-  const rows = payload?.rows ?? [];
   const sortedRows = useMemo(
     () =>
-      sortRows(rows, sortState, {
+      sortRows(filteredRows, sortState, {
         hero: (row) => row.hero,
         runCount: (row) => row.run_count,
         goldScore: (row) => row.gold_score,
         rank: (row) => row.rank,
       }),
-    [rows, sortState]
-  );
-  const bestBuild = useMemo(
-    () =>
-      sortRows(rows, { key: 'rank', direction: 'asc' }, {
-        hero: (row) => row.hero,
-        runCount: (row) => row.run_count,
-        goldScore: (row) => row.gold_score,
-        rank: (row) => row.rank,
-      })[0],
-    [rows]
+    [filteredRows, sortState]
   );
 
   return (
@@ -130,41 +140,26 @@ export default function FinalBuildDashboard({
       description=""
       source={source}
       generatedAt={manifest.generatedAt}
-      summary={
-        <>
-          <SummaryMetricCard
-            label="Top build hero"
-            value={bestBuild ? <HeroBadge hero={bestBuild.hero} size="lg" /> : 'N/A'}
-          />
-          <SummaryMetricCard
-            label="Tracked builds"
-            value={formatInteger(rowCount)}
-          />
-          <SummaryMetricCard
-            label="Coverage window"
-            value={WINDOW_LABELS[selectedWindow]}
-          />
-        </>
-      }
+      summary={null}
       filters={
-        <MetricFilterBar
-          locale={locale}
-          title="Final builds"
-          metricLabel="final_builds"
-          routeBase="/builds"
+        <ScopeFilterPanel
+          ariaLabel="Build scope filters"
           windowOptions={windowOptions}
           tierOptions={tierOptions}
           selectedWindow={selectedWindow}
           selectedTier={selectedTier}
+          heroOptions={heroOptions}
+          selectedHero={activeHero}
           onWindowSelect={setSelectedWindow}
           onTierSelect={setSelectedTier}
+          onHeroSelect={setSelectedHero}
         />
       }
     >
       <section className="overflow-hidden rounded-[24px] border border-[color:var(--color-border)] bg-[color:rgba(26,22,19,0.92)]">
         <VirtualizedMetricTable
           ariaLabel="Final builds"
-          columnCount={5}
+          columnCount={6}
           columnWidths={FINAL_BUILD_COLUMN_WIDTHS}
           rows={sortedRows}
           rowHeight={88}
@@ -197,6 +192,7 @@ export default function FinalBuildDashboard({
                 activeDirection={sortState.key === 'rank' ? sortState.direction : undefined}
                 onToggle={() => setSortState((current) => toggleSort(current, 'rank', 'asc'))}
               />
+              <th className="px-5 py-4">Representative user</th>
             </tr>
           }
           renderRow={(row) => (
@@ -216,6 +212,27 @@ export default function FinalBuildDashboard({
               </td>
               <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
                 {row.rank}
+              </td>
+              <td className="px-5 py-4">
+                {row.representative_user_display_name ? (
+                  <div
+                    className="min-w-0 space-y-1"
+                    title={row.representative_user_account_id ?? undefined}
+                  >
+                    <div className="truncate font-medium text-[color:var(--color-text-base)]">
+                      {row.representative_user_display_name}
+                    </div>
+                    {formatRepresentativeRunCount(row.representative_user_run_count) ? (
+                      <div className="text-xs text-[color:var(--color-text-muted)]">
+                        {formatRepresentativeRunCount(row.representative_user_run_count)}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <span className="text-xs text-[color:var(--color-text-muted)]">
+                    No representative user
+                  </span>
+                )}
               </td>
             </tr>
           )}

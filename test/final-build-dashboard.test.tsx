@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import FinalBuildDashboard from '../src/components/FinalBuildDashboard';
@@ -38,6 +38,13 @@ describe('FinalBuildDashboard', () => {
           rating_tier: 'high',
           rowCount: 1,
         },
+        {
+          path: 'final_builds/3d/all.json',
+          metric: 'final_builds',
+          window: '3d',
+          rating_tier: 'all',
+          rowCount: 1,
+        },
       ],
     };
 
@@ -49,9 +56,29 @@ describe('FinalBuildDashboard', () => {
         p75_run_days: 14.5,
         gold_score: 0.1713728724,
         rank: 1,
+        representative_user_account_id: 'acct-dooley',
+        representative_user_display_name: 'Dooley Builder',
+        representative_user_run_count: 4,
+        item_count: 2,
+        slot_count: 5,
+        is_complete_build: false,
         build_cards: [
-          { id: 'card-a', name: 'Amber Core', imageUrl: 'https://img.example/a.png' },
-          { id: 'card-b', name: 'Eagle Talisman', imageUrl: 'https://img.example/b.png' },
+          {
+            id: 'card-a',
+            name: 'Amber Core',
+            imageUrl: 'https://img.example/a.png',
+            socket: 0,
+            slotSize: 2,
+            tier: 'Gold',
+          },
+          {
+            id: 'card-b',
+            name: 'Eagle Talisman',
+            imageUrl: 'https://img.example/b.png',
+            socket: 2,
+            slotSize: 3,
+            tier: 'Diamond',
+          },
         ],
         card_names: ['Amber Core', 'Eagle Talisman'],
       },
@@ -62,6 +89,12 @@ describe('FinalBuildDashboard', () => {
         p75_run_days: 10,
         gold_score: 0.431,
         rank: 2,
+        representative_user_account_id: null,
+        representative_user_display_name: null,
+        representative_user_run_count: null,
+        item_count: 2,
+        slot_count: 10,
+        is_complete_build: true,
         build_cards: [
           { id: 'card-c', name: 'Caltrops', imageUrl: 'https://img.example/c.png' },
           { id: 'card-d', name: 'Crow\'s Nest', imageUrl: 'https://img.example/d.png' },
@@ -78,6 +111,12 @@ describe('FinalBuildDashboard', () => {
         p75_run_days: 8,
         gold_score: 0.998,
         rank: 1,
+        representative_user_account_id: null,
+        representative_user_display_name: null,
+        representative_user_run_count: null,
+        item_count: 2,
+        slot_count: 10,
+        is_complete_build: true,
         build_cards: [
           { id: 'card-x', name: 'Chronobarrier', imageUrl: 'https://img.example/x.png' },
           { id: 'card-y', name: 'Stove', imageUrl: 'https://img.example/y.png' },
@@ -91,26 +130,52 @@ describe('FinalBuildDashboard', () => {
         locale="en"
         manifest={manifest}
         initialSelectedTier="all"
-        initialSelectedWindow="1d"
+        initialSelectedWindow="3d"
         source="local"
         rowsByWindow={{
           '1d': {
             all: { rowCount: 1, rows: allRows },
           },
           '3d': {
+            all: { rowCount: 1, rows: allRows },
             high: { rowCount: 1, rows: highRows },
           },
         }}
       />
     );
 
+    expect(screen.queryByText('Top build hero')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tracked builds')).not.toBeInTheDocument();
+    expect(screen.queryByText('Coverage window')).not.toBeInTheDocument();
+    expect(screen.queryByText('Metric:')).not.toBeInTheDocument();
+    expect(screen.queryByText('final_builds')).not.toBeInTheDocument();
+    const scopeFilters = screen.getByRole('region', { name: 'Build scope filters' });
+    expect(within(scopeFilters).getByText('Time window')).toBeInTheDocument();
+    const tierGroup = within(scopeFilters).getByRole('group', { name: 'Tier' });
+    expect(within(tierGroup).queryByRole('button', { name: 'High rank' })).not.toBeInTheDocument();
+    expect(within(tierGroup).getByRole('button', { name: 'ALL' })).toBeInTheDocument();
+    expect(within(tierGroup).getByRole('button', { name: 'HIGH' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('cell', { name: 'Mak' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'P75 days' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '1D' }));
     expect(screen.getByRole('cell', { name: 'Dooley' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Amber Core' })).toBeInTheDocument();
+    const amberCoreImage = screen.getByRole('img', { name: 'Amber Core' });
+    expect(amberCoreImage.closest('[title="Amber Core"]')).not.toBeNull();
+    const headers = screen.getAllByRole('columnheader').map((header) => header.textContent);
+    expect(headers.at(-1)).toContain('Representative user');
+    expect(screen.getByText('Dooley Builder')).toBeInTheDocument();
+    expect(screen.getByText('4 runs')).toBeInTheDocument();
+    expect(screen.queryByText('5/10 slots')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Turbo/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Vanessa' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Vanessa' }));
+    expect(screen.queryByRole('cell', { name: 'Dooley' })).not.toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Vanessa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
+    const heroGroup = within(scopeFilters).getByRole('group', { name: 'Hero' });
+    fireEvent.click(within(heroGroup).getByRole('button', { name: 'ALL' }));
     fireEvent.click(screen.getByRole('button', { name: 'Runs' }));
     const dataRows = screen
       .getAllByRole('row')

@@ -1,20 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import CardWinrateDashboard from '../src/components/CardWinrateDashboard';
 import type {
   CardWinrateViewRow,
-  EnchantUpliftViewRow,
   ItemInclusionViewRow,
   ItemUpliftViewRow,
   ManifestPayload,
-  PhaseInclusionViewRow,
-  PhaseValueViewRow,
 } from '../src/lib/metrics';
 
 describe('CardWinrateDashboard', () => {
-  test('switches card workspace views and phase subview from live browser state', async () => {
-    window.history.replaceState({}, '', '/cards?w=3d&t=high&m=phase&pm=inclusion&lang=zh');
+  test('switches card workspace views and ignores removed phase state from the URL', async () => {
+    window.history.replaceState({}, '', '/cards?w=3d&t=high&m=phase&pm=inclusion&hero=Mak&lang=zh');
 
     const manifest: ManifestPayload = {
       generatedAt: '2026-04-18T18:57:46Z',
@@ -40,10 +37,24 @@ describe('CardWinrateDashboard', () => {
           rowCount: 1,
         },
         {
+          path: 'item_winrate/1d/high.json',
+          metric: 'item_winrate',
+          window: '1d',
+          rating_tier: 'high',
+          rowCount: 1,
+        },
+        {
           path: 'item_winrate/3d/all.json',
           metric: 'item_winrate',
           window: '3d',
           rating_tier: 'all',
+          rowCount: 1,
+        },
+        {
+          path: 'item_winrate/3d/high.json',
+          metric: 'item_winrate',
+          window: '3d',
+          rating_tier: 'high',
           rowCount: 1,
         },
         {
@@ -63,27 +74,6 @@ describe('CardWinrateDashboard', () => {
         {
           path: 'item_inclusion/3d/high.json',
           metric: 'item_inclusion',
-          window: '3d',
-          rating_tier: 'high',
-          rowCount: 1,
-        },
-        {
-          path: 'item_phase_value/3d/high.json',
-          metric: 'item_phase_value',
-          window: '3d',
-          rating_tier: 'high',
-          rowCount: 1,
-        },
-        {
-          path: 'item_phase_inclusion/3d/high.json',
-          metric: 'item_phase_inclusion',
-          window: '3d',
-          rating_tier: 'high',
-          rowCount: 1,
-        },
-        {
-          path: 'enchant_uplift/3d/high.json',
-          metric: 'enchant_uplift',
           window: '3d',
           rating_tier: 'high',
           rowCount: 1,
@@ -146,57 +136,11 @@ describe('CardWinrateDashboard', () => {
       },
     ];
 
-    const phaseValueRows: PhaseValueViewRow[] = [
-      {
-        hero: 'Mak',
-        template_id: 'card-phase-value',
-        phase: 'early',
-        appearances: 63,
-        wins: 32,
-        win_rate: 0.5079365079,
-        win_rate_wilson_lower: 0.3876267711,
-        display_name: 'Flashpoint',
-        image_url: 'https://img.example/flashpoint.png',
-        card_size: 'small',
-      },
-    ];
-
-    const phaseInclusionRows: PhaseInclusionViewRow[] = [
-      {
-        hero: 'Mak',
-        template_id: 'card-phase-inclusion',
-        phase: 'early',
-        hero_battles_in_phase: 44512,
-        battles_with_card: 11203,
-        inclusion_rate: 0.2516831416,
-        display_name: 'Stabilizer',
-        image_url: 'https://img.example/stabilizer.png',
-        card_size: 'large',
-      },
-    ];
-
-    const enchantRows: EnchantUpliftViewRow[] = [
-      {
-        hero: 'Mak',
-        template_id: 'card-enchant',
-        enchant: 'Toxic',
-        appearances: 53,
-        wins: 47,
-        win_rate: 0.8867924528,
-        win_rate_wilson_lower: 0.774232297,
-        uplift_vs_unenchanted: 0.1132,
-        display_name: 'Amber Core',
-        image_url: 'https://img.example/amber-core-toxic.png',
-        card_size: 'large',
-      },
-    ];
-
     render(
       <CardWinrateDashboard
         locale="zh"
         manifest={manifest}
         initialSelectedMetric="winrate"
-        initialSelectedPhaseMetric="value"
         initialSelectedTier="all"
         initialSelectedWindow="1d"
         source="local"
@@ -206,6 +150,7 @@ describe('CardWinrateDashboard', () => {
           },
           '3d': {
             all: { rowCount: 1, rows: winrateRows },
+            high: { rowCount: 1, rows: winrateRows },
           },
         }}
         upliftByWindow={{
@@ -221,51 +166,67 @@ describe('CardWinrateDashboard', () => {
             high: { rowCount: 1, rows: inclusionRows },
           },
         }}
-        phaseValueByWindow={{
-          '3d': {
-            high: { rowCount: 1, rows: phaseValueRows },
-          },
-        }}
-        phaseInclusionByWindow={{
-          '3d': {
-            high: { rowCount: 1, rows: phaseInclusionRows },
-          },
-        }}
-        enchantByWindow={{
-          '3d': {
-            high: { rowCount: 1, rows: enchantRows },
-          },
-        }}
       />
     );
 
-    expect(screen.getAllByRole('button', { name: 'Phase' })[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByRole('button', { name: 'Inclusion' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByText(/Single workspace for card win rate/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Top phase inclusion')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tracked rows')).not.toBeInTheDocument();
+    expect(screen.queryByText('Coverage window')).not.toBeInTheDocument();
+    expect(screen.queryByText('Workspace')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Card analysis' })).toHaveLength(1);
+    expect(screen.getByText('Time window')).toBeInTheDocument();
+    expect(screen.queryByText('Scope')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Metric' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Phase' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Value' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Win rate' })[0]).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'High rank' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('25.2%')).toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Value' })[0]!);
-    expect(screen.getAllByRole('button', { name: 'Value' })[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(await screen.findByText('50.8%')).toBeInTheDocument();
+    const scopeFilters = screen.getByRole('region', { name: 'Card scope filters' });
+    const tierGroup = within(scopeFilters).getByRole('group', { name: 'Tier' });
+    expect(tierGroup.parentElement?.className).toContain('gap-x-3');
+    expect(within(tierGroup).getByRole('button', { name: 'ALL' })).toBeInTheDocument();
+    expect(within(tierGroup).queryByRole('button', { name: 'LOW' })).not.toBeInTheDocument();
+    expect(within(tierGroup).queryByRole('button', { name: 'MID' })).not.toBeInTheDocument();
+    expect(within(tierGroup).getByRole('button', { name: 'HIGH' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'all' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'low' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'mid' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'high' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'All players' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Low rank' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mid rank' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'High rank' })).not.toBeInTheDocument();
+    const heroGroup = within(scopeFilters).getByRole('group', { name: 'Hero' });
+    expect(heroGroup.className).toContain('basis-full');
+    expect(within(heroGroup).getByRole('button', { name: 'ALL' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mak' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enchants' })).not.toBeInTheDocument();
+    expect(await screen.findByText('75.0%')).toBeInTheDocument();
     expect(window.location.search).not.toContain('pm=');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Enchants' }));
-    expect(screen.getByRole('button', { name: 'Enchants' })).toHaveAttribute('aria-pressed', 'true');
-    expect(await screen.findByText('Toxic')).toBeInTheDocument();
-    expect(screen.getByText('11.3%')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Win rate' })[0]!);
     expect(screen.getAllByRole('button', { name: 'Win rate' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByText('75.0%')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Brass Bug' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Eagle Talisman' })).not.toBeInTheDocument();
+    expect(window.location.search).toContain('hero=Mak');
+    fireEvent.click(within(heroGroup).getByRole('button', { name: 'ALL' }));
     expect(await screen.findByText('62.8%')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Eagle Talisman' })).toBeInTheDocument();
+    expect(window.location.search).not.toContain('hero=');
     fireEvent.click(screen.getAllByRole('button', { name: 'Win rate' })[1]!);
     const cardRows = screen
       .getAllByRole('row')
       .filter((row) => row.textContent?.includes('Eagle Talisman') || row.textContent?.includes('Brass Bug'));
     expect(cardRows[0]?.textContent).toContain('Brass Bug');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Uplift' })[0]!);
+    expect(screen.getAllByRole('button', { name: 'Uplift' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByText('28.4%')).toBeInTheDocument();
+    expect(window.location.search).toContain('m=uplift');
     expect(window.location.search).toContain('lang=zh');
-    expect(window.location.search).not.toContain('m=phase');
     expect(window.location.search).not.toContain('pm=');
   });
 });

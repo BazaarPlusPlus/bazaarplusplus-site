@@ -31,4 +31,50 @@ describe('MetricFilterBar', () => {
       'text-[color:#130f08]'
     );
   });
+
+  test('renders hero choices as color-dot short labels in compact and full layouts', () => {
+    const { rerender } = render(
+      <MetricFilterBar
+        compact
+        locale="zh"
+        title="Scope"
+        metricLabel="item_winrate"
+        routeBase="/cards"
+        windowOptions={['1d']}
+        tierOptions={['all']}
+        selectedWindow="1d"
+        selectedTier="all"
+        heroOptions={['all', 'Mak']}
+        selectedHero="Mak"
+        onHeroSelect={() => {}}
+      />
+    );
+
+    const compactHeroButton = screen.getByRole('button', { name: 'Mak' });
+    expect(compactHeroButton).toHaveAttribute('aria-pressed', 'true');
+    expect(compactHeroButton.querySelector('[data-hero-short-label="MAK"]')).not.toBeNull();
+    expect(compactHeroButton.querySelector('[data-hero-color-dot="Mak"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'All heroes' })).toBeInTheDocument();
+
+    rerender(
+      <MetricFilterBar
+        locale="en"
+        title="Final builds"
+        metricLabel="final_builds"
+        routeBase="/builds"
+        windowOptions={['3d']}
+        tierOptions={['high']}
+        selectedWindow="3d"
+        selectedTier="high"
+        heroOptions={['all', 'Jules']}
+        selectedHero="Jules"
+        onHeroSelect={() => {}}
+      />
+    );
+
+    const fullHeroButton = screen.getByRole('button', { name: 'Jules' });
+    expect(fullHeroButton).toHaveAttribute('aria-pressed', 'true');
+    expect(fullHeroButton.querySelector('[data-hero-short-label="JUL"]')).not.toBeNull();
+    expect(fullHeroButton.querySelector('[data-hero-color-dot="Jules"]')).not.toBeNull();
+  });
 });

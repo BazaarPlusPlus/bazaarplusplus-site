@@ -1,7 +1,6 @@
 import type {
   CardDictionary,
   CardWinratePayload,
-  EnchantUpliftPayload,
   FinalBuildsPayload,
   HeroOverviewPayload,
   HeroWinrateDailyPayload,
@@ -10,8 +9,6 @@ import type {
   ManifestPayload,
   MetricsSource,
   MetricWindow,
-  PhaseInclusionPayload,
-  PhaseValuePayload,
   RatingTier,
 } from './metrics';
 
@@ -66,12 +63,6 @@ export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions 
       loadMetric<ItemUpliftPayload>(`item_uplift/${window}/${tier}.json`),
     getItemInclusion: (window: MetricWindow, tier: RatingTier) =>
       loadMetric<ItemInclusionPayload>(`item_inclusion/${window}/${tier}.json`),
-    getPhaseValue: (window: MetricWindow, tier: RatingTier) =>
-      loadMetric<PhaseValuePayload>(`item_phase_value/${window}/${tier}.json`),
-    getPhaseInclusion: (window: MetricWindow, tier: RatingTier) =>
-      loadMetric<PhaseInclusionPayload>(`item_phase_inclusion/${window}/${tier}.json`),
-    getEnchantUplift: (window: MetricWindow, tier: RatingTier) =>
-      loadMetric<EnchantUpliftPayload>(`enchant_uplift/${window}/${tier}.json`),
     getFinalBuilds: (window: MetricWindow, tier: RatingTier) =>
       loadMetric<FinalBuildsPayload>(`final_builds/${window}/${tier}.json`),
     getHeroWinrateDaily: (tier: RatingTier) =>

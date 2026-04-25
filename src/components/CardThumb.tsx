@@ -8,6 +8,7 @@ type CardThumbProps = {
   imageUrl?: string;
   cardSize?: CardSize;
   compact?: boolean;
+  fillWidth?: boolean;
   size?: 'sm' | 'md';
 };
 
@@ -29,6 +30,11 @@ const SIZE_CLASSES: Record<NonNullable<CardThumbProps['size']>, Record<CardSize,
   },
 };
 
+const FILL_WIDTH_SIZE_CLASSES: Record<NonNullable<CardThumbProps['size']>, string> = {
+  sm: 'h-11 min-w-0 w-full',
+  md: 'h-14 min-w-0 w-full',
+};
+
 function getImageSrc(templateId: string, imageUrl?: string): string | undefined {
   if (!imageUrl) {
     return undefined;
@@ -43,11 +49,12 @@ export default function CardThumb({
   imageUrl,
   cardSize = 'medium',
   compact = false,
+  fillWidth = false,
   size = 'md',
 }: CardThumbProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const slotClass = SLOT_CLASSES[size];
-  const sizeClass = SIZE_CLASSES[size][cardSize];
+  const sizeClass = fillWidth ? FILL_WIDTH_SIZE_CLASSES[size] : SIZE_CLASSES[size][cardSize];
   const src = getImageSrc(templateId, imageUrl);
 
   useEffect(() => {
@@ -74,7 +81,15 @@ export default function CardThumb({
   );
 
   if (compact) {
-    return <div className="relative flex items-center justify-center">{content}</div>;
+    return (
+      <div
+        className={`relative flex items-center justify-center ${
+          fillWidth ? 'min-w-0 w-full' : ''
+        }`}
+      >
+        {content}
+      </div>
+    );
   }
 
   return (

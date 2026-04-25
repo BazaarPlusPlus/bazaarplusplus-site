@@ -1,6 +1,3 @@
-import type { Locale, MetricWindow, RatingTier } from './metrics';
-import { buildLocalizedHref } from './dashboard';
-
 export const HEROES = [
   'Stelle',
   'Mak',
@@ -43,15 +40,4 @@ export function getHeroColor(hero: string): string {
 
 export function getHeroShortLabel(hero: string): string {
   return isHeroName(hero) ? HERO_SHORT_LABELS[hero] : hero.slice(0, 3).toUpperCase();
-}
-
-export function buildHeroHref(
-  hero: string,
-  params: {
-    w?: MetricWindow;
-    t?: RatingTier;
-    lang?: Locale;
-  }
-): string {
-  return buildLocalizedHref(`/heroes/${encodeURIComponent(hero)}`, params);
 }

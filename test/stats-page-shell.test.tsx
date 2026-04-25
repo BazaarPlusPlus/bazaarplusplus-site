@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import StatsPageShell from '../src/components/StatsPageShell';
@@ -31,6 +31,9 @@ describe('StatsPageShell', () => {
       'href',
       '/builds?lang=zh'
     );
+    expect(
+      within(screen.getByRole('navigation', { name: 'Primary' })).queryByText('Analytics')
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(cardsLink.className).toContain('text-[color:var(--color-accent-bright)]');
     expect(screen.getByText('Local metrics')).toBeInTheDocument();

@@ -294,20 +294,26 @@ describe('DailyHeroDashboard', () => {
     expect(within(trendSection!).getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'false');
     expect(within(trendSection!).queryByRole('button', { name: 'Low' })).not.toBeInTheDocument();
     expect(within(snapshotSection!).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(snapshotSection!).getByRole('button', { name: 'High rank' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(snapshotSection!).getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(snapshotSection!).queryByRole('button', { name: 'High rank' })).not.toBeInTheDocument();
+    expect(within(snapshotSection!).queryByRole('button', { name: 'Low' })).not.toBeInTheDocument();
     const snapshotTable = within(snapshotSection!).getByRole('table');
     expect(snapshotTable.className).toContain('table-fixed');
     expect(snapshotTable.querySelectorAll('col')).toHaveLength(8);
+    expect(within(snapshotSection!).getByRole('button', { name: '10W rate' }).className).toContain('whitespace-nowrap');
+    expect(within(snapshotSection!).getByRole('button', { name: '10W wins' })).toBeInTheDocument();
+    expect(within(snapshotSection!).queryByRole('button', { name: '10 wins' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Day' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'P75 days' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Silver' })).toBeInTheDocument();
     expect(container.querySelector('[data-hero="Stelle"] polyline')).toHaveAttribute('stroke', '#ffeb18');
     expect(container.querySelector('[data-hero="Dooley"] polyline')).toBeNull();
-    const stelleTrendLink = within(trendSection!).getByRole('link', { name: 'Stelle 42.0%' });
-    expect(stelleTrendLink).not.toHaveTextContent('42.0%');
-    fireEvent.mouseEnter(stelleTrendLink);
-    expect(within(stelleTrendLink).queryByText('42.0%')).not.toBeInTheDocument();
-    fireEvent.mouseLeave(stelleTrendLink);
+    const stelleTrendButton = within(trendSection!).getByRole('button', { name: 'Stelle 42.0%' });
+    expect(stelleTrendButton).not.toHaveAttribute('href');
+    expect(stelleTrendButton).not.toHaveTextContent('42.0%');
+    fireEvent.mouseEnter(stelleTrendButton);
+    expect(within(stelleTrendButton).queryByText('42.0%')).not.toBeInTheDocument();
+    fireEvent.mouseLeave(stelleTrendButton);
     const stelleTrendPoints = container.querySelectorAll('[data-hero="Stelle"] circle');
     expect(stelleTrendPoints).toHaveLength(3);
     fireEvent.mouseEnter(stelleTrendPoints[2]!);
@@ -320,22 +326,18 @@ describe('DailyHeroDashboard', () => {
     expect(screen.getByRole('cell', { name: '20.0%' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '36.0%' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '40.0%' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Dooley' })[0]).toHaveAttribute(
-      'href',
-      '/heroes/Dooley?w=3d&t=high'
-    );
+    expect(screen.queryByRole('link', { name: 'Dooley' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dooley' })).not.toHaveAttribute('href');
     expect(container.querySelector('[data-hero="Dooley"] polyline')).toBeNull();
 
-    fireEvent.click(within(snapshotSection!).getByRole('button', { name: 'Mid rank' }));
-    expect(within(snapshotSection!).getByRole('button', { name: 'Mid rank' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(snapshotSection!).getByRole('button', { name: 'Mid' }));
+    expect(within(snapshotSection!).getByRole('button', { name: 'Mid' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('cell', { name: 'Mak' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '47.0%' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '12.0%' })).toBeInTheDocument();
     expect(window.location.search).toContain('t=mid');
-    expect(screen.getAllByRole('link', { name: 'Mak' })[0]).toHaveAttribute(
-      'href',
-      '/heroes/Mak?w=3d&t=mid'
-    );
+    expect(screen.queryByRole('link', { name: 'Mak' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mak' })).not.toHaveAttribute('href');
     expect(container.querySelector('[data-hero="Mak"] polyline')).toBeNull();
     expect(container.querySelector('[data-hero="Stelle"] polyline')).toHaveAttribute('stroke', '#ffeb18');
 
@@ -344,7 +346,7 @@ describe('DailyHeroDashboard', () => {
     expect(container.querySelector('[data-hero="Mak"] polyline')).toHaveAttribute('stroke', '#bee65b');
     expect(container.querySelector('[data-hero="Stelle"] polyline')).toBeNull();
 
-    fireEvent.mouseEnter(screen.getAllByRole('link', { name: 'Mak' })[0]);
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Mak' }));
     expect(screen.getAllByText('Mak')[0]).toBeInTheDocument();
     expect(container.querySelector('[data-hero="Mak"] polyline')).toHaveAttribute('stroke', '#bee65b');
     expect(container.querySelector('[data-hero="Stelle"] polyline')).toBeNull();
@@ -356,7 +358,7 @@ describe('DailyHeroDashboard', () => {
     expect(screen.getByRole('cell', { name: '30.0%' })).toBeInTheDocument();
     expect(window.location.search).toContain('w=7d');
 
-    fireEvent.click(within(snapshotSection!).getByRole('button', { name: 'All players' }));
+    fireEvent.click(within(snapshotSection!).getByRole('button', { name: 'All' }));
     fireEvent.click(screen.getByRole('button', { name: 'Hero' }));
     fireEvent.click(screen.getByRole('button', { name: 'Hero' }));
     const dataRows = screen

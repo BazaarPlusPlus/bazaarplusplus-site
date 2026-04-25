@@ -25,7 +25,7 @@
 - Modify: `/Users/yxinyu/codes/bpp_codes/bazaarplusplus-stats/test/daily-hero-dashboard.test.tsx`
   - Adds UI coverage for `Risers`, `Fallers`, neutral state, and hero detail links.
 
-No data-loading files need to change. Do not add `tier_curve`, card, build, or enchant modules to the homepage first screen.
+No data-loading files need to change. Do not add `tier_curve`, card, or build modules to the homepage first screen.
 
 ---
 

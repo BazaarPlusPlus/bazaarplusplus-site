@@ -49,11 +49,11 @@ function getInitialTier(options: RatingTier[], search: string): RatingTier {
 
 function usePageQuery<T>(
   queryKey: readonly unknown[],
-  queryFn: () => Promise<T>
+  queryFn: (signal: AbortSignal) => Promise<T>
 ): { data: T | undefined; error: unknown; isLoading: boolean } {
   return useQuery({
     queryKey,
-    queryFn,
+    queryFn: ({ signal }) => queryFn(signal),
   });
 }
 
@@ -61,7 +61,7 @@ export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
   const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['hero-overview'],
-    () => loadHeroOverviewPageData(client, { onProgress: setProgress })
+    (signal) => loadHeroOverviewPageData(client, { onProgress: setProgress, signal })
   );
 
   if (isLoading) {
@@ -105,7 +105,7 @@ export function CardsPage({ client, locale, search }: RoutePageProps) {
   const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['cards', locale],
-    () => loadCardsPageData(client, locale, { onProgress: setProgress })
+    (signal) => loadCardsPageData(client, locale, { onProgress: setProgress, signal })
   );
 
   if (isLoading) {
@@ -170,7 +170,7 @@ export function BuildsPage({ client, locale, search }: RoutePageProps) {
   const [progress, setProgress] = useState<PageLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['builds', locale],
-    () => loadBuildsPageData(client, locale, { onProgress: setProgress })
+    (signal) => loadBuildsPageData(client, locale, { onProgress: setProgress, signal })
   );
 
   if (isLoading) {

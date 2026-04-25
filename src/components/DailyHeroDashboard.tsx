@@ -100,7 +100,6 @@ const TREND_TIER_LABELS: Record<TrendTier, string> = {
 const TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
 const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '12%', '11%', '11%', '12%', '12%', '12%'];
 const MOVEMENT_ROW_LIMIT = 3;
-const SNAPSHOT_SUMMARY_LIMIT = 4;
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -504,10 +503,6 @@ export default function DailyHeroDashboard({
   );
   const hasEnoughTrendHistory = trendVisibleDays.length >= 2;
   const hasHeroMovement = movementRows.some((row) => row.delta !== 0);
-  const snapshotSummaryRows = useMemo(
-    () => sortedDetailRows.slice(0, SNAPSHOT_SUMMARY_LIMIT),
-    [sortedDetailRows]
-  );
 
   return (
     <StatsPageShell
@@ -556,13 +551,21 @@ export default function DailyHeroDashboard({
             ) : null}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="grid gap-3">
           <div
-            data-testid="daily-winrate-chart"
-            className="rounded-[20px] border border-[color:rgba(58,47,31,0.7)] bg-[linear-gradient(180deg,rgba(212,162,76,0.05),rgba(13,11,8,0.94))] p-3 sm:p-4"
+            data-testid="trend-layout"
+            className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start"
           >
-            <svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} className="h-auto w-full" role="img" aria-label="Hero winrate chart">
+            <div className="grid min-w-0 gap-3">
+              <div
+                data-testid="daily-winrate-chart"
+                className="aspect-[8/3] min-h-[280px] overflow-hidden rounded-[20px] border border-[color:rgba(58,47,31,0.7)] bg-[linear-gradient(180deg,rgba(212,162,76,0.05),rgba(13,11,8,0.94))] p-3 sm:p-4 lg:min-h-[360px]"
+              >
+                <svg
+                  viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+                  className="block h-full w-full"
+                  role="img"
+                  aria-label="Hero winrate chart"
+                >
               {trendYAxisTicks.map((tick) => {
                 const y = getChartY(tick, yMin, yMax);
                 return (
@@ -726,47 +729,50 @@ export default function DailyHeroDashboard({
                   </text>
                 </g>
               ) : null}
-            </svg>
-          </div>
+                </svg>
+              </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-            {trendSeries.map((heroSeries) => (
-              <a
-                key={heroSeries.hero}
-                href={buildHeroHref(heroSeries.hero, {
-                  w: TREND_WINDOW,
-                  t: activeTrendTier,
-                  lang: locale,
-                })}
-                data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
-                onMouseEnter={() => setSelectedTrendHero(heroSeries.hero)}
-                onFocus={() => setSelectedTrendHero(heroSeries.hero)}
-                onClick={() => setSelectedTrendHero(heroSeries.hero)}
-                className={`inline-flex min-w-0 items-center justify-center gap-2 rounded-full border px-2.5 py-1.5 text-sm transition ${
-                  heroSeries.hero === focusedTrendHero?.hero
-                    ? 'border-[color:var(--color-accent)] bg-[color:rgba(212,162,76,0.2)] text-[color:var(--color-text-base)] shadow-[0_0_0_1px_rgba(212,162,76,0.18)]'
-                    : 'border-[color:rgba(58,47,31,0.78)] bg-[color:rgba(19,15,8,0.7)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
-                }`}
-                aria-label={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
-                title={heroSeries.hero}
-              >
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: heroSeries.color }}
-                  aria-hidden="true"
-                />
-                <span className="font-medium tracking-[0.08em]">
-                  {getHeroShortLabel(heroSeries.hero)}
-                </span>
-              </a>
-            ))}
-          </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {trendSeries.map((heroSeries) => (
+                  <a
+                    key={heroSeries.hero}
+                    href={buildHeroHref(heroSeries.hero, {
+                      w: TREND_WINDOW,
+                      t: activeTrendTier,
+                      lang: locale,
+                    })}
+                    data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
+                    onMouseEnter={() => setSelectedTrendHero(heroSeries.hero)}
+                    onFocus={() => setSelectedTrendHero(heroSeries.hero)}
+                    onClick={() => setSelectedTrendHero(heroSeries.hero)}
+                    className={`inline-flex min-w-0 items-center justify-center gap-2 rounded-full border px-2.5 py-1.5 text-sm transition ${
+                      heroSeries.hero === focusedTrendHero?.hero
+                        ? 'border-[color:var(--color-accent)] bg-[color:rgba(212,162,76,0.2)] text-[color:var(--color-text-base)] shadow-[0_0_0_1px_rgba(212,162,76,0.18)]'
+                        : 'border-[color:rgba(58,47,31,0.78)] bg-[color:rgba(19,15,8,0.7)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
+                    }`}
+                    aria-label={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
+                    title={heroSeries.hero}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: heroSeries.color }}
+                      aria-hidden="true"
+                    />
+                    <span className="font-medium tracking-[0.08em]">
+                      {getHeroShortLabel(heroSeries.hero)}
+                    </span>
+                  </a>
+                ))}
+              </div>
             </div>
 
-            <aside className="grid content-start gap-3">
+            <aside
+              data-testid="trend-movement-rail"
+              className="grid gap-3 lg:min-h-[360px] lg:w-72 lg:grid-rows-2"
+            >
               {hasEnoughTrendHistory && hasHeroMovement ? (
                 <>
-                  <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                  <section className="flex min-h-[168px] flex-col rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
                         Risers
@@ -776,7 +782,7 @@ export default function DailyHeroDashboard({
                       </span>
                     </div>
                     {risingRows.length > 0 ? (
-                      <div className="mt-3 grid gap-2">
+                      <div className="mt-3 grid flex-1 content-start gap-2">
                         {risingRows.map((row) => (
                           <a
                             key={`riser-${row.hero}`}
@@ -809,7 +815,7 @@ export default function DailyHeroDashboard({
                     )}
                   </section>
 
-                  <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                  <section className="flex min-h-[168px] flex-col rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
                         Fallers
@@ -819,7 +825,7 @@ export default function DailyHeroDashboard({
                       </span>
                     </div>
                     {fallingRows.length > 0 ? (
-                      <div className="mt-3 grid gap-2">
+                      <div className="mt-3 grid flex-1 content-start gap-2">
                         {fallingRows.map((row) => (
                           <a
                             key={`faller-${row.hero}`}
@@ -853,7 +859,7 @@ export default function DailyHeroDashboard({
                   </section>
                 </>
               ) : (
-                <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                <section className="flex min-h-[168px] flex-col justify-center rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4 lg:row-span-2">
                   <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
                     Hero movement
                   </h3>
@@ -864,36 +870,6 @@ export default function DailyHeroDashboard({
                   </p>
                 </section>
               )}
-
-              <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
-                <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
-                  Current snapshot
-                </h3>
-                <div className="mt-3 grid gap-2">
-                  {snapshotSummaryRows.map((row) => (
-                    <a
-                      key={`snapshot-${row.hero}`}
-                      href={buildHeroHref(row.hero, {
-                        w: selectedWindow,
-                        t: selectedTier,
-                        lang: locale,
-                      })}
-                      onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
-                      onFocus={() => setSelectedSnapshotHero(row.hero)}
-                      className="flex items-center justify-between gap-3 rounded-[12px] px-1 py-1 transition hover:text-[color:var(--color-accent-bright)]"
-                    >
-                      <HeroBadge
-                        hero={row.hero}
-                        size="sm"
-                        selected={row.hero === selectedSnapshotHero}
-                      />
-                      <span className="tnum text-sm text-[color:var(--color-accent-bright)]">
-                        {formatPercent(row.winRate)}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </section>
             </aside>
           </div>
         </section>

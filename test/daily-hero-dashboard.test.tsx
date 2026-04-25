@@ -282,9 +282,13 @@ describe('DailyHeroDashboard', () => {
     const snapshotSection = screen.getByText('Latest hero snapshot').closest('section');
     expect(trendSection).not.toBeNull();
     expect(snapshotSection).not.toBeNull();
+    expect(within(trendSection!).getByTestId('trend-layout').className).toContain(
+      'lg:grid-cols-[minmax(0,1fr)_18rem]'
+    );
+    expect(within(trendSection!).getByTestId('trend-movement-rail').className).toContain('lg:w-72');
     expect(within(trendSection!).getByText('Risers')).toBeInTheDocument();
     expect(within(trendSection!).getByText('Fallers')).toBeInTheDocument();
-    expect(within(trendSection!).getByText('Current snapshot')).toBeInTheDocument();
+    expect(within(trendSection!).queryByText('Current snapshot')).not.toBeInTheDocument();
     expect(within(trendSection!).getByText('+4.5pp')).toBeInTheDocument();
     expect(within(trendSection!).getByText('-0.5pp')).toBeInTheDocument();
     expect(within(trendSection!).getByText('Latest 42.0%')).toBeInTheDocument();

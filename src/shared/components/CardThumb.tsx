@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type CardSize = 'small' | 'medium' | 'large';
 
@@ -34,6 +34,8 @@ const FILL_WIDTH_SIZE_CLASSES: Record<NonNullable<CardThumbProps['size']>, strin
   sm: 'h-11 min-w-0 w-full',
   md: 'h-14 min-w-0 w-full',
 };
+const MAX_IMAGE_RETRY_ATTEMPTS = 2;
+const imageRetryAttempts = new Map<string, number>();
 
 function getImageSrc(templateId: string, imageUrl?: string): string | undefined {
   if (!imageUrl) {
@@ -41,6 +43,35 @@ function getImageSrc(templateId: string, imageUrl?: string): string | undefined 
   }
 
   return imageUrl;
+}
+
+function getRetrySrc(src: string, retryAttempt: number): string {
+  if (retryAttempt <= 0) {
+    return src;
+  }
+
+  const hashIndex = src.indexOf('#');
+  const srcWithoutHash = hashIndex === -1 ? src : src.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : src.slice(hashIndex);
+  const separator = srcWithoutHash.includes('?') ? '&' : '?';
+
+  return `${srcWithoutHash}${separator}retry=${retryAttempt}${hash}`;
+}
+
+function getSharedRetryAttempt(src: string, currentAttempt: number): number {
+  const sharedAttempt = imageRetryAttempts.get(src) ?? 0;
+
+  if (sharedAttempt > currentAttempt) {
+    return sharedAttempt;
+  }
+
+  if (sharedAttempt >= MAX_IMAGE_RETRY_ATTEMPTS) {
+    return sharedAttempt;
+  }
+
+  const nextAttempt = sharedAttempt + 1;
+  imageRetryAttempts.set(src, nextAttempt);
+  return nextAttempt;
 }
 
 export default function CardThumb({
@@ -52,23 +83,46 @@ export default function CardThumb({
   fillWidth = false,
   size = 'md',
 }: CardThumbProps) {
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [retryState, setRetryState] = useState<{
+    src?: string;
+    attempt: number;
+  }>({ src: undefined, attempt: 0 });
   const slotClass = SLOT_CLASSES[size];
   const sizeClass = fillWidth ? FILL_WIDTH_SIZE_CLASSES[size] : SIZE_CLASSES[size][cardSize];
   const src = getImageSrc(templateId, imageUrl);
+  const retryAttempt = retryState.src === src ? retryState.attempt : 0;
+  const displayedSrc = src ? getRetrySrc(src, retryAttempt) : undefined;
 
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+  function handleImageError() {
+    if (!src) {
+      return;
+    }
 
-  const content = src && isHydrated ? (
+    setRetryState((current) => {
+      const currentAttempt = current.src === src ? current.attempt : 0;
+      const nextAttempt = getSharedRetryAttempt(src, currentAttempt);
+
+      if (nextAttempt === currentAttempt) {
+        return current;
+      }
+
+      return {
+        src,
+        attempt: nextAttempt,
+      };
+    });
+  }
+
+  const content = displayedSrc ? (
     <img
-      src={src}
+      src={displayedSrc}
       alt={name}
       data-template-id={templateId}
       className={`${sizeClass} rounded-[6px] border border-[color:rgba(212,162,76,0.38)] object-fill shadow-[0_6px_16px_rgba(0,0,0,0.35)]`}
       loading="lazy"
+      decoding="async"
       referrerPolicy="no-referrer"
+      onError={handleImageError}
     />
   ) : (
     <div

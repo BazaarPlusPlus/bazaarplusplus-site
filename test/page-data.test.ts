@@ -1,17 +1,12 @@
 import { describe, expect, test, vi } from 'vitest';
 
 import {
-  loadCardsPageData,
   loadHeroOverviewPageData,
   type PageLoadProgress,
 } from '../src/app/page-data';
 import type {
-  CardDictionary,
-  CardWinratePayload,
   HeroOverviewPayload,
   HeroWinrateDailyPayload,
-  ItemInclusionPayload,
-  ItemUpliftPayload,
   ManifestPayload,
   RatingTier,
 } from '../src/shared/lib/metrics';
@@ -154,87 +149,4 @@ describe('SPA data loading progress', () => {
     await loadHeroOverviewPageData(client, { signal: abortController.signal });
   });
 
-  test('limits concurrent card payload downloads', async () => {
-    const tiers: RatingTier[] = ['all', 'low', 'mid', 'high'];
-    const manifest: ManifestPayload = {
-      generatedAt: '2026-04-25T14:46:33Z',
-      current_patch_id: null,
-      windows: {
-        '1d': {
-          start: '2026-04-24T00:00:00Z',
-          end: '2026-04-25T00:00:00Z',
-          patch_transition: false,
-        },
-        '3d': {
-          start: '2026-04-22T00:00:00Z',
-          end: '2026-04-25T00:00:00Z',
-          patch_transition: false,
-        },
-        '7d': {
-          start: '2026-04-18T00:00:00Z',
-          end: '2026-04-25T00:00:00Z',
-          patch_transition: false,
-        },
-      },
-      files: ['item_winrate', 'item_uplift', 'item_inclusion'].flatMap((metric) =>
-        (['1d', '3d', '7d'] as const).flatMap((window) =>
-          tiers.map((tier) => ({
-            path: `${metric}/${window}/${tier}.json`,
-            metric,
-            window,
-            rating_tier: tier,
-            rowCount: 1,
-          }))
-        )
-      ),
-    };
-    const cardDictionary: CardDictionary = {};
-    const winrate: CardWinratePayload = {
-      metric: 'item_winrate',
-      generatedAt: manifest.generatedAt,
-      rowCount: 0,
-      rows: [],
-    };
-    const uplift: ItemUpliftPayload = {
-      metric: 'item_uplift',
-      generatedAt: manifest.generatedAt,
-      rowCount: 0,
-      rows: [],
-    };
-    const inclusion: ItemInclusionPayload = {
-      metric: 'item_inclusion',
-      generatedAt: manifest.generatedAt,
-      rowCount: 0,
-      rows: [],
-    };
-    let active = 0;
-    let maxActive = 0;
-
-    async function trackPayload<T>(payload: T): Promise<T> {
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      active -= 1;
-      return payload;
-    }
-
-    const client = {
-      getSource: () => 'remote',
-      getManifest: vi.fn(async () => manifest),
-      getCardDictionary: vi.fn(async () => cardDictionary),
-      getCardWinrate: vi.fn(async () => trackPayload(winrate)),
-      getItemUplift: vi.fn(async () => trackPayload(uplift)),
-      getItemInclusion: vi.fn(async () => trackPayload(inclusion)),
-      getHeroWinrateDaily: vi.fn(),
-      getHeroOverview: vi.fn(),
-      getFinalBuilds: vi.fn(),
-    } satisfies RuntimeMetricsClient;
-
-    await loadCardsPageData(client, 'en', { concurrency: 2 });
-
-    expect(maxActive).toBeLessThanOrEqual(2);
-    expect(client.getCardWinrate).toHaveBeenCalledTimes(12);
-    expect(client.getItemUplift).toHaveBeenCalledTimes(12);
-    expect(client.getItemInclusion).toHaveBeenCalledTimes(12);
-  });
 });

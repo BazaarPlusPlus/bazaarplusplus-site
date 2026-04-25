@@ -12,7 +12,7 @@
     "deploy:dry-run": "npm run build && npx wrangler deploy --dry-run",
     "deploy:preview": "npm run build && npx wrangler deploy --env preview",
     "deploy:preview:dry-run": "npm run build && npx wrangler deploy --env preview --dry-run",
-    "preview": "vite preview",
+    "preview": "VITE_METRICS_BASE=/metrics/ vite build && vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

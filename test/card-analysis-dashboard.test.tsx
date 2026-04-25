@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, test } from 'vitest';
 
 import CardAnalysisDashboard from '../src/features/cards/CardAnalysisDashboard';
@@ -8,6 +10,13 @@ import type {
   ItemUpliftViewRow,
   ManifestPayload,
 } from '../src/shared/lib/metrics';
+
+function renderWithQueryClient(ui: ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 describe('CardAnalysisDashboard', () => {
   test('switches card workspace views and ignores removed phase state from the URL', async () => {
@@ -136,7 +145,7 @@ describe('CardAnalysisDashboard', () => {
       },
     ];
 
-    render(
+    renderWithQueryClient(
       <CardAnalysisDashboard
         locale="zh"
         manifest={manifest}

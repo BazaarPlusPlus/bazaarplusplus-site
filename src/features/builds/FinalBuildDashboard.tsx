@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import type {
+  CardDictionary,
+  FinalBuildsPayload,
   FinalBuildViewRow,
   Locale,
   ManifestPayload,
@@ -10,7 +13,8 @@ import type {
 } from '../../shared/lib/metrics';
 import { formatInteger } from '../../shared/lib/dashboard';
 import { getHeroColor } from '../../shared/lib/heroes';
-import { getAvailableTiers } from '../../shared/lib/metrics';
+import { buildFinalBuildViewRows, getAvailableTiers } from '../../shared/lib/metrics';
+import type { MetricsRequestOptions, RuntimeMetricsClient } from '../../shared/lib/metrics-client';
 import {
   ALL_HEROES,
   getActiveHeroFilter,
@@ -39,7 +43,9 @@ type FinalBuildDashboardProps = {
   initialSelectedWindow: MetricWindow;
   initialSelectedTier: RatingTier;
   source: MetricsSource;
-  rowsByWindow: Partial<Record<MetricWindow, Partial<Record<RatingTier, ViewPayload<FinalBuildViewRow>>>>>;
+  client?: RuntimeMetricsClient;
+  cardDictionary?: CardDictionary;
+  rowsByWindow?: Partial<Record<MetricWindow, Partial<Record<RatingTier, ViewPayload<FinalBuildViewRow>>>>>;
 };
 
 type BuildSortKey = 'hero' | 'runCount' | 'goldScore' | 'rank';
@@ -50,13 +56,24 @@ function formatGoldScore(value: number): string {
   return value.toFixed(3);
 }
 
+function loadFinalBuildsPayload(
+  client: RuntimeMetricsClient,
+  window: MetricWindow,
+  tier: RatingTier,
+  requestOptions?: MetricsRequestOptions
+): Promise<FinalBuildsPayload> {
+  return client.getFinalBuilds(window, tier, requestOptions);
+}
+
 export default function FinalBuildDashboard({
   locale,
   manifest,
   initialSelectedWindow,
   initialSelectedTier,
   source,
-  rowsByWindow,
+  client,
+  cardDictionary,
+  rowsByWindow = {},
 }: FinalBuildDashboardProps) {
   const windowOptions = useMemo(() => getWindowOptionsFromManifest(manifest), [manifest]);
   const initialSelection = useMemo(
@@ -80,6 +97,18 @@ export default function FinalBuildDashboard({
     () => getAvailableTiers(manifest, selectedWindow, 'final_builds'),
     [manifest, selectedWindow]
   );
+  const canLoadSelectedPayload = tierOptions.includes(selectedTier);
+  const remoteBuildsQuery = useQuery({
+    queryKey: ['final-builds-payload', selectedWindow, selectedTier],
+    queryFn: ({ signal }) => {
+      if (!client) {
+        throw new Error('Missing metrics client');
+      }
+
+      return loadFinalBuildsPayload(client, selectedWindow, selectedTier, { signal });
+    },
+    enabled: Boolean(client && cardDictionary && canLoadSelectedPayload),
+  });
 
   useEffect(() => {
     if (!tierOptions.includes(selectedTier)) {
@@ -90,7 +119,16 @@ export default function FinalBuildDashboard({
   const payload =
     rowsByWindow[selectedWindow]?.[selectedTier] ??
     rowsByWindow[selectedWindow]?.[tierOptions[0] ?? 'all'];
-  const rows = payload?.rows ?? [];
+  const remoteRows = useMemo(() => {
+    if (!remoteBuildsQuery.data || !cardDictionary) {
+      return [];
+    }
+
+    return buildFinalBuildViewRows(remoteBuildsQuery.data, cardDictionary, locale);
+  }, [cardDictionary, locale, remoteBuildsQuery.data]);
+  const usesRemotePayloads = Boolean(client && cardDictionary);
+  const isRowsLoading = usesRemotePayloads && remoteBuildsQuery.isPending;
+  const rows = usesRemotePayloads ? remoteRows : (payload?.rows ?? []);
   const heroOptions = useMemo(() => getHeroFilterOptions(rows), [rows]);
   const activeHero = getActiveHeroFilter(heroOptions, selectedHero);
   const filteredRows = useMemo(
@@ -99,10 +137,10 @@ export default function FinalBuildDashboard({
   );
 
   useEffect(() => {
-    if (!heroOptions.includes(selectedHero)) {
+    if (!isRowsLoading && !heroOptions.includes(selectedHero)) {
       setSelectedHero(ALL_HEROES);
     }
-  }, [heroOptions, selectedHero]);
+  }, [heroOptions, isRowsLoading, selectedHero]);
 
   useEffect(() => {
     syncFilterStateToUrl('/builds', {
@@ -148,50 +186,59 @@ export default function FinalBuildDashboard({
       }
     >
       <section className="surface overflow-hidden">
-        <VirtualizedMetricTable
-          ariaLabel="Final builds"
-          columnCount={6}
-          columnWidths={FINAL_BUILD_COLUMN_WIDTHS}
-          rows={sortedRows}
-          rowHeight={88}
-          viewportHeight={880}
-          getRowKey={(row) => `${row.hero}:${row.sig}`}
-          columns={
-            <tr>
-              <SortableHeader
-                label="Hero"
-                className="px-5 py-4"
-                activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
-                onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
-              />
-              <th className="px-5 py-4">Build</th>
-              <SortableHeader
-                label="Runs"
-                className="px-5 py-4"
-                activeDirection={sortState.key === 'runCount' ? sortState.direction : undefined}
-                onToggle={() => setSortState((current) => toggleSort(current, 'runCount', 'desc'))}
-              />
-              <SortableHeader
-                label="Gold score"
-                className="px-5 py-4"
-                activeDirection={sortState.key === 'goldScore' ? sortState.direction : undefined}
-                onToggle={() => setSortState((current) => toggleSort(current, 'goldScore', 'desc'))}
-              />
-              <SortableHeader
-                label="Rank"
-                className="px-5 py-4"
-                activeDirection={sortState.key === 'rank' ? sortState.direction : undefined}
-                onToggle={() => setSortState((current) => toggleSort(current, 'rank', 'asc'))}
-              />
-              <th className="px-5 py-4">Contributor</th>
-            </tr>
-          }
-          renderRow={(row) => (
-            <tr
-              key={`${row.hero}:${row.sig}`}
-              className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
-              style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
-            >
+        {isRowsLoading ? (
+          <div role="status" className="px-6 py-8 text-sm text-[color:var(--color-text-muted)]">
+            Loading build data
+          </div>
+        ) : remoteBuildsQuery.isError ? (
+          <div role="alert" className="px-6 py-8 text-sm text-[color:var(--color-neg)]">
+            Build data unavailable
+          </div>
+        ) : (
+          <VirtualizedMetricTable
+            ariaLabel="Final builds"
+            columnCount={6}
+            columnWidths={FINAL_BUILD_COLUMN_WIDTHS}
+            rows={sortedRows}
+            rowHeight={88}
+            viewportHeight={880}
+            getRowKey={(row) => `${row.hero}:${row.sig}`}
+            columns={
+              <tr>
+                <SortableHeader
+                  label="Hero"
+                  className="px-5 py-4"
+                  activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
+                  onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
+                />
+                <th className="px-5 py-4">Build</th>
+                <SortableHeader
+                  label="Runs"
+                  className="px-5 py-4"
+                  activeDirection={sortState.key === 'runCount' ? sortState.direction : undefined}
+                  onToggle={() => setSortState((current) => toggleSort(current, 'runCount', 'desc'))}
+                />
+                <SortableHeader
+                  label="Gold score"
+                  className="px-5 py-4"
+                  activeDirection={sortState.key === 'goldScore' ? sortState.direction : undefined}
+                  onToggle={() => setSortState((current) => toggleSort(current, 'goldScore', 'desc'))}
+                />
+                <SortableHeader
+                  label="Rank"
+                  className="px-5 py-4"
+                  activeDirection={sortState.key === 'rank' ? sortState.direction : undefined}
+                  onToggle={() => setSortState((current) => toggleSort(current, 'rank', 'asc'))}
+                />
+                <th className="px-5 py-4">Contributor</th>
+              </tr>
+            }
+            renderRow={(row) => (
+              <tr
+                key={`${row.hero}:${row.sig}`}
+                className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+                style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
+              >
               <td className="px-5 py-4">
                 <HeroBadge hero={row.hero} size="sm" />
               </td>
@@ -223,7 +270,8 @@ export default function FinalBuildDashboard({
               </td>
             </tr>
           )}
-        />
+          />
+        )}
       </section>
     </StatsPageShell>
   );

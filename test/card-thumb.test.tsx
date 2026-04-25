@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 
 import CardThumb from '../src/shared/components/CardThumb';
@@ -32,6 +33,85 @@ describe('CardThumb', () => {
       'border-[color:rgba(212,162,76,0.38)]'
     );
     expect(image.className).toContain('object-fill');
+  });
+
+  test('emits image markup immediately when image_url exists', () => {
+    const markup = renderToStaticMarkup(
+      <CardThumb
+        templateId="card-stove"
+        name="Stove"
+        imageUrl="https://img.example/stove.webp"
+      />
+    );
+
+    expect(markup).toContain('<img');
+    expect(markup).toContain('src="https://img.example/stove.webp"');
+    expect(markup).not.toContain('Stove placeholder');
+  });
+
+  test('retries failed image loads without rendering a fallback', () => {
+    render(
+      <CardThumb
+        templateId="card-stove"
+        name="Stove"
+        imageUrl="https://img.example/stove.webp"
+      />
+    );
+
+    const image = screen.getByRole('img', { name: 'Stove' });
+
+    fireEvent.error(image);
+
+    expect(screen.getByRole('img', { name: 'Stove' })).toHaveAttribute(
+      'src',
+      'https://img.example/stove.webp?retry=1'
+    );
+    expect(screen.queryByLabelText('Stove placeholder')).not.toBeInTheDocument();
+
+    fireEvent.error(screen.getByRole('img', { name: 'Stove' }));
+
+    expect(screen.getByRole('img', { name: 'Stove' })).toHaveAttribute(
+      'src',
+      'https://img.example/stove.webp?retry=2'
+    );
+  });
+
+  test('shares retry attempts for duplicate image urls', () => {
+    render(
+      <div>
+        <CardThumb
+          templateId="card-stove-a"
+          name="Stove A"
+          imageUrl="https://img.example/duplicate.webp"
+        />
+        <CardThumb
+          templateId="card-stove-b"
+          name="Stove B"
+          imageUrl="https://img.example/duplicate.webp"
+        />
+      </div>
+    );
+
+    const firstImage = screen.getByRole('img', { name: 'Stove A' });
+    const secondImage = screen.getByRole('img', { name: 'Stove B' });
+
+    fireEvent.error(firstImage);
+    expect(screen.getByRole('img', { name: 'Stove A' })).toHaveAttribute(
+      'src',
+      'https://img.example/duplicate.webp?retry=1'
+    );
+
+    fireEvent.error(screen.getByRole('img', { name: 'Stove A' }));
+    expect(screen.getByRole('img', { name: 'Stove A' })).toHaveAttribute(
+      'src',
+      'https://img.example/duplicate.webp?retry=2'
+    );
+
+    fireEvent.error(secondImage);
+    expect(screen.getByRole('img', { name: 'Stove B' })).toHaveAttribute(
+      'src',
+      'https://img.example/duplicate.webp?retry=2'
+    );
   });
 
   test('uses aspect classes based on the card size metadata', () => {

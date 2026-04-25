@@ -5,6 +5,7 @@ import FinalBuildDashboard from '../features/builds/FinalBuildDashboard';
 import CardAnalysisDashboard from '../features/cards/CardAnalysisDashboard';
 import DailyHeroDashboard from '../features/heroes/DailyHeroDashboard';
 import {
+  type CardDictionary,
   getAvailableTiers,
   getAvailableWindows,
   parseCardMetric,
@@ -18,11 +19,7 @@ import {
 } from '../shared/lib/metrics';
 import type { RuntimeMetricsClient } from '../shared/lib/metrics-client';
 import {
-  loadBuildsPageData,
-  loadCardsPageData,
   loadHeroOverviewPageData,
-  type BuildsPageData,
-  type CardsPageData,
   type HeroOverviewPageData,
   type PageLoadProgress,
 } from './page-data';
@@ -33,6 +30,14 @@ type RoutePageProps = {
   locale: Locale;
   search: string;
 };
+
+type CardsPageData = {
+  manifest: ManifestPayload;
+  source: ReturnType<RuntimeMetricsClient['getSource']>;
+  cardDictionary: CardDictionary;
+};
+
+type BuildsPageData = CardsPageData;
 
 function getInitialWindow(manifest: ManifestPayload, search: string): MetricWindow {
   const requestedWindow = parseMetricWindow(new URLSearchParams(search).get('w'));
@@ -55,6 +60,20 @@ function usePageQuery<T>(
     queryKey,
     queryFn: ({ signal }) => queryFn(signal),
   });
+}
+
+function getCombinedProgress(
+  manifestLoaded: boolean,
+  dictionaryLoaded: boolean
+): PageLoadProgress {
+  const completed = Number(manifestLoaded) + Number(dictionaryLoaded);
+  const label = !manifestLoaded
+    ? 'Loading manifest'
+    : !dictionaryLoaded
+      ? 'Loading card dictionary'
+      : 'Loaded card dictionary';
+
+  return { completed, total: 2, label };
 }
 
 export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
@@ -102,21 +121,36 @@ function HeroOverviewDashboard({
 }
 
 export function CardsPage({ client, locale, search }: RoutePageProps) {
-  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
-  const { data, error, isLoading } = usePageQuery(
-    ['cards', locale],
-    (signal) => loadCardsPageData(client, locale, { onProgress: setProgress, signal })
+  const manifestQuery = usePageQuery(
+    ['metrics-manifest'],
+    (signal) => client.getManifest({ signal })
   );
+  const dictionaryQuery = usePageQuery(
+    ['card-dictionary'],
+    (signal) => client.getCardDictionary({ signal })
+  );
+  const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
 
-  if (isLoading) {
+  if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
     return <LoadingScreen progress={progress} />;
   }
 
-  if (!data) {
-    return <ErrorScreen error={error} />;
+  if (!manifestQuery.data || !dictionaryQuery.data) {
+    return <ErrorScreen error={manifestQuery.error ?? dictionaryQuery.error} />;
   }
 
-  return <CardsDashboard data={data} locale={locale} search={search} />;
+  return (
+    <CardsDashboard
+      data={{
+        manifest: manifestQuery.data,
+        source: client.getSource(),
+        cardDictionary: dictionaryQuery.data,
+      }}
+      client={client}
+      locale={locale}
+      search={search}
+    />
+  );
 }
 
 function getCardMetricLabels(metric: CardMetric): string[] {
@@ -133,10 +167,12 @@ function getCardMetricLabels(metric: CardMetric): string[] {
 
 function CardsDashboard({
   data,
+  client,
   locale,
   search,
 }: {
   data: CardsPageData;
+  client: RuntimeMetricsClient;
   locale: Locale;
   search: string;
 }) {
@@ -159,37 +195,53 @@ function CardsDashboard({
       initialSelectedWindow={initialSelectedWindow}
       initialSelectedTier={initialSelectedTier}
       source={data.source}
-      winrateByWindow={data.winrateByWindow}
-      upliftByWindow={data.upliftByWindow}
-      inclusionByWindow={data.inclusionByWindow}
+      client={client}
+      cardDictionary={data.cardDictionary}
     />
   );
 }
 
 export function BuildsPage({ client, locale, search }: RoutePageProps) {
-  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
-  const { data, error, isLoading } = usePageQuery(
-    ['builds', locale],
-    (signal) => loadBuildsPageData(client, locale, { onProgress: setProgress, signal })
+  const manifestQuery = usePageQuery(
+    ['metrics-manifest'],
+    (signal) => client.getManifest({ signal })
   );
+  const dictionaryQuery = usePageQuery(
+    ['card-dictionary'],
+    (signal) => client.getCardDictionary({ signal })
+  );
+  const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
 
-  if (isLoading) {
+  if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
     return <LoadingScreen progress={progress} />;
   }
 
-  if (!data) {
-    return <ErrorScreen error={error} />;
+  if (!manifestQuery.data || !dictionaryQuery.data) {
+    return <ErrorScreen error={manifestQuery.error ?? dictionaryQuery.error} />;
   }
 
-  return <BuildsDashboard data={data} locale={locale} search={search} />;
+  return (
+    <BuildsDashboard
+      data={{
+        manifest: manifestQuery.data,
+        source: client.getSource(),
+        cardDictionary: dictionaryQuery.data,
+      }}
+      client={client}
+      locale={locale}
+      search={search}
+    />
+  );
 }
 
 function BuildsDashboard({
   data,
+  client,
   locale,
   search,
 }: {
   data: BuildsPageData;
+  client: RuntimeMetricsClient;
   locale: Locale;
   search: string;
 }) {
@@ -204,7 +256,8 @@ function BuildsDashboard({
       initialSelectedWindow={initialSelectedWindow}
       initialSelectedTier={initialSelectedTier}
       source={data.source}
-      rowsByWindow={data.rowsByWindow}
+      client={client}
+      cardDictionary={data.cardDictionary}
     />
   );
 }

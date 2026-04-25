@@ -1,8 +1,17 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, test } from 'vitest';
 
 import FinalBuildDashboard from '../src/features/builds/FinalBuildDashboard';
 import type { FinalBuildViewRow, ManifestPayload } from '../src/shared/lib/metrics';
+
+function renderWithQueryClient(ui: ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 describe('FinalBuildDashboard', () => {
   test('switches build datasets when the active filters change', () => {
@@ -125,7 +134,7 @@ describe('FinalBuildDashboard', () => {
       },
     ];
 
-    render(
+    renderWithQueryClient(
       <FinalBuildDashboard
         locale="en"
         manifest={manifest}

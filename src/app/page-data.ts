@@ -1,30 +1,15 @@
 import {
-  buildCardWinrateViewRows,
-  buildFinalBuildViewRows,
-  buildItemInclusionViewRows,
-  buildItemUpliftViewRows,
   getAvailableTiers,
   getAvailableTiersForWindowlessMetric,
   getAvailableWindows,
-  getCommonAvailableTiers,
-  type CardWinrateViewRow,
-  type FinalBuildViewRow,
   type HeroOverviewPayload,
   type HeroWinrateDailyPayload,
-  type ItemInclusionViewRow,
-  type ItemUpliftViewRow,
-  type Locale,
   type ManifestPayload,
   type MetricsSource,
   type MetricWindow,
   type RatingTier,
 } from '../shared/lib/metrics';
 import type { MetricsRequestOptions, RuntimeMetricsClient } from '../shared/lib/metrics-client';
-
-type ViewPayload<T> = {
-  rowCount: number;
-  rows: T[];
-};
 
 export type PageLoadProgress = {
   completed: number;
@@ -53,7 +38,6 @@ type PageLoadContext = {
 };
 
 type WindowTierMap<T> = Partial<Record<MetricWindow, Partial<Record<RatingTier, T>>>>;
-type ViewWindowTierMap<T> = WindowTierMap<ViewPayload<T>>;
 
 type PageDataBase = {
   manifest: ManifestPayload;
@@ -67,16 +51,6 @@ export type HeroOverviewPageData = PageDataBase & {
   availableTiers: RatingTier[];
   dailyByTier: Partial<Record<RatingTier, HeroWinrateDailyPayload>>;
   overviewByWindow: WindowTierMap<HeroOverviewPayload>;
-};
-
-export type CardsPageData = PageDataBase & {
-  winrateByWindow: ViewWindowTierMap<CardWinrateViewRow>;
-  upliftByWindow: ViewWindowTierMap<ItemUpliftViewRow>;
-  inclusionByWindow: ViewWindowTierMap<ItemInclusionViewRow>;
-};
-
-export type BuildsPageData = PageDataBase & {
-  rowsByWindow: ViewWindowTierMap<FinalBuildViewRow>;
 };
 
 function createProgressTracker(
@@ -112,13 +86,6 @@ function reportManifestStart(onProgress: PageLoadOptions['onProgress']) {
 function countWindowTierPayloads(manifest: ManifestPayload, metric: string): number {
   return getAvailableWindows(manifest).reduce(
     (count, window) => count + getAvailableTiers(manifest, window, metric).length,
-    0
-  );
-}
-
-function countCommonWindowTierPayloads(manifest: ManifestPayload, metrics: string[]): number {
-  return getAvailableWindows(manifest).reduce(
-    (count, window) => count + getCommonAvailableTiers(manifest, window, metrics).length,
     0
   );
 }
@@ -250,56 +217,6 @@ async function loadWindowTierMap<T>(
   return Object.fromEntries(entries);
 }
 
-async function loadCommonWindowTierViewMap<T>(
-  manifest: ManifestPayload,
-  metrics: string[],
-  loadRows: (
-    window: MetricWindow,
-    tier: RatingTier,
-    requestOptions?: MetricsRequestOptions
-  ) => Promise<ViewPayload<T>>,
-  context: PageLoadContext
-): Promise<ViewWindowTierMap<T>> {
-  const availableWindows = getAvailableWindows(manifest);
-  const entries = await Promise.all(
-    availableWindows.map(async (window) => [
-      window,
-      Object.fromEntries(
-        await Promise.all(
-          getCommonAvailableTiers(manifest, window, metrics).map(async (tier) => [
-            tier,
-            await loadTracked(context, `${metrics.join('+')}/${window}/${tier}`, () =>
-              loadRows(window, tier, context.requestOptions)
-            ),
-          ] as const)
-        )
-      ),
-    ] as const)
-  );
-
-  return Object.fromEntries(entries);
-}
-
-async function loadMetricViewMap<TPayload extends { rowCount: number }, TRow>(
-  manifest: ManifestPayload,
-  metric: string,
-  loadPayload: (
-    window: MetricWindow,
-    tier: RatingTier,
-    requestOptions?: MetricsRequestOptions
-  ) => Promise<TPayload>,
-  mapRows: (payload: TPayload) => TRow[],
-  context: PageLoadContext
-): Promise<ViewWindowTierMap<TRow>> {
-  return loadCommonWindowTierViewMap(manifest, [metric], async (window, tier, requestOptions) => {
-    const payload = await loadPayload(window, tier, requestOptions);
-    return {
-      rowCount: payload.rowCount,
-      rows: mapRows(payload),
-    };
-  }, context);
-}
-
 export async function loadHeroOverviewPageData(
   client: RuntimeMetricsClient,
   options: PageLoadOptions = {}
@@ -334,93 +251,5 @@ export async function loadHeroOverviewPageData(
     availableTiers,
     dailyByTier: Object.fromEntries(dailyEntries),
     overviewByWindow,
-  };
-}
-
-export async function loadCardsPageData(
-  client: RuntimeMetricsClient,
-  locale: Locale,
-  options: PageLoadOptions = {}
-): Promise<CardsPageData> {
-  reportManifestStart(options.onProgress);
-  const manifest = await client.getManifest({ signal: options.signal });
-  const context = createPageLoadContext(
-    options,
-    2 +
-      countCommonWindowTierPayloads(manifest, ['item_winrate']) +
-      countCommonWindowTierPayloads(manifest, ['item_uplift']) +
-      countCommonWindowTierPayloads(manifest, ['item_inclusion']),
-    1,
-    'Loaded manifest'
-  );
-
-  const cardDictionary = await loadTracked(context, 'card dictionary', () =>
-    client.getCardDictionary(context.requestOptions)
-  );
-  const [
-    winrateByWindow,
-    upliftByWindow,
-    inclusionByWindow,
-  ] = await Promise.all([
-    loadMetricViewMap(
-      manifest,
-      'item_winrate',
-      client.getCardWinrate,
-      (payload) => buildCardWinrateViewRows(payload, cardDictionary, locale),
-      context
-    ),
-    loadMetricViewMap(
-      manifest,
-      'item_uplift',
-      client.getItemUplift,
-      (payload) => buildItemUpliftViewRows(payload, cardDictionary, locale),
-      context
-    ),
-    loadMetricViewMap(
-      manifest,
-      'item_inclusion',
-      client.getItemInclusion,
-      (payload) => buildItemInclusionViewRows(payload, cardDictionary, locale),
-      context
-    ),
-  ]);
-
-  return {
-    manifest,
-    source: client.getSource(),
-    winrateByWindow,
-    upliftByWindow,
-    inclusionByWindow,
-  };
-}
-
-export async function loadBuildsPageData(
-  client: RuntimeMetricsClient,
-  locale: Locale,
-  options: PageLoadOptions = {}
-): Promise<BuildsPageData> {
-  reportManifestStart(options.onProgress);
-  const manifest = await client.getManifest({ signal: options.signal });
-  const context = createPageLoadContext(
-    options,
-    2 + countCommonWindowTierPayloads(manifest, ['final_builds']),
-    1,
-    'Loaded manifest'
-  );
-  const cardDictionary = await loadTracked(context, 'card dictionary', () =>
-    client.getCardDictionary(context.requestOptions)
-  );
-  const rowsByWindow = await loadMetricViewMap(
-    manifest,
-    'final_builds',
-    client.getFinalBuilds,
-    (payload) => buildFinalBuildViewRows(payload, cardDictionary, locale),
-    context
-  );
-
-  return {
-    manifest,
-    source: client.getSource(),
-    rowsByWindow,
   };
 }

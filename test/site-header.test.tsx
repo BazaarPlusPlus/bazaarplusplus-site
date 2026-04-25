@@ -25,11 +25,9 @@ describe('SiteHeader', () => {
     expect(screen.getByRole('link', { name: '赞助' })).toHaveAttribute('href', '/support');
     expect(screen.queryByRole('link', { name: '支持者' })).not.toBeInTheDocument();
 
-    expect(container.querySelector('source[type="image/webp"]')).toHaveAttribute(
-      'srcSet',
-      '/bazaarplusplus-icon.webp'
-    );
-    expect(container.querySelector('img[src="/bazaarplusplus-icon.png"]')).toBeInTheDocument();
+    expect(container.querySelector('source')).not.toBeInTheDocument();
+    expect(container.querySelector('img[src="/bazaarplusplus-icon.webp"]')).toBeInTheDocument();
+    expect(container.querySelector('img[src="/bazaarplusplus-icon.png"]')).not.toBeInTheDocument();
     expect(screen.getByText('Live feed')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '卡牌数据' })).toHaveAttribute('aria-current', 'page');
   });

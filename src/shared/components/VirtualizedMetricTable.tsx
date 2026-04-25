@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 
 type VirtualizedMetricTableProps<T> = {
   ariaLabel: string;
@@ -26,19 +26,41 @@ export default function VirtualizedMetricTable<T>({
   renderRow,
 }: VirtualizedMetricTableProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
+  const rafRef = useRef<number | undefined>(undefined);
   const visibleRowCount = Math.ceil(viewportHeight / rowHeight) + overscan * 2;
-  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+  const maxStartIndex = Math.max(0, rows.length - visibleRowCount);
+  const startIndex = Math.min(
+    maxStartIndex,
+    Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
+  );
   const endIndex = Math.min(rows.length, startIndex + visibleRowCount);
   const topSpacerHeight = startIndex * rowHeight;
   const bottomSpacerHeight = Math.max(0, (rows.length - endIndex) * rowHeight);
   const visibleRows = rows.slice(startIndex, endIndex);
+
+  useEffect(() => () => {
+    if (rafRef.current !== undefined) {
+      window.cancelAnimationFrame(rafRef.current);
+    }
+  }, []);
+
+  function handleScroll(nextScrollTop: number) {
+    if (rafRef.current !== undefined) {
+      window.cancelAnimationFrame(rafRef.current);
+    }
+
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = undefined;
+      setScrollTop(nextScrollTop);
+    });
+  }
 
   return (
     <div
       data-testid="virtualized-table-scroll"
       className="max-h-[68rem] overflow-auto"
       style={{ height: `${viewportHeight}px` }}
-      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+      onScroll={(event) => handleScroll(event.currentTarget.scrollTop)}
     >
       <table aria-label={ariaLabel} className="min-w-full table-fixed border-collapse">
         {columnWidths.length > 0 ? (

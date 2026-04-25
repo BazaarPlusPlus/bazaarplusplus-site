@@ -20,8 +20,6 @@ type MetricsRepositoryOptions = {
   fetchImpl?: FetchLike;
 };
 
-export type MetricsRepository = Awaited<ReturnType<typeof createMetricsRepository>>;
-
 const DEFAULT_REMOTE_BASE_URL =
   process.env.PUBLIC_METRICS_BASE ?? 'https://bpp-metrics.bazaarplusplus.com';
 const DEFAULT_REMOTE_CARD_DICTIONARY_URL =

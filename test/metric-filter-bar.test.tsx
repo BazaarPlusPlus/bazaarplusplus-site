@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import MetricFilterBar from '../src/components/MetricFilterBar';
+import MetricFilterBar from '../src/shared/components/MetricFilterBar';
 
 describe('MetricFilterBar', () => {
   test('renders shared window and tier filter links for the current route', () => {

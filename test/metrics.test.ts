@@ -2,7 +2,7 @@
 
 import { describe, expect, test, vi } from 'vitest';
 
-import { createMetricsRepository } from '../src/lib/metrics-node';
+import { createMetricsRepository } from '../src/shared/lib/metrics-node';
 import {
   buildFinalBuildViewRows,
   buildItemInclusionViewRows,
@@ -18,7 +18,7 @@ import {
   type ItemInclusionPayload,
   type ItemUpliftPayload,
   type ManifestPayload,
-} from '../src/lib/metrics';
+} from '../src/shared/lib/metrics';
 
 describe('createMetricsRepository', () => {
   test('parses locale and resolves localized card display names', () => {

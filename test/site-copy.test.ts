@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { getPageTitle } from '../src/lib/site-copy';
+import { getPageTitle } from '../src/content/site-copy';
 
 describe('site copy', () => {
   test('builds localized browser tab titles for routed pages', () => {

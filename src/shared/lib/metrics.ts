@@ -6,13 +6,13 @@ export type CardMetric = 'winrate' | 'uplift' | 'inclusion';
 
 export const DEFAULT_LOCALE: Locale = 'zh';
 
-export type ManifestWindowInfo = {
+type ManifestWindowInfo = {
   start: string;
   end: string;
   patch_transition: boolean;
 };
 
-export type ManifestFile = {
+type ManifestFile = {
   path: string;
   metric: string;
   window?: string;
@@ -28,7 +28,7 @@ export type ManifestPayload = {
   files: ManifestFile[];
 };
 
-export type HeroOverviewRow = {
+type HeroOverviewRow = {
   hero: string;
   runs_total: number;
   runs_completed: number;
@@ -58,7 +58,7 @@ export type HeroOverviewPayload = {
   rows: HeroOverviewRow[];
 };
 
-export type CardWinrateRow = {
+type CardWinrateRow = {
   hero: string;
   template_id: string;
   appearances: number;
@@ -80,7 +80,7 @@ export type CardWinrateViewRow = CardWinrateRow & {
   card_size: 'small' | 'medium' | 'large';
 };
 
-export type ItemUpliftRow = {
+type ItemUpliftRow = {
   hero: string;
   template_id: string;
   runs_with: number;
@@ -105,7 +105,7 @@ export type ItemUpliftViewRow = ItemUpliftRow & {
   card_size: 'small' | 'medium' | 'large';
 };
 
-export type ItemInclusionRow = {
+type ItemInclusionRow = {
   hero: string;
   template_id: string;
   runs_total_10w: number;
@@ -126,7 +126,7 @@ export type ItemInclusionViewRow = ItemInclusionRow & {
   card_size: 'small' | 'medium' | 'large';
 };
 
-export type FinalBuildRow = {
+type FinalBuildRow = {
   hero: string;
   sig: string;
   run_count: number;
@@ -143,7 +143,7 @@ export type FinalBuildRow = {
   items?: FinalBuildItem[];
 };
 
-export type FinalBuildItem = {
+type FinalBuildItem = {
   slot_index: number | null;
   socket: number | null;
   size: number | null;
@@ -172,7 +172,7 @@ export type FinalBuildViewRow = FinalBuildRow & {
   card_names: string[];
 };
 
-export type HeroWinrateDailyRow = {
+type HeroWinrateDailyRow = {
   hero: string;
   day: string;
   completed_runs: number;
@@ -188,7 +188,7 @@ export type HeroWinrateDailyPayload = {
   rows: HeroWinrateDailyRow[];
 };
 
-export type CardDictionaryEntry = {
+type CardDictionaryEntry = {
   name?: Partial<Record<Locale | 'en-US' | 'zh-CN', string>>;
   image_url?: string;
   desc?: Partial<Record<Locale, string>>;
@@ -279,30 +279,6 @@ export function getAvailableWindowsForMetric(
 
   const order: MetricWindow[] = ['1d', '3d', '7d'];
   return Array.from(windows).sort((a, b) => order.indexOf(a) - order.indexOf(b));
-}
-
-export function getCommonAvailableWindows(
-  manifest: ManifestPayload,
-  metrics: string[]
-): MetricWindow[] {
-  if (metrics.length === 0) {
-    return [];
-  }
-
-  const [firstMetric, ...restMetrics] = metrics as [string, ...string[]];
-  const initial = new Set(getAvailableWindowsForMetric(manifest, firstMetric));
-
-  for (const metric of restMetrics) {
-    const next = new Set(getAvailableWindowsForMetric(manifest, metric));
-    for (const window of initial) {
-      if (!next.has(window)) {
-        initial.delete(window);
-      }
-    }
-  }
-
-  const order: MetricWindow[] = ['1d', '3d', '7d'];
-  return Array.from(initial).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
 export function getCommonAvailableTiers(

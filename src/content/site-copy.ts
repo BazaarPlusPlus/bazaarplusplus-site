@@ -1,19 +1,19 @@
-import type { Locale } from './metrics';
+import type { Locale } from '../shared/lib/metrics';
 
-export type PrimaryNavCopy = {
+type PrimaryNavCopy = {
   heroes: string;
   cards: string;
   builds: string;
 };
 
-export type SecondaryNavCopy = {
+type SecondaryNavCopy = {
   download: string;
   support: string;
 };
 
-export type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'not-found';
+type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'not-found';
 
-export type PageTitleCopy = Record<PageTitleKey, string>;
+type PageTitleCopy = Record<PageTitleKey, string>;
 
 export type DownloadPageCopy = {
   eyebrow: string;
@@ -64,7 +64,7 @@ export type SupportPageCopy = {
   };
 };
 
-export type LocalizedSiteCopy = {
+type LocalizedSiteCopy = {
   primaryNav: PrimaryNavCopy;
   nav: SecondaryNavCopy;
   pageTitles: PageTitleCopy;

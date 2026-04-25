@@ -1,4 +1,4 @@
-import CardThumb from './CardThumb';
+import CardThumb from '../../shared/components/CardThumb';
 
 type FinalBuildCard = {
   id: string;

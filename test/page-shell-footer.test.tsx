@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import InfoPageShell from '../src/components/InfoPageShell';
-import StatsPageShell from '../src/components/StatsPageShell';
+import InfoPageShell from '../src/shared/components/InfoPageShell';
+import StatsPageShell from '../src/shared/components/StatsPageShell';
 
 describe('page shell footer', () => {
   test('renders the author credit link in info pages', () => {

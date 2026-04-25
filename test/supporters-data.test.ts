@@ -5,7 +5,7 @@ import {
   orderSupportersForDisplay,
   SUPPORTER_LIST_URL,
   type Supporter,
-} from '../src/lib/supporters-data';
+} from '../src/features/support/supporters-data';
 
 function fixedRandom(values: number[]): () => number {
   let index = 0;

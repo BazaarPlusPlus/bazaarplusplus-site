@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
-import SiteHeader from '../src/components/SiteHeader';
+import SiteHeader from '../src/shared/components/SiteHeader';
 
 describe('SiteHeader', () => {
   let originalUrl: string;

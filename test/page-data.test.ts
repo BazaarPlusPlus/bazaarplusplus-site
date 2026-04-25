@@ -1,12 +1,12 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { loadHeroOverviewPageData, type PageLoadProgress } from '../src/spa/data';
+import { loadHeroOverviewPageData, type PageLoadProgress } from '../src/app/page-data';
 import type {
   HeroOverviewPayload,
   HeroWinrateDailyPayload,
   ManifestPayload,
-} from '../src/lib/metrics';
-import type { RuntimeMetricsClient } from '../src/lib/metrics-client';
+} from '../src/shared/lib/metrics';
+import type { RuntimeMetricsClient } from '../src/shared/lib/metrics-client';
 
 describe('SPA data loading progress', () => {
   test('reports progress while loading hero overview payloads', async () => {

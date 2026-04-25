@@ -10,16 +10,16 @@ import type {
   MetricsSource,
   MetricWindow,
   RatingTier,
-} from '../lib/metrics';
+} from '../../shared/lib/metrics';
 import {
   getAvailableTiers,
   getAvailableWindowsForMetric,
-} from '../lib/metrics';
+} from '../../shared/lib/metrics';
 import {
   formatInteger,
   formatPercent,
-} from '../lib/dashboard';
-import { getHeroColor } from '../lib/heroes';
+} from '../../shared/lib/dashboard';
+import { getHeroColor } from '../../shared/lib/heroes';
 import {
   ALL_HEROES,
   getActiveHeroFilter,
@@ -28,14 +28,14 @@ import {
   readHeroSelection,
   readCardSelection,
   syncFilterStateToUrl,
-} from '../lib/interactive-filters';
-import { sortRows, toggleSort, type SortPrimitive, type SortState } from '../lib/table-sorting';
-import CardThumb from './CardThumb';
-import HeroBadge from './HeroBadge';
-import ScopeFilterPanel from './ScopeFilterPanel';
-import SortableHeader from './SortableHeader';
-import StatsPageShell from './StatsPageShell';
-import VirtualizedMetricTable from './VirtualizedMetricTable';
+} from '../../shared/lib/interactive-filters';
+import { sortRows, toggleSort, type SortPrimitive, type SortState } from '../../shared/lib/table-sorting';
+import CardThumb from '../../shared/components/CardThumb';
+import HeroBadge from '../../shared/components/HeroBadge';
+import ScopeFilterPanel from '../../shared/components/ScopeFilterPanel';
+import SortableHeader from '../../shared/components/SortableHeader';
+import StatsPageShell from '../../shared/components/StatsPageShell';
+import VirtualizedMetricTable from '../../shared/components/VirtualizedMetricTable';
 
 type ViewPayload<T> = {
   rowCount: number;
@@ -47,7 +47,7 @@ type CardWorkspaceRow =
   | ItemUpliftViewRow
   | ItemInclusionViewRow;
 
-type CardWinrateDashboardProps = {
+type CardAnalysisDashboardProps = {
   locale: Locale;
   manifest: ManifestPayload;
   initialSelectedMetric: CardMetric;
@@ -165,7 +165,7 @@ function getTopRowDetail(
   return `${winrateRow.hero} · ${formatInteger(winrateRow.appearances)} appearances`;
 }
 
-export default function CardWinrateDashboard({
+export default function CardAnalysisDashboard({
   locale,
   manifest,
   initialSelectedMetric,
@@ -175,7 +175,7 @@ export default function CardWinrateDashboard({
   winrateByWindow,
   upliftByWindow,
   inclusionByWindow,
-}: CardWinrateDashboardProps) {
+}: CardAnalysisDashboardProps) {
   const manifestWindows = useMemo(() => getWindowOptionsFromManifest(manifest), [manifest]);
   const initialSelection = useMemo(
     () =>

@@ -1,8 +1,8 @@
 import { buildLocalizedHref } from '../lib/dashboard';
 import { DEFAULT_LOCALE, type Locale, type MetricsSource } from '../lib/metrics';
-import { getSiteCopy } from '../lib/site-copy';
+import { getSiteCopy } from '../../content/site-copy';
 
-export type SiteHeaderActiveSection =
+type SiteHeaderActiveSection =
   | 'heroes'
   | 'cards'
   | 'builds'

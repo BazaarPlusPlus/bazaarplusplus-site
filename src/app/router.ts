@@ -1,4 +1,4 @@
-export type SpaRoute =
+type SpaRoute =
   | { page: 'heroes' }
   | { page: 'cards' }
   | { page: 'builds' }

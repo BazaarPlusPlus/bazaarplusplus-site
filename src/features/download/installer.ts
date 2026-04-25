@@ -3,7 +3,7 @@ export const GITHUB_RELEASE_URL = 'https://github.com/cauyxy/BazaarPlusPlus/rele
 
 export type DownloadPlatform = 'windows' | 'mac';
 
-export type LatestVersion = {
+type LatestVersion = {
   version: string;
 };
 

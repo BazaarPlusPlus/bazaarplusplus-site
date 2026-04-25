@@ -8,19 +8,19 @@ import {
   type MetricsSource,
   type MetricWindow,
   type RatingTier,
-} from '../lib/metrics';
+} from '../../shared/lib/metrics';
 import {
   WINDOW_LABELS,
   formatInteger,
   formatPercent,
   formatShortDate,
-} from '../lib/dashboard';
-import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
-import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
-import HeroBadge from './HeroBadge';
-import { SegmentedButton, SegmentedControl } from './ScopeFilterPanel';
-import SortableHeader from './SortableHeader';
-import StatsPageShell from './StatsPageShell';
+} from '../../shared/lib/dashboard';
+import { getHeroColor, getHeroShortLabel } from '../../shared/lib/heroes';
+import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
+import HeroBadge from '../../shared/components/HeroBadge';
+import { SegmentedButton, SegmentedControl } from '../../shared/components/ScopeFilterPanel';
+import SortableHeader from '../../shared/components/SortableHeader';
+import StatsPageShell from '../../shared/components/StatsPageShell';
 
 type DailyHeroDashboardProps = {
   locale: Locale;

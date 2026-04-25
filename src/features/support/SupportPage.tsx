@@ -1,16 +1,16 @@
 import { useId, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import DialogShell from '../components/DialogShell';
-import InfoPageShell from '../components/InfoPageShell';
-import type { Locale } from '../lib/metrics';
-import { getSiteCopy, KOFI_URL, type SupportPageCopy } from '../lib/site-copy';
+import DialogShell from '../../shared/components/DialogShell';
+import InfoPageShell from '../../shared/components/InfoPageShell';
+import type { Locale } from '../../shared/lib/metrics';
+import { getSiteCopy, KOFI_URL, type SupportPageCopy } from '../../content/site-copy';
 import {
   loadSupporters,
   orderSupportersForDisplay,
   type Supporter,
-} from '../lib/supporters-data';
-import { wechatPayQrSvg } from '../lib/wechat-pay';
+} from './supporters-data';
+import { wechatPayQrSvg } from './wechat-pay';
 
 type SupportPageProps = {
   locale: Locale;

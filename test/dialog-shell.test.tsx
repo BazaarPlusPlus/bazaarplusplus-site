@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
 
-import DialogShell from '../src/components/DialogShell';
+import DialogShell from '../src/shared/components/DialogShell';
 
 describe('DialogShell', () => {
   test('renders nothing when closed', () => {

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import FinalBuildCardStrip from '../src/components/FinalBuildCardStrip';
+import FinalBuildCardStrip from '../src/features/builds/FinalBuildCardStrip';
 
 describe('FinalBuildCardStrip', () => {
   test('uses a fixed ten-slot grid with equal-height card images', () => {

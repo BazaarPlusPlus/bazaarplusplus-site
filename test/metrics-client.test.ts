@@ -2,7 +2,7 @@
 
 import { describe, expect, test, vi } from 'vitest';
 
-import { createRuntimeMetricsClient } from '../src/lib/metrics-client';
+import { createRuntimeMetricsClient } from '../src/shared/lib/metrics-client';
 
 describe('createRuntimeMetricsClient', () => {
   test('uses the remote metrics base URL by default', async () => {

@@ -18,8 +18,8 @@ import {
   type MetricsSource,
   type MetricWindow,
   type RatingTier,
-} from '../lib/metrics';
-import type { RuntimeMetricsClient } from '../lib/metrics-client';
+} from '../shared/lib/metrics';
+import type { RuntimeMetricsClient } from '../shared/lib/metrics-client';
 
 type ViewPayload<T> = {
   rowCount: number;

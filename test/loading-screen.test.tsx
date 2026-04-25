@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import { LoadingScreen } from '../src/App';
+import { LoadingScreen } from '../src/app/screens';
 
 describe('LoadingScreen', () => {
   test('shows determinate data download progress when available', () => {

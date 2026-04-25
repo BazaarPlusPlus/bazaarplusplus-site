@@ -8,7 +8,7 @@ export const HEROES = [
   'Vanessa',
 ] as const;
 
-export type HeroName = (typeof HEROES)[number];
+type HeroName = (typeof HEROES)[number];
 
 export const HERO_MAPPING: Record<HeroName, { shortLabel: string; color: string }> = {
   Stelle: { shortLabel: 'STE', color: '#ffeb18' },
@@ -20,17 +20,17 @@ export const HERO_MAPPING: Record<HeroName, { shortLabel: string; color: string 
   Vanessa: { shortLabel: 'VAN', color: '#c02121' },
 };
 
-export const HERO_COLORS: Record<HeroName, string> = Object.fromEntries(
+const HERO_COLORS: Record<HeroName, string> = Object.fromEntries(
   HEROES.map((hero) => [hero, HERO_MAPPING[hero].color])
 ) as Record<HeroName, string>;
 
-export const HERO_SHORT_LABELS: Record<HeroName, string> = Object.fromEntries(
+const HERO_SHORT_LABELS: Record<HeroName, string> = Object.fromEntries(
   HEROES.map((hero) => [hero, HERO_MAPPING[hero].shortLabel])
 ) as Record<HeroName, string>;
 
-export const FALLBACK_HERO_COLOR = '#394961';
+const FALLBACK_HERO_COLOR = '#394961';
 
-export function isHeroName(value: string): value is HeroName {
+function isHeroName(value: string): value is HeroName {
   return (HEROES as readonly string[]).includes(value);
 }
 

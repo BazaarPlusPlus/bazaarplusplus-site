@@ -1,15 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import CardWinrateDashboard from '../src/components/CardWinrateDashboard';
+import CardAnalysisDashboard from '../src/features/cards/CardAnalysisDashboard';
 import type {
   CardWinrateViewRow,
   ItemInclusionViewRow,
   ItemUpliftViewRow,
   ManifestPayload,
-} from '../src/lib/metrics';
+} from '../src/shared/lib/metrics';
 
-describe('CardWinrateDashboard', () => {
+describe('CardAnalysisDashboard', () => {
   test('switches card workspace views and ignores removed phase state from the URL', async () => {
     window.history.replaceState({}, '', '/cards?w=3d&t=high&m=phase&pm=inclusion&hero=Mak');
 
@@ -137,7 +137,7 @@ describe('CardWinrateDashboard', () => {
     ];
 
     render(
-      <CardWinrateDashboard
+      <CardAnalysisDashboard
         locale="zh"
         manifest={manifest}
         initialSelectedMetric="winrate"

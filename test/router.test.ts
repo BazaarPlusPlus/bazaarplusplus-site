@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/lib/spa-router';
+import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/app/router';
 
 describe('spa router', () => {
   test('resolves top-level stats routes', () => {

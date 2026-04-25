@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 
-import InfoPageShell from '../components/InfoPageShell';
+import InfoPageShell from '../../shared/components/InfoPageShell';
 import {
   buildDownloadUrl,
   fetchLatestVersion,
   GITHUB_RELEASE_URL,
   type DownloadPlatform,
-} from '../lib/installer';
-import type { Locale } from '../lib/metrics';
-import { macIconDataUri, windowsIconDataUri } from '../lib/platform-icons';
-import { getSiteCopy, type DownloadPageCopy } from '../lib/site-copy';
+} from './installer';
+import type { Locale } from '../../shared/lib/metrics';
+import { macIconDataUri, windowsIconDataUri } from './platform-icons';
+import { getSiteCopy, type DownloadPageCopy } from '../../content/site-copy';
 
 type PlatformCopy = DownloadPageCopy['windows'];
 

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import StatsPageShell from '../src/components/StatsPageShell';
+import StatsPageShell from '../src/shared/components/StatsPageShell';
 
 describe('StatsPageShell', () => {
   test('renders shared navigation and highlights the active section', () => {

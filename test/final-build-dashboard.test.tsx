@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import FinalBuildDashboard from '../src/components/FinalBuildDashboard';
-import type { FinalBuildViewRow, ManifestPayload } from '../src/lib/metrics';
+import FinalBuildDashboard from '../src/features/builds/FinalBuildDashboard';
+import type { FinalBuildViewRow, ManifestPayload } from '../src/shared/lib/metrics';
 
 describe('FinalBuildDashboard', () => {
   test('switches build datasets when the active filters change', () => {

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, type Plugin } from 'vite';
 
-import type { CardDictionary } from './src/lib/metrics';
+import type { CardDictionary } from './src/shared/lib/metrics';
 
 function normalizeBaseUrl(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;

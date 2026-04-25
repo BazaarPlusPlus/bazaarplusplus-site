@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import CardThumbGroup from '../src/components/CardThumbGroup';
+import CardThumbGroup from '../src/shared/components/CardThumbGroup';
 
 describe('CardThumbGroup', () => {
   test('renders a packed card cluster centered inside a nine-unit container', () => {

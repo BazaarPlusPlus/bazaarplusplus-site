@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import VirtualizedMetricTable from '../src/components/VirtualizedMetricTable';
+import VirtualizedMetricTable from '../src/shared/components/VirtualizedMetricTable';
 
 describe('VirtualizedMetricTable', () => {
   test('renders only the visible window of rows and swaps them on scroll', () => {

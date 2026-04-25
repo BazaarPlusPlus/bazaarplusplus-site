@@ -7,10 +7,10 @@ import type {
   MetricsSource,
   MetricWindow,
   RatingTier,
-} from '../lib/metrics';
-import { formatInteger } from '../lib/dashboard';
-import { getHeroColor } from '../lib/heroes';
-import { getAvailableTiers } from '../lib/metrics';
+} from '../../shared/lib/metrics';
+import { formatInteger } from '../../shared/lib/dashboard';
+import { getHeroColor } from '../../shared/lib/heroes';
+import { getAvailableTiers } from '../../shared/lib/metrics';
 import {
   ALL_HEROES,
   getActiveHeroFilter,
@@ -19,14 +19,14 @@ import {
   readHeroSelection,
   readWindowTierSelection,
   syncFilterStateToUrl,
-} from '../lib/interactive-filters';
-import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
+} from '../../shared/lib/interactive-filters';
+import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
 import FinalBuildCardStrip from './FinalBuildCardStrip';
-import HeroBadge from './HeroBadge';
-import ScopeFilterPanel from './ScopeFilterPanel';
-import SortableHeader from './SortableHeader';
-import StatsPageShell from './StatsPageShell';
-import VirtualizedMetricTable from './VirtualizedMetricTable';
+import HeroBadge from '../../shared/components/HeroBadge';
+import ScopeFilterPanel from '../../shared/components/ScopeFilterPanel';
+import SortableHeader from '../../shared/components/SortableHeader';
+import StatsPageShell from '../../shared/components/StatsPageShell';
+import VirtualizedMetricTable from '../../shared/components/VirtualizedMetricTable';
 
 type ViewPayload<T> = {
   rowCount: number;

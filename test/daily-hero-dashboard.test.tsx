@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import DailyHeroDashboard from '../src/components/DailyHeroDashboard';
-import { formatShortDate } from '../src/lib/dashboard';
+import DailyHeroDashboard from '../src/features/heroes/DailyHeroDashboard';
+import { formatShortDate } from '../src/shared/lib/dashboard';
 import type {
   HeroOverviewPayload,
   HeroWinrateDailyPayload,
   RatingTier,
-} from '../src/lib/metrics';
+} from '../src/shared/lib/metrics';
 
 function createOverviewPayload(
   generatedAt: string,

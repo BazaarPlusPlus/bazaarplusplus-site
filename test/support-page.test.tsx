@@ -3,8 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import SupportPage from '../src/pages/SupportPage';
-import type { Supporter } from '../src/lib/supporters-data';
+import SupportPage from '../src/features/support/SupportPage';
+import type { Supporter } from '../src/features/support/supporters-data';
 
 function makeTestClient(): QueryClient {
   return new QueryClient({
@@ -84,13 +84,13 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     expect(screen.getByText('致谢')).toBeInTheDocument();
-    expect(screen.getByText('有你的支持,让 Bazaar++ 走得更远。')).toBeInTheDocument();
+    expect(screen.getByText('有你的支持,让 Bazaar++ 走得更远')).toBeInTheDocument();
 
     expect(await screen.findByText('FeiMary')).toBeInTheDocument();
     expect(screen.getByText('EcitsujNT')).toBeInTheDocument();
     expect(screen.getByText('小和尚济海')).toBeInTheDocument();
     expect(screen.getByText('麦麦在逃脆薯饼')).toBeInTheDocument();
-    expect(screen.getByText('也感谢所有未署名的支持者。')).toBeInTheDocument();
+    expect(screen.getByText('也感谢所有未署名的支持者')).toBeInTheDocument();
 
     expect(fetch).toHaveBeenCalledWith(
       'https://bpp-static.bazaarplusplus.com/supporter-list.json',
@@ -104,10 +104,10 @@ describe('SupportPage', () => {
 
     expect(screen.getByText('Roll call')).toBeInTheDocument();
     expect(
-      screen.getByText('Thanks for backing Bazaar++. Your support keeps the project moving further.')
+      screen.getByText('Thanks for backing Bazaar++. Your support keeps the project moving further')
     ).toBeInTheDocument();
     expect(
-      screen.getByText('And thanks to everyone who supported Bazaar++ without leaving a name.')
+      screen.getByText('And thanks to everyone who supported Bazaar++ without leaving a name')
     ).toBeInTheDocument();
 
     expect(await screen.findByText('FeiMary')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     await waitFor(() =>
-      expect(screen.getByText('名单暂时拉不下来,稍后再试。')).toBeInTheDocument()
+      expect(screen.getByText('名单暂时拉不下来,稍后再试')).toBeInTheDocument()
     );
   });
 
@@ -127,7 +127,7 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     await waitFor(() =>
-      expect(screen.getByText('名单还在收集中,稍后再来看看。')).toBeInTheDocument()
+      expect(screen.getByText('名单还在收集中,稍后再来看看')).toBeInTheDocument()
     );
   });
 });

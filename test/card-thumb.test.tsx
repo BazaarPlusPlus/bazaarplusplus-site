@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import CardThumb from '../src/components/CardThumb';
+import CardThumb from '../src/shared/components/CardThumb';
 
 describe('CardThumb', () => {
   test('renders the image with a no-referrer policy when image_url exists', () => {

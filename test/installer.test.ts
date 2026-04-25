@@ -5,7 +5,7 @@ import {
   buildDownloadUrl,
   fetchLatestVersion,
   INSTALLER_BASE,
-} from '../src/lib/installer';
+} from '../src/features/download/installer';
 
 describe('buildDownloadUrl', () => {
   test('builds the windows installer url', () => {

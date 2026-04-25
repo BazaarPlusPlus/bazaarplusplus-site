@@ -5,7 +5,7 @@ import {
   HERO_MAPPING,
   getHeroColor,
   getHeroShortLabel,
-} from '../src/lib/heroes';
+} from '../src/shared/lib/heroes';
 
 describe('hero mapping', () => {
   test('keeps the canonical hero short labels and colors together', () => {

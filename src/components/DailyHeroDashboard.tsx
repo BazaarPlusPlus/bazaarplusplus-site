@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
 import type {
   HeroOverviewPayload,
@@ -15,12 +15,12 @@ import {
   formatPercent,
   formatShortDate,
 } from '../lib/dashboard';
+import { buildHeroMovementRows, type HeroMovementRow } from '../lib/hero-movement';
 import { buildHeroHref, getHeroColor, getHeroShortLabel } from '../lib/heroes';
 import { sortRows, toggleSort, type SortState } from '../lib/table-sorting';
 import HeroBadge from './HeroBadge';
 import SortableHeader from './SortableHeader';
 import StatsPageShell from './StatsPageShell';
-import SummaryMetricCard from './SummaryMetricCard';
 
 type DailyHeroDashboardProps = {
   locale: Locale;
@@ -48,7 +48,6 @@ type DailyDetailRow = {
   wins10w: number;
   winRate: number;
   winRateWilsonLower: number;
-  p75DaysFor10w: number | null;
   perfectRate: number | null;
   goldRate: number | null;
   silverRate: number | null;
@@ -60,15 +59,31 @@ type DailySortKey =
   | 'winRate'
   | 'runsTotal'
   | 'wins10w'
-  | 'p75Days'
   | 'perfectRate'
   | 'goldRate'
   | 'silverRate'
   | 'bronzeRate';
 
+type TrendTier = Extract<RatingTier, 'all' | 'mid' | 'high'>;
+
+type ChartPoint = {
+  day: string;
+  winRate: number;
+  x: number;
+  y: number;
+};
+
+type HoveredTrendPoint = ChartPoint & {
+  hero: string;
+  color: string;
+};
+
 const CHART_WIDTH = 960;
 const CHART_HEIGHT = 360;
 const CHART_PADDING = { top: 24, right: 24, bottom: 44, left: 56 };
+const POINT_TOOLTIP_WIDTH = 70;
+const POINT_TOOLTIP_HEIGHT = 28;
+const POINT_TOOLTIP_OFFSET = 14;
 const GRIDLINE_COUNT = 4;
 const WINDOW_DAY_COUNT: Record<MetricWindow, number> = {
   '1d': 1,
@@ -76,7 +91,16 @@ const WINDOW_DAY_COUNT: Record<MetricWindow, number> = {
   '7d': 7,
 };
 const TREND_WINDOW: MetricWindow = '7d';
+const TREND_TIER_OPTIONS: TrendTier[] = ['all', 'mid', 'high'];
+const TREND_TIER_LABELS: Record<TrendTier, string> = {
+  all: 'All',
+  mid: 'Mid',
+  high: 'High',
+};
 const TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
+const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '12%', '11%', '11%', '12%', '12%', '12%'];
+const MOVEMENT_ROW_LIMIT = 3;
+const SNAPSHOT_SUMMARY_LIMIT = 4;
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -146,12 +170,49 @@ function getChartY(value: number, min: number, max: number) {
   return CHART_PADDING.top + chartInnerHeight * (1 - normalized);
 }
 
+function getNearestChartPoint(
+  event: ReactMouseEvent<SVGPolylineElement>,
+  points: ChartPoint[]
+): ChartPoint | undefined {
+  if (points.length === 0) {
+    return undefined;
+  }
+
+  const svg = event.currentTarget.ownerSVGElement;
+  const rect = svg?.getBoundingClientRect();
+  if (rect == null || rect.width <= 0) {
+    return points.at(-1);
+  }
+
+  const mouseX = ((event.clientX - rect.left) / rect.width) * CHART_WIDTH;
+  return points.reduce((nearest, point) =>
+    Math.abs(point.x - mouseX) < Math.abs(nearest.x - mouseX) ? point : nearest
+  );
+}
+
 function buildTierRate(counts: Record<string, number> | undefined, key: string, denominator: number) {
   if (!counts || denominator <= 0) {
     return null;
   }
 
   return (counts[key] ?? 0) / denominator;
+}
+
+function formatSignedPercentagePoints(value: number): string {
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${(value * 100).toFixed(1)}pp`;
+}
+
+function getMovementLink(
+  row: HeroMovementRow,
+  selectedTier: RatingTier,
+  locale: Locale
+): string {
+  return buildHeroHref(row.hero, {
+    w: TREND_WINDOW,
+    t: selectedTier,
+    lang: locale,
+  });
 }
 
 function buildChartState(
@@ -187,7 +248,6 @@ function buildChartState(
           wins10w: overview.runs_10w,
           winRate: overview.win_rate,
           winRateWilsonLower: overview.win_rate_wilson_lower,
-          p75DaysFor10w: overview.p75_run_days_for_10w,
           perfectRate: buildTierRate(
             overview.victory_tier_counts,
             'perfect',
@@ -213,7 +273,6 @@ function buildChartState(
           wins10w: row.wins_10w,
           winRate: row.win_rate,
           winRateWilsonLower: row.win_rate_wilson_lower,
-          p75DaysFor10w: null,
           perfectRate: null,
           goldRate: null,
           silverRate: null,
@@ -272,18 +331,38 @@ export default function DailyHeroDashboard({
   );
   const [selectedWindow, setSelectedWindow] = useState<MetricWindow>(initialSelection.window);
   const [selectedTier, setSelectedTier] = useState<RatingTier>(initialSelection.tier);
+  const [selectedTrendTier, setSelectedTrendTier] = useState<TrendTier>('all');
   const [sortState, setSortState] = useState<SortState<DailySortKey>>({
     key: 'winRate',
     direction: 'desc',
   });
 
+  const trendTierOptions = useMemo(
+    () =>
+      TREND_TIER_OPTIONS.filter(
+        (tierOption) => availableTiers.includes(tierOption) && dailyByTier[tierOption] != null
+      ),
+    [availableTiers, dailyByTier]
+  );
+  const fallbackTrendTier = trendTierOptions[0] ?? 'all';
+  const activeTrendTier = trendTierOptions.includes(selectedTrendTier)
+    ? selectedTrendTier
+    : fallbackTrendTier;
+
   const snapshotDailyPayload = dailyByTier[selectedTier] ?? dailyByTier[availableTiers[0]];
   const snapshotOverviewPayload =
     overviewByWindow[selectedWindow]?.[selectedTier] ??
     overviewByWindow[selectedWindow]?.[availableTiers[0]];
-  const trendDailyPayload = dailyByTier.all ?? dailyByTier[availableTiers[0]];
+  const trendDailyPayload =
+    dailyByTier[activeTrendTier] ??
+    dailyByTier[fallbackTrendTier] ??
+    dailyByTier.all ??
+    dailyByTier[availableTiers[0]];
   const trendOverviewPayload =
-    overviewByWindow[TREND_WINDOW]?.all ?? overviewByWindow[TREND_WINDOW]?.[availableTiers[0]];
+    overviewByWindow[TREND_WINDOW]?.[activeTrendTier] ??
+    overviewByWindow[TREND_WINDOW]?.[fallbackTrendTier] ??
+    overviewByWindow[TREND_WINDOW]?.all ??
+    overviewByWindow[TREND_WINDOW]?.[availableTiers[0]];
   const currentGeneratedAt =
     snapshotDailyPayload?.generatedAt ??
     snapshotOverviewPayload?.generatedAt ??
@@ -307,11 +386,34 @@ export default function DailyHeroDashboard({
   const [selectedTrendHero, setSelectedTrendHero] = useState<string | null>(
     bestTrendHero?.hero ?? null
   );
+  const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
   const [selectedSnapshotHero, setSelectedSnapshotHero] = useState<string | null>(
     detailRows[0]?.hero ?? null
   );
   const yMin = trendYAxisTicks[0] ?? 0;
   const yMax = trendYAxisTicks.at(-1) ?? 1;
+  const trendTooltipX =
+    hoveredTrendPoint == null
+      ? 0
+      : clamp(
+          hoveredTrendPoint.x - POINT_TOOLTIP_WIDTH / 2,
+          CHART_PADDING.left,
+          CHART_WIDTH - CHART_PADDING.right - POINT_TOOLTIP_WIDTH
+        );
+  const trendTooltipY =
+    hoveredTrendPoint == null
+      ? 0
+      : clamp(
+          hoveredTrendPoint.y - POINT_TOOLTIP_HEIGHT - POINT_TOOLTIP_OFFSET,
+          CHART_PADDING.top,
+          CHART_HEIGHT - CHART_PADDING.bottom - POINT_TOOLTIP_HEIGHT
+        );
+
+  useEffect(() => {
+    if (trendTierOptions.length > 0 && !trendTierOptions.includes(selectedTrendTier)) {
+      setSelectedTrendTier(trendTierOptions[0] ?? 'all');
+    }
+  }, [selectedTrendTier, trendTierOptions]);
 
   useEffect(() => {
     if (bestTrendHero == null) {
@@ -377,13 +479,34 @@ export default function DailyHeroDashboard({
         winRate: (row) => row.winRate,
         runsTotal: (row) => row.runsTotal,
         wins10w: (row) => row.wins10w,
-        p75Days: (row) => row.p75DaysFor10w,
         perfectRate: (row) => row.perfectRate,
         goldRate: (row) => row.goldRate,
         silverRate: (row) => row.silverRate,
         bronzeRate: (row) => row.bronzeRate,
       }),
     [detailRows, sortState]
+  );
+  const movementRows = useMemo(
+    () => buildHeroMovementRows(trendDailyPayload?.rows ?? [], trendVisibleDays),
+    [trendDailyPayload, trendVisibleDays]
+  );
+  const risingRows = useMemo(
+    () => movementRows.filter((row) => row.delta > 0).slice(0, MOVEMENT_ROW_LIMIT),
+    [movementRows]
+  );
+  const fallingRows = useMemo(
+    () =>
+      [...movementRows]
+        .filter((row) => row.delta < 0)
+        .sort((a, b) => a.delta - b.delta || a.hero.localeCompare(b.hero))
+        .slice(0, MOVEMENT_ROW_LIMIT),
+    [movementRows]
+  );
+  const hasEnoughTrendHistory = trendVisibleDays.length >= 2;
+  const hasHeroMovement = movementRows.some((row) => row.delta !== 0);
+  const snapshotSummaryRows = useMemo(
+    () => sortedDetailRows.slice(0, SNAPSHOT_SUMMARY_LIMIT),
+    [sortedDetailRows]
   );
 
   return (
@@ -395,24 +518,7 @@ export default function DailyHeroDashboard({
       description=""
       source={source}
       generatedAt={generatedAt}
-      summary={
-        <>
-          <SummaryMetricCard
-            label="Focused hero"
-            value={
-              focusedTrendHero ? <HeroBadge hero={focusedTrendHero.hero} selected size="lg" /> : 'N/A'
-            }
-          />
-          <SummaryMetricCard
-            label="Sampled heroes"
-            value={formatInteger(detailRows.length)}
-          />
-          <SummaryMetricCard
-            label="Latest day"
-            value={latestDay ? formatShortDate(latestDay) : 'N/A'}
-          />
-        </>
-      }
+      summary={null}
       filters={null}
     >
       <section className="grid gap-6">
@@ -426,8 +532,32 @@ export default function DailyHeroDashboard({
                 {WINDOW_LABELS[TREND_WINDOW]} hero winrate lines
               </h2>
             </div>
+            {trendTierOptions.length > 0 ? (
+              <div aria-label="Trend tier" className="flex flex-wrap gap-2">
+                {trendTierOptions.map((tierOption) => {
+                  const active = tierOption === activeTrendTier;
+                  return (
+                    <button
+                      key={tierOption}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setSelectedTrendTier(tierOption)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                        active
+                          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-[color:#130f08]'
+                          : 'border-[color:var(--color-border)] bg-transparent text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-text-base)]'
+                      }`}
+                    >
+                      {TREND_TIER_LABELS[tierOption]}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
 
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid gap-3">
           <div
             data-testid="daily-winrate-chart"
             className="rounded-[20px] border border-[color:rgba(58,47,31,0.7)] bg-[linear-gradient(180deg,rgba(212,162,76,0.05),rgba(13,11,8,0.94))] p-3 sm:p-4"
@@ -484,10 +614,25 @@ export default function DailyHeroDashboard({
               })}
 
               {trendSeries.map((heroSeries) => {
-                const points = heroSeries.points.map((point) => ({
+                const points: ChartPoint[] = heroSeries.points.map((point) => ({
+                  day: point.day,
+                  winRate: point.winRate,
                   x: getChartX(trendVisibleDays.indexOf(point.day), trendVisibleDays.length),
                   y: getChartY(point.winRate, yMin, yMax),
                 }));
+                const showTrendPoint = (point: ChartPoint | undefined) => {
+                  if (point == null) {
+                    return;
+                  }
+
+                  setSelectedTrendHero(heroSeries.hero);
+                  setHoveredTrendPoint({
+                    ...point,
+                    hero: heroSeries.hero,
+                    color: heroSeries.color,
+                  });
+                };
+                const clearTrendPoint = () => setHoveredTrendPoint(null);
 
                 return (
                   <g
@@ -506,6 +651,19 @@ export default function DailyHeroDashboard({
                       strokeLinecap="round"
                       points={points.map((point) => `${point.x},${point.y}`).join(' ')}
                     />
+                    <polyline
+                      fill="none"
+                      stroke="transparent"
+                      strokeWidth="18"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+                      style={{ pointerEvents: 'stroke' }}
+                      aria-hidden="true"
+                      onMouseEnter={(event) => showTrendPoint(getNearestChartPoint(event, points))}
+                      onMouseMove={(event) => showTrendPoint(getNearestChartPoint(event, points))}
+                      onMouseLeave={clearTrendPoint}
+                    />
                     {points.map((point, index) => (
                       <circle
                         key={`${heroSeries.hero}-${index}`}
@@ -516,21 +674,68 @@ export default function DailyHeroDashboard({
                         fillOpacity={heroSeries.hero === focusedTrendHero?.hero ? '1' : '0.35'}
                         stroke="rgba(19,15,8,0.9)"
                         strokeWidth="2"
+                        onMouseEnter={() => showTrendPoint(point)}
+                        onMouseLeave={clearTrendPoint}
+                        onFocus={() => showTrendPoint(point)}
+                        onBlur={clearTrendPoint}
+                        tabIndex={0}
+                        aria-label={`${heroSeries.hero} ${formatShortDate(point.day)} ${formatPercent(point.winRate)}`}
                       />
                     ))}
                   </g>
                 );
               })}
+
+              {hoveredTrendPoint ? (
+                <g data-testid="trend-point-tooltip" pointerEvents="none">
+                  <line
+                    x1={hoveredTrendPoint.x}
+                    y1={hoveredTrendPoint.y}
+                    x2={hoveredTrendPoint.x}
+                    y2={CHART_HEIGHT - CHART_PADDING.bottom}
+                    stroke={hoveredTrendPoint.color}
+                    strokeOpacity="0.32"
+                    strokeWidth="1"
+                  />
+                  <circle
+                    cx={hoveredTrendPoint.x}
+                    cy={hoveredTrendPoint.y}
+                    r="7"
+                    fill="none"
+                    stroke={hoveredTrendPoint.color}
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x={trendTooltipX}
+                    y={trendTooltipY}
+                    width={POINT_TOOLTIP_WIDTH}
+                    height={POINT_TOOLTIP_HEIGHT}
+                    rx="8"
+                    fill="rgba(19,15,8,0.96)"
+                    stroke="rgba(212,162,76,0.48)"
+                  />
+                  <text
+                    x={trendTooltipX + POINT_TOOLTIP_WIDTH / 2}
+                    y={trendTooltipY + 19}
+                    fill="rgba(255,248,228,0.96)"
+                    fontSize="13"
+                    fontWeight="700"
+                    textAnchor="middle"
+                  >
+                    {formatPercent(hoveredTrendPoint.winRate)}
+                  </text>
+                </g>
+              ) : null}
             </svg>
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {trendSeries.map((heroSeries) => (
               <a
                 key={heroSeries.hero}
                 href={buildHeroHref(heroSeries.hero, {
                   w: TREND_WINDOW,
-                  t: 'all',
+                  t: activeTrendTier,
                   lang: locale,
                 })}
                 data-selected={heroSeries.hero === focusedTrendHero?.hero ? 'true' : 'false'}
@@ -543,7 +748,7 @@ export default function DailyHeroDashboard({
                     : 'border-[color:rgba(58,47,31,0.78)] bg-[color:rgba(19,15,8,0.7)] text-[color:var(--color-text-base)] hover:border-[color:var(--color-accent)]'
                 }`}
                 aria-label={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
-                title={`${heroSeries.hero} ${formatPercent(heroSeries.latestWinRate)}`}
+                title={heroSeries.hero}
               >
                 <span
                   className="h-2.5 w-2.5 rounded-full"
@@ -553,11 +758,143 @@ export default function DailyHeroDashboard({
                 <span className="font-medium tracking-[0.08em]">
                   {getHeroShortLabel(heroSeries.hero)}
                 </span>
-                <span className="truncate text-[color:var(--color-text-muted)]">
-                  {formatPercent(heroSeries.latestWinRate)}
-                </span>
               </a>
             ))}
+          </div>
+            </div>
+
+            <aside className="grid content-start gap-3">
+              {hasEnoughTrendHistory && hasHeroMovement ? (
+                <>
+                  <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
+                        Risers
+                      </h3>
+                      <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
+                        {WINDOW_LABELS[TREND_WINDOW]}
+                      </span>
+                    </div>
+                    {risingRows.length > 0 ? (
+                      <div className="mt-3 grid gap-2">
+                        {risingRows.map((row) => (
+                          <a
+                            key={`riser-${row.hero}`}
+                            href={getMovementLink(row, activeTrendTier, locale)}
+                            aria-label={`${row.hero} movement ${formatSignedPercentagePoints(row.delta)}`}
+                            onMouseEnter={() => setSelectedTrendHero(row.hero)}
+                            onFocus={() => setSelectedTrendHero(row.hero)}
+                            className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:rgba(58,47,31,0.7)] bg-[color:rgba(19,15,8,0.64)] px-3 py-2 transition hover:border-[color:var(--color-accent)]"
+                          >
+                            <HeroBadge
+                              hero={row.hero}
+                              size="sm"
+                              selected={row.hero === focusedTrendHero?.hero}
+                            />
+                            <span className="grid text-right">
+                              <span className="tnum text-sm font-semibold text-[color:var(--color-pos)]">
+                                {formatSignedPercentagePoints(row.delta)}
+                              </span>
+                              <span className="tnum text-xs text-[color:var(--color-text-muted)]">
+                                Latest {formatPercent(row.latestWinRate)}
+                              </span>
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
+                        No risers in this window
+                      </p>
+                    )}
+                  </section>
+
+                  <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
+                        Fallers
+                      </h3>
+                      <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
+                        {WINDOW_LABELS[TREND_WINDOW]}
+                      </span>
+                    </div>
+                    {fallingRows.length > 0 ? (
+                      <div className="mt-3 grid gap-2">
+                        {fallingRows.map((row) => (
+                          <a
+                            key={`faller-${row.hero}`}
+                            href={getMovementLink(row, activeTrendTier, locale)}
+                            aria-label={`${row.hero} movement ${formatSignedPercentagePoints(row.delta)}`}
+                            onMouseEnter={() => setSelectedTrendHero(row.hero)}
+                            onFocus={() => setSelectedTrendHero(row.hero)}
+                            className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:rgba(58,47,31,0.7)] bg-[color:rgba(19,15,8,0.64)] px-3 py-2 transition hover:border-[color:var(--color-accent)]"
+                          >
+                            <HeroBadge
+                              hero={row.hero}
+                              size="sm"
+                              selected={row.hero === focusedTrendHero?.hero}
+                            />
+                            <span className="grid text-right">
+                              <span className="tnum text-sm font-semibold text-[color:var(--color-neg)]">
+                                {formatSignedPercentagePoints(row.delta)}
+                              </span>
+                              <span className="tnum text-xs text-[color:var(--color-text-muted)]">
+                                Latest {formatPercent(row.latestWinRate)}
+                              </span>
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
+                        No fallers in this window
+                      </p>
+                    )}
+                  </section>
+                </>
+              ) : (
+                <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                  <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
+                    Hero movement
+                  </h3>
+                  <p className="mt-3 text-sm text-[color:var(--color-text-muted)]">
+                    {hasEnoughTrendHistory
+                      ? 'No hero movement in this window'
+                      : 'Not enough trend history'}
+                  </p>
+                </section>
+              )}
+
+              <section className="rounded-[18px] border border-[color:rgba(58,47,31,0.74)] bg-[color:rgba(15,13,10,0.58)] p-4">
+                <h3 className="text-sm font-semibold text-[color:var(--color-text-base)]">
+                  Current snapshot
+                </h3>
+                <div className="mt-3 grid gap-2">
+                  {snapshotSummaryRows.map((row) => (
+                    <a
+                      key={`snapshot-${row.hero}`}
+                      href={buildHeroHref(row.hero, {
+                        w: selectedWindow,
+                        t: selectedTier,
+                        lang: locale,
+                      })}
+                      onMouseEnter={() => setSelectedSnapshotHero(row.hero)}
+                      onFocus={() => setSelectedSnapshotHero(row.hero)}
+                      className="flex items-center justify-between gap-3 rounded-[12px] px-1 py-1 transition hover:text-[color:var(--color-accent-bright)]"
+                    >
+                      <HeroBadge
+                        hero={row.hero}
+                        size="sm"
+                        selected={row.hero === selectedSnapshotHero}
+                      />
+                      <span className="tnum text-sm text-[color:var(--color-accent-bright)]">
+                        {formatPercent(row.winRate)}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            </aside>
           </div>
         </section>
 
@@ -617,14 +954,18 @@ export default function DailyHeroDashboard({
             </div>
           </div>
 
-          <table className="min-w-full border-collapse">
+          <table className="min-w-full table-fixed border-collapse">
+            <colgroup>
+              {SNAPSHOT_COLUMN_WIDTHS.map((width, index) => (
+                <col key={`${index}:${width}`} style={{ width }} />
+              ))}
+            </colgroup>
             <thead className="bg-[color:rgba(212,162,76,0.12)] text-left text-xs uppercase tracking-[0.22em] text-[color:var(--color-text-muted)]">
               <tr>
                 <SortableHeader label="Hero" className="px-5 py-4" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
                 <SortableHeader label="10W rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
                 <SortableHeader label="Runs" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
                 <SortableHeader label="10 wins" className="px-5 py-4" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
-                <SortableHeader label="P75 days" className="px-5 py-4" activeDirection={sortState.key === 'p75Days' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'p75Days', 'desc'))} />
                 <SortableHeader label="Perfect" className="px-5 py-4" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
                 <SortableHeader label="Gold" className="px-5 py-4" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
                 <SortableHeader label="Silver" className="px-5 py-4" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
@@ -668,9 +1009,6 @@ export default function DailyHeroDashboard({
                     {row.runsTotal == null ? 'N/A' : formatInteger(row.runsTotal)}
                   </td>
                   <td className="px-5 py-4 tnum">{formatInteger(row.wins10w)}</td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {row.p75DaysFor10w == null ? 'N/A' : row.p75DaysFor10w}
-                  </td>
                   <td className="px-5 py-4 tnum">
                     {row.perfectRate === null ? 'N/A' : formatPercent(row.perfectRate)}
                   </td>

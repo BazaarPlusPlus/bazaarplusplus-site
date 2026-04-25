@@ -13,7 +13,6 @@ describe('StatsPageShell', () => {
         title="Card winrate"
         source="local"
         generatedAt="2026-04-18T18:57:46Z"
-        summary={<div>Summary slot</div>}
         filters={<div>Filters slot</div>}
       >
         <div>Table slot</div>
@@ -36,7 +35,10 @@ describe('StatsPageShell', () => {
     expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(cardsLink.className).toContain('text-[color:var(--color-accent-bright)]');
     expect(screen.getByText('Local feed')).toBeInTheDocument();
-    expect(screen.getByText('Summary slot')).toBeInTheDocument();
+    expect(screen.getByText('BazaarPlusPlus analytics')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Card winrate' }).className).not.toContain(
+      'sr-only'
+    );
     expect(screen.getByText('Filters slot')).toBeInTheDocument();
     expect(screen.getByText('Table slot')).toBeInTheDocument();
   });

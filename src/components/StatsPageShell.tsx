@@ -12,7 +12,6 @@ type StatsPageShellProps = {
   title: string;
   source: MetricsSource;
   generatedAt: string;
-  summary: ReactNode;
   filters: ReactNode;
   children: ReactNode;
 };
@@ -30,11 +29,9 @@ export default function StatsPageShell({
   title,
   source,
   generatedAt,
-  summary,
   filters,
   children,
 }: StatsPageShellProps) {
-  const hasOverview = Boolean(summary);
   const formattedGeneratedAt = formatDateTime(generatedAt);
 
   return (
@@ -123,35 +120,29 @@ export default function StatsPageShell({
       </header>
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 sm:px-10 sm:py-14">
-        {hasOverview ? (
-          <section className="relative overflow-hidden">
-            <div className="pointer-events-none absolute inset-0 -z-10">
-              <div className="absolute -left-12 -top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(232,185,74,0.14),transparent_70%)] blur-3xl" />
-              <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(208,90,74,0.06),transparent_70%)] blur-3xl" />
-            </div>
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute -left-12 -top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(232,185,74,0.14),transparent_70%)] blur-3xl" />
+            <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(208,90,74,0.06),transparent_70%)] blur-3xl" />
+          </div>
 
-            <div className="grid gap-8">
-              <div className="max-w-3xl">
-                <p className="eyebrow eyebrow-rule">{eyebrow}</p>
-                <h1 className="mt-3 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.025em] text-[color:var(--color-text-base)] sm:text-[3.2rem]">
-                  {title.split(' ').map((word, i, arr) =>
-                    i === arr.length - 1 ? (
-                      <span key={`${word}:${i}`} className="font-display-italic text-[color:var(--color-accent-bright)]">
-                        {word}
-                      </span>
-                    ) : (
-                      <span key={`${word}:${i}`}>{word} </span>
-                    )
-                  )}
-                </h1>
-              </div>
-
-              {summary ? <div className="grid gap-4 sm:grid-cols-3">{summary}</div> : null}
+          <div className="grid gap-8">
+            <div className="max-w-3xl">
+              <p className="eyebrow eyebrow-rule">{eyebrow}</p>
+              <h1 className="mt-3 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.025em] text-[color:var(--color-text-base)] sm:text-[3.2rem]">
+                {title.split(' ').map((word, i, arr) =>
+                  i === arr.length - 1 ? (
+                    <span key={`${word}:${i}`} className="font-display-italic text-[color:var(--color-accent-bright)]">
+                      {word}
+                    </span>
+                  ) : (
+                    <span key={`${word}:${i}`}>{word} </span>
+                  )
+                )}
+              </h1>
             </div>
-          </section>
-        ) : (
-          <h1 className="sr-only">{title}</h1>
-        )}
+          </div>
+        </section>
 
         {filters}
         {children}

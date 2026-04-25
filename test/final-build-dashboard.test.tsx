@@ -165,9 +165,9 @@ describe('FinalBuildDashboard', () => {
     const amberCoreImage = screen.getByRole('img', { name: 'Amber Core' });
     expect(amberCoreImage.closest('[title="Amber Core"]')).not.toBeNull();
     const headers = screen.getAllByRole('columnheader').map((header) => header.textContent);
-    expect(headers.at(-1)).toContain('Representative user');
+    expect(headers.at(-1)).toContain('Contributor');
     expect(screen.getByText('Dooley Builder')).toBeInTheDocument();
-    expect(screen.getByText('4 runs')).toBeInTheDocument();
+    expect(screen.queryByText('4 runs')).not.toBeInTheDocument();
     expect(screen.queryByText('5/10 slots')).not.toBeInTheDocument();
     expect(screen.queryByText(/Turbo/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Vanessa' })).toBeInTheDocument();

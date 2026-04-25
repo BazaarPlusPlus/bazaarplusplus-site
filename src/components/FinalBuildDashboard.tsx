@@ -50,14 +50,6 @@ function formatGoldScore(value: number): string {
   return value.toFixed(3);
 }
 
-function formatRepresentativeRunCount(value: number | null | undefined): string | null {
-  if (typeof value !== 'number') {
-    return null;
-  }
-
-  return `${formatInteger(value)} ${value === 1 ? 'run' : 'runs'}`;
-}
-
 export default function FinalBuildDashboard({
   locale,
   manifest,
@@ -140,7 +132,6 @@ export default function FinalBuildDashboard({
       title="Final builds"
       source={source}
       generatedAt={manifest.generatedAt}
-      summary={null}
       filters={
         <ScopeFilterPanel
           ariaLabel="Build scope filters"
@@ -192,7 +183,7 @@ export default function FinalBuildDashboard({
                 activeDirection={sortState.key === 'rank' ? sortState.direction : undefined}
                 onToggle={() => setSortState((current) => toggleSort(current, 'rank', 'asc'))}
               />
-              <th className="px-5 py-4">Representative user</th>
+              <th className="px-5 py-4">Contributor</th>
             </tr>
           }
           renderRow={(row) => (
@@ -223,15 +214,10 @@ export default function FinalBuildDashboard({
                     <div className="truncate font-medium text-[color:var(--color-text-base)]">
                       {row.representative_user_display_name}
                     </div>
-                    {formatRepresentativeRunCount(row.representative_user_run_count) ? (
-                      <div className="text-xs text-[color:var(--color-text-muted)]">
-                        {formatRepresentativeRunCount(row.representative_user_run_count)}
-                      </div>
-                    ) : null}
                   </div>
                 ) : (
                   <span className="text-xs text-[color:var(--color-text-muted)]">
-                    No representative user
+                    No contributor
                   </span>
                 )}
               </td>

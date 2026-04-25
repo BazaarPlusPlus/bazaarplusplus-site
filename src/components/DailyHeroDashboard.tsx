@@ -510,7 +510,6 @@ export default function DailyHeroDashboard({
       title="Hero overview"
       source={source}
       generatedAt={generatedAt}
-      summary={null}
       filters={null}
     >
       <section className="grid gap-6">

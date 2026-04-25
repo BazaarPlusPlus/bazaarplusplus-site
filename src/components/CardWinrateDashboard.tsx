@@ -329,7 +329,6 @@ export default function CardWinrateDashboard({
       title={title}
       source={source}
       generatedAt={manifest.generatedAt}
-      summary={null}
       filters={
         <section className="grid gap-5">
           <div className="flex flex-wrap items-end justify-between gap-4">

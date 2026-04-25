@@ -1,21 +1,33 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import CardAnalysisDashboard from '../src/features/cards/CardAnalysisDashboard';
 import type {
+  CardDictionary,
+  CardWinratePayload,
   CardWinrateViewRow,
   ItemInclusionViewRow,
   ItemUpliftViewRow,
   ManifestPayload,
 } from '../src/shared/lib/metrics';
+import type { RuntimeMetricsClient } from '../src/shared/lib/metrics-client';
 
 function renderWithQueryClient(ui: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return { promise, resolve };
 }
 
 describe('CardAnalysisDashboard', () => {
@@ -234,5 +246,126 @@ describe('CardAnalysisDashboard', () => {
     expect(window.location.search).toContain('m=uplift');
     expect(window.location.search).not.toContain('lang=');
     expect(window.location.search).not.toContain('pm=');
+  });
+
+  test('keeps the current card table visible while a new window loads', async () => {
+    window.history.replaceState({}, '', '/cards?w=1d&t=all');
+
+    const manifest: ManifestPayload = {
+      generatedAt: '2026-04-25T14:46:33Z',
+      current_patch_id: null,
+      windows: {
+        '1d': {
+          start: '2026-04-24T00:00:00Z',
+          end: '2026-04-25T00:00:00Z',
+          patch_transition: false,
+        },
+        '7d': {
+          start: '2026-04-18T00:00:00Z',
+          end: '2026-04-25T00:00:00Z',
+          patch_transition: false,
+        },
+      },
+      files: [
+        {
+          path: 'item_winrate/1d/all.json',
+          metric: 'item_winrate',
+          window: '1d',
+          rating_tier: 'all',
+          rowCount: 1,
+        },
+        {
+          path: 'item_winrate/7d/all.json',
+          metric: 'item_winrate',
+          window: '7d',
+          rating_tier: 'all',
+          rowCount: 1,
+        },
+      ],
+    };
+    const cardDictionary: CardDictionary = {
+      'card-1d': {
+        name: { en: 'Amber Core' },
+        image_url: 'https://img.example/amber-core.png',
+        size: 'medium',
+      },
+      'card-7d': {
+        name: { en: 'Chronobarrier' },
+        image_url: 'https://img.example/chronobarrier.png',
+        size: 'medium',
+      },
+    };
+    const oneDayPayload: CardWinratePayload = {
+      metric: 'item_winrate',
+      generatedAt: manifest.generatedAt,
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Mak',
+          template_id: 'card-1d',
+          appearances: 12,
+          wins: 9,
+          win_rate: 0.75,
+          win_rate_wilson_lower: 0.7,
+        },
+      ],
+    };
+    const sevenDayPayload: CardWinratePayload = {
+      metric: 'item_winrate',
+      generatedAt: manifest.generatedAt,
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Mak',
+          template_id: 'card-7d',
+          appearances: 44,
+          wins: 22,
+          win_rate: 0.5,
+          win_rate_wilson_lower: 0.45,
+        },
+      ],
+    };
+    const sevenDayDeferred = createDeferred<CardWinratePayload>();
+    const client = {
+      getSource: () => 'remote',
+      getManifest: vi.fn(),
+      getCardDictionary: vi.fn(),
+      getCardWinrate: vi.fn((window) =>
+        window === '7d' ? sevenDayDeferred.promise : Promise.resolve(oneDayPayload)
+      ),
+      getItemUplift: vi.fn(),
+      getItemInclusion: vi.fn(),
+      getHeroWinrateDaily: vi.fn(),
+      getHeroOverview: vi.fn(),
+      getFinalBuilds: vi.fn(),
+    } satisfies RuntimeMetricsClient;
+
+    renderWithQueryClient(
+      <CardAnalysisDashboard
+        locale="en"
+        manifest={manifest}
+        initialSelectedMetric="winrate"
+        initialSelectedTier="all"
+        initialSelectedWindow="1d"
+        source="remote"
+        client={client}
+        cardDictionary={cardDictionary}
+      />
+    );
+
+    expect(await screen.findByText('Amber Core')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '7D' }));
+
+    expect(screen.getByText('Amber Core')).toBeInTheDocument();
+    expect(screen.queryByText('Loading card data')).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /Updating 7D All players data/i })).toBeInTheDocument();
+
+    sevenDayDeferred.resolve(sevenDayPayload);
+
+    await waitFor(() => {
+      expect(screen.getByText('Chronobarrier')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Amber Core')).not.toBeInTheDocument();
   });
 });

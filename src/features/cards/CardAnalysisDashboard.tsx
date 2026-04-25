@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
   CardDictionary,
@@ -27,6 +27,8 @@ import type { MetricsRequestOptions, RuntimeMetricsClient } from '../../shared/l
 import {
   formatInteger,
   formatPercent,
+  TIER_LABELS,
+  WINDOW_LABELS,
 } from '../../shared/lib/dashboard';
 import { getHeroColor } from '../../shared/lib/heroes';
 import {
@@ -157,6 +159,14 @@ function loadSelectedCardPayload(
   return client.getCardWinrate(window, tier, requestOptions);
 }
 
+function getCardPayloadQueryKey(
+  metric: CardMetric,
+  window: MetricWindow,
+  tier: RatingTier
+) {
+  return ['card-metric-payload', metric, window, tier] as const;
+}
+
 function buildSelectedCardRows(
   metric: CardMetric,
   payload: CardMetricPayload,
@@ -229,6 +239,7 @@ export default function CardAnalysisDashboard({
   upliftByWindow = {},
   inclusionByWindow = {},
 }: CardAnalysisDashboardProps) {
+  const queryClient = useQueryClient();
   const manifestWindows = useMemo(() => getWindowOptionsFromManifest(manifest), [manifest]);
   const initialSelection = useMemo(
     () =>
@@ -270,8 +281,27 @@ export default function CardAnalysisDashboard({
   );
   const canLoadSelectedPayload =
     availableWindows.includes(selectedWindow) && tierOptions.includes(selectedTier);
+  const prefetchCardPayload = useCallback(
+    (metric: CardMetric, window: MetricWindow, tier: RatingTier) => {
+      if (!client || !cardDictionary) {
+        return;
+      }
+
+      const windows = getMetricWindows(manifest, metric);
+      const tiers = getMetricTiers(manifest, window, metric);
+      if (!windows.includes(window) || !tiers.includes(tier)) {
+        return;
+      }
+
+      void queryClient.prefetchQuery({
+        queryKey: getCardPayloadQueryKey(metric, window, tier),
+        queryFn: ({ signal }) => loadSelectedCardPayload(client, metric, window, tier, { signal }),
+      });
+    },
+    [cardDictionary, client, manifest, queryClient]
+  );
   const remotePayloadQuery = useQuery({
-    queryKey: ['card-metric-payload', selectedMetric, selectedWindow, selectedTier],
+    queryKey: getCardPayloadQueryKey(selectedMetric, selectedWindow, selectedTier),
     queryFn: ({ signal }) => {
       if (!client) {
         throw new Error('Missing metrics client');
@@ -280,6 +310,8 @@ export default function CardAnalysisDashboard({
       return loadSelectedCardPayload(client, selectedMetric, selectedWindow, selectedTier, { signal });
     },
     enabled: Boolean(client && cardDictionary && canLoadSelectedPayload),
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === selectedMetric ? previousData : undefined,
   });
 
   useEffect(() => {
@@ -297,6 +329,35 @@ export default function CardAnalysisDashboard({
   useEffect(() => {
     setSortState(getDefaultCardSort(selectedMetric));
   }, [selectedMetric]);
+
+  useEffect(() => {
+    if (!remotePayloadQuery.data || !client || !cardDictionary || !canLoadSelectedPayload) {
+      return;
+    }
+
+    availableWindows.forEach((window) => {
+      if (window !== selectedWindow) {
+        prefetchCardPayload(selectedMetric, window, selectedTier);
+      }
+    });
+
+    tierOptions.forEach((tier) => {
+      if (tier !== selectedTier) {
+        prefetchCardPayload(selectedMetric, selectedWindow, tier);
+      }
+    });
+  }, [
+    availableWindows,
+    canLoadSelectedPayload,
+    cardDictionary,
+    client,
+    prefetchCardPayload,
+    remotePayloadQuery.data,
+    selectedMetric,
+    selectedTier,
+    selectedWindow,
+    tierOptions,
+  ]);
 
   const preloadedPayload = useMemo(() => {
     if (selectedMetric === 'uplift') {
@@ -336,6 +397,8 @@ export default function CardAnalysisDashboard({
   }, [cardDictionary, locale, remotePayloadQuery.data, selectedMetric]);
   const usesRemotePayloads = Boolean(client && cardDictionary);
   const isRowsLoading = usesRemotePayloads && remotePayloadQuery.isPending;
+  const isRowsRefreshing =
+    usesRemotePayloads && remotePayloadQuery.isFetching && !remotePayloadQuery.isPending;
   const rows = usesRemotePayloads
     ? remoteRows
     : ((preloadedPayload?.rows ?? []) as CardWorkspaceRow[]);
@@ -397,6 +460,7 @@ export default function CardAnalysisDashboard({
   const columnWidths = getCardTableColumnWidths(selectedMetric);
 
   const totalRows = sortedRows.length;
+  const refreshLabel = `Updating ${WINDOW_LABELS[selectedWindow]} ${TIER_LABELS[selectedTier]} data`;
 
   return (
     <StatsPageShell
@@ -454,11 +518,13 @@ export default function CardAnalysisDashboard({
             onWindowSelect={setSelectedWindow}
             onTierSelect={setSelectedTier}
             onHeroSelect={setSelectedHero}
+            onWindowPreview={(window) => prefetchCardPayload(selectedMetric, window, selectedTier)}
+            onTierPreview={(tier) => prefetchCardPayload(selectedMetric, selectedWindow, tier)}
           />
         </section>
       }
     >
-      <section className="surface overflow-hidden">
+      <section className="surface relative overflow-hidden" aria-busy={isRowsLoading || isRowsRefreshing}>
         {isRowsLoading ? (
           <div role="status" className="px-6 py-8 text-sm text-[color:var(--color-text-muted)]">
             Loading card data
@@ -468,123 +534,135 @@ export default function CardAnalysisDashboard({
             Card data unavailable
           </div>
         ) : (
-          <VirtualizedMetricTable
-            ariaLabel={metricTitle}
-            columnCount={columnCount}
-            columnWidths={columnWidths}
-            rows={sortedRows}
-            rowHeight={88}
-            viewportHeight={880}
-            getRowKey={(row) => `${row.hero}:${row.template_id}`}
-            columns={
-              <tr>
-                <th className="px-5 py-4">Card</th>
-                <SortableHeader
-                  label="Hero"
-                  className="px-5 py-4"
-                  activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
-                  onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
-                />
-                <SortableHeader
-                  label="Name"
-                  className="px-5 py-4"
-                  activeDirection={sortState.key === 'name' ? sortState.direction : undefined}
-                  onToggle={() => setSortState((current) => toggleSort(current, 'name', 'asc'))}
-                />
+          <div className={remotePayloadQuery.isPlaceholderData ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
+            {isRowsRefreshing ? (
+              <div
+                role="status"
+                aria-label={refreshLabel}
+                aria-live="polite"
+                className="absolute right-4 top-4 z-20 rounded-full border border-[color:var(--color-accent-deep)] bg-[color:rgba(18,14,9,0.94)] px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-accent-bright)] shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
+              >
+                {refreshLabel}
+              </div>
+            ) : null}
+            <VirtualizedMetricTable
+              ariaLabel={metricTitle}
+              columnCount={columnCount}
+              columnWidths={columnWidths}
+              rows={sortedRows}
+              rowHeight={88}
+              viewportHeight={880}
+              getRowKey={(row) => `${row.hero}:${row.template_id}`}
+              columns={
+                <tr>
+                  <th className="px-5 py-4">Card</th>
+                  <SortableHeader
+                    label="Hero"
+                    className="px-5 py-4"
+                    activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
+                    onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
+                  />
+                  <SortableHeader
+                    label="Name"
+                    className="px-5 py-4"
+                    activeDirection={sortState.key === 'name' ? sortState.direction : undefined}
+                    onToggle={() => setSortState((current) => toggleSort(current, 'name', 'asc'))}
+                  />
+                  {selectedMetric === 'uplift' ? (
+                    <>
+                      <SortableHeader label="Uplift" className="px-5 py-4" activeDirection={sortState.key === 'uplift' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'uplift', 'desc'))} />
+                      <SortableHeader label="CI lower" className="px-5 py-4" activeDirection={sortState.key === 'ciLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciLower', 'desc'))} />
+                      <SortableHeader label="CI upper" className="px-5 py-4" activeDirection={sortState.key === 'ciUpper' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciUpper', 'desc'))} />
+                      <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
+                      <SortableHeader label="Runs without" className="px-5 py-4" activeDirection={sortState.key === 'runsWithout' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWithout', 'desc'))} />
+                    </>
+                  ) : selectedMetric === 'inclusion' ? (
+                    <>
+                      <SortableHeader label="Inclusion" className="px-5 py-4" activeDirection={sortState.key === 'inclusionRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'inclusionRate', 'desc'))} />
+                      <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
+                      <SortableHeader label="Hero 10W total" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal10w', 'desc'))} />
+                    </>
+                  ) : (
+                    <>
+                      <SortableHeader label="Win rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
+                      <SortableHeader label="Appearances" className="px-5 py-4" activeDirection={sortState.key === 'appearances' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'appearances', 'desc'))} />
+                      <SortableHeader label="Wins" className="px-5 py-4" activeDirection={sortState.key === 'wins' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins', 'desc'))} />
+                    </>
+                  )}
+                </tr>
+              }
+              renderRow={(row) => (
+                <tr
+                  key={`${row.hero}:${row.template_id}`}
+                  className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+                  style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
+                >
+                <td className="px-5 py-4">
+                  <CardThumb
+                    templateId={row.template_id}
+                    name={row.display_name}
+                    imageUrl={row.image_url}
+                    cardSize={row.card_size}
+                  />
+                </td>
+                <td className="px-5 py-4">
+                  <HeroBadge hero={row.hero} size="sm" />
+                </td>
+                <td className="px-5 py-4 font-medium text-[color:var(--color-text-base)]">{row.display_name}</td>
                 {selectedMetric === 'uplift' ? (
                   <>
-                    <SortableHeader label="Uplift" className="px-5 py-4" activeDirection={sortState.key === 'uplift' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'uplift', 'desc'))} />
-                    <SortableHeader label="CI lower" className="px-5 py-4" activeDirection={sortState.key === 'ciLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciLower', 'desc'))} />
-                    <SortableHeader label="CI upper" className="px-5 py-4" activeDirection={sortState.key === 'ciUpper' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciUpper', 'desc'))} />
-                    <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
-                    <SortableHeader label="Runs without" className="px-5 py-4" activeDirection={sortState.key === 'runsWithout' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWithout', 'desc'))} />
+                    <td
+                      className={`px-5 py-4 tnum text-[0.95rem] font-semibold ${
+                        (row as ItemUpliftViewRow).uplift >= 0
+                          ? 'text-[color:var(--color-pos)]'
+                          : 'text-[color:var(--color-neg)]'
+                      }`}
+                    >
+                      {(row as ItemUpliftViewRow).uplift >= 0 ? '+' : ''}
+                      {formatPercent((row as ItemUpliftViewRow).uplift)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {formatPercent((row as ItemUpliftViewRow).uplift_ci_95_lower)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {formatPercent((row as ItemUpliftViewRow).uplift_ci_95_upper)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {formatInteger((row as ItemUpliftViewRow).runs_with)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {formatInteger((row as ItemUpliftViewRow).runs_without)}
+                    </td>
                   </>
                 ) : selectedMetric === 'inclusion' ? (
                   <>
-                    <SortableHeader label="Inclusion" className="px-5 py-4" activeDirection={sortState.key === 'inclusionRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'inclusionRate', 'desc'))} />
-                    <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
-                    <SortableHeader label="Hero 10W total" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal10w', 'desc'))} />
+                    <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
+                      {formatPercent((row as ItemInclusionViewRow).inclusion_rate)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {formatInteger((row as ItemInclusionViewRow).runs_with_card)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {formatInteger((row as ItemInclusionViewRow).runs_total_10w)}
+                    </td>
                   </>
                 ) : (
                   <>
-                    <SortableHeader label="Win rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
-                    <SortableHeader label="Appearances" className="px-5 py-4" activeDirection={sortState.key === 'appearances' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'appearances', 'desc'))} />
-                    <SortableHeader label="Wins" className="px-5 py-4" activeDirection={sortState.key === 'wins' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins', 'desc'))} />
+                    <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
+                      {formatPercent((row as CardWinrateViewRow).win_rate)}
+                    </td>
+                    <td className="px-5 py-4 tnum">
+                      {formatInteger((row as CardWinrateViewRow).appearances)}
+                    </td>
+                    <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
+                      {formatInteger((row as CardWinrateViewRow).wins)}
+                    </td>
                   </>
                 )}
               </tr>
-            }
-            renderRow={(row) => (
-              <tr
-                key={`${row.hero}:${row.template_id}`}
-                className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
-                style={{ '--hero-color': getHeroColor(row.hero) } as React.CSSProperties}
-              >
-              <td className="px-5 py-4">
-                <CardThumb
-                  templateId={row.template_id}
-                  name={row.display_name}
-                  imageUrl={row.image_url}
-                  cardSize={row.card_size}
-                />
-              </td>
-              <td className="px-5 py-4">
-                <HeroBadge hero={row.hero} size="sm" />
-              </td>
-              <td className="px-5 py-4 font-medium text-[color:var(--color-text-base)]">{row.display_name}</td>
-              {selectedMetric === 'uplift' ? (
-                <>
-                  <td
-                    className={`px-5 py-4 tnum text-[0.95rem] font-semibold ${
-                      (row as ItemUpliftViewRow).uplift >= 0
-                        ? 'text-[color:var(--color-pos)]'
-                        : 'text-[color:var(--color-neg)]'
-                    }`}
-                  >
-                    {(row as ItemUpliftViewRow).uplift >= 0 ? '+' : ''}
-                    {formatPercent((row as ItemUpliftViewRow).uplift)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatPercent((row as ItemUpliftViewRow).uplift_ci_95_lower)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatPercent((row as ItemUpliftViewRow).uplift_ci_95_upper)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {formatInteger((row as ItemUpliftViewRow).runs_with)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatInteger((row as ItemUpliftViewRow).runs_without)}
-                  </td>
-                </>
-              ) : selectedMetric === 'inclusion' ? (
-                <>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
-                    {formatPercent((row as ItemInclusionViewRow).inclusion_rate)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {formatInteger((row as ItemInclusionViewRow).runs_with_card)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatInteger((row as ItemInclusionViewRow).runs_total_10w)}
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-accent-bright)]">
-                    {formatPercent((row as CardWinrateViewRow).win_rate)}
-                  </td>
-                  <td className="px-5 py-4 tnum">
-                    {formatInteger((row as CardWinrateViewRow).appearances)}
-                  </td>
-                  <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                    {formatInteger((row as CardWinrateViewRow).wins)}
-                  </td>
-                </>
-              )}
-            </tr>
-          )}
-          />
+            )}
+            />
+          </div>
         )}
       </section>
     </StatsPageShell>

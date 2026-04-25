@@ -16,6 +16,8 @@ type ScopeFilterPanelProps = {
   onWindowSelect: (window: MetricWindow) => void;
   onTierSelect: (tier: RatingTier) => void;
   onHeroSelect: (hero: string) => void;
+  onWindowPreview?: (window: MetricWindow) => void;
+  onTierPreview?: (tier: RatingTier) => void;
 };
 
 const SCOPE_TIER_LABELS: Record<RatingTier, string> = {
@@ -36,6 +38,8 @@ export default function ScopeFilterPanel({
   onWindowSelect,
   onTierSelect,
   onHeroSelect,
+  onWindowPreview,
+  onTierPreview,
 }: ScopeFilterPanelProps) {
   return (
     <section
@@ -50,6 +54,7 @@ export default function ScopeFilterPanel({
                 key={option}
                 active={option === selectedWindow}
                 onClick={() => onWindowSelect(option)}
+                onPreview={() => onWindowPreview?.(option)}
               >
                 {WINDOW_LABELS[option]}
               </SegmentedButton>
@@ -64,6 +69,7 @@ export default function ScopeFilterPanel({
                 key={option}
                 active={option === selectedTier}
                 onClick={() => onTierSelect(option)}
+                onPreview={() => onTierPreview?.(option)}
               >
                 {SCOPE_TIER_LABELS[option]}
               </SegmentedButton>
@@ -114,10 +120,12 @@ export function SegmentedControl({ children }: { children: ReactNode }) {
 export function SegmentedButton({
   active,
   onClick,
+  onPreview,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  onPreview?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -125,6 +133,8 @@ export function SegmentedButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
+      onFocus={onPreview}
+      onMouseEnter={onPreview}
       className={`relative shrink-0 rounded-full px-3.5 py-1.5 text-[0.78rem] font-semibold uppercase tracking-[0.12em] transition ${
         active
           ? 'bg-[color:var(--color-accent)] text-[color:#100c06] shadow-[0_4px_12px_rgba(232,185,74,0.32)]'

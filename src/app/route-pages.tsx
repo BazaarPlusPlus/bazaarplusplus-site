@@ -8,6 +8,7 @@ import {
   type CardDictionary,
   getAvailableTiers,
   getAvailableWindows,
+  getCardMetricPayloadMetric,
   parseCardMetric,
   parseMetricWindow,
   parseRatingTier,
@@ -31,13 +32,11 @@ type RoutePageProps = {
   search: string;
 };
 
-type CardsPageData = {
+type ManifestDictionaryPageData = {
   manifest: ManifestPayload;
   source: ReturnType<RuntimeMetricsClient['getSource']>;
   cardDictionary: CardDictionary;
 };
-
-type BuildsPageData = CardsPageData;
 
 function getInitialWindow(manifest: ManifestPayload, search: string): MetricWindow {
   const requestedWindow = parseMetricWindow(new URLSearchParams(search).get('w'));
@@ -62,7 +61,7 @@ function usePageQuery<T>(
   });
 }
 
-function getCombinedProgress(
+export function getManifestDictionaryProgress(
   manifestLoaded: boolean,
   dictionaryLoaded: boolean
 ): PageLoadProgress {
@@ -74,6 +73,40 @@ function getCombinedProgress(
       : 'Loaded card dictionary';
 
   return { completed, total: 2, label };
+}
+
+function useManifestDictionaryPageData(client: RuntimeMetricsClient): {
+  data: ManifestDictionaryPageData | undefined;
+  error: unknown;
+  isLoading: boolean;
+  progress: PageLoadProgress;
+} {
+  const manifestQuery = usePageQuery(
+    ['metrics-manifest'],
+    (signal) => client.getManifest({ signal })
+  );
+  const dictionaryQuery = usePageQuery(
+    ['card-dictionary'],
+    (signal) => client.getCardDictionary({ signal })
+  );
+  const progress = getManifestDictionaryProgress(
+    Boolean(manifestQuery.data),
+    Boolean(dictionaryQuery.data)
+  );
+  const data = manifestQuery.data && dictionaryQuery.data
+    ? {
+        manifest: manifestQuery.data,
+        source: client.getSource(),
+        cardDictionary: dictionaryQuery.data,
+      }
+    : undefined;
+
+  return {
+    data,
+    error: manifestQuery.error ?? dictionaryQuery.error,
+    isLoading: manifestQuery.isLoading || dictionaryQuery.isLoading,
+    progress,
+  };
 }
 
 export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
@@ -121,48 +154,24 @@ function HeroOverviewRouteContent({
 }
 
 export function CardsPage({ client, locale, search }: RoutePageProps) {
-  const manifestQuery = usePageQuery(
-    ['metrics-manifest'],
-    (signal) => client.getManifest({ signal })
-  );
-  const dictionaryQuery = usePageQuery(
-    ['card-dictionary'],
-    (signal) => client.getCardDictionary({ signal })
-  );
-  const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
+  const { data, error, isLoading, progress } = useManifestDictionaryPageData(client);
 
-  if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
+  if (isLoading) {
     return <LoadingScreen locale={locale} progress={progress} />;
   }
 
-  if (!manifestQuery.data || !dictionaryQuery.data) {
-    return <ErrorScreen locale={locale} error={manifestQuery.error ?? dictionaryQuery.error} />;
+  if (!data) {
+    return <ErrorScreen locale={locale} error={error} />;
   }
 
   return (
     <CardsDashboard
-      data={{
-        manifest: manifestQuery.data,
-        source: client.getSource(),
-        cardDictionary: dictionaryQuery.data,
-      }}
+      data={data}
       client={client}
       locale={locale}
       search={search}
     />
   );
-}
-
-function getCardMetricManifestKey(metric: CardMetric): string {
-  if (metric === 'uplift') {
-    return 'item_uplift';
-  }
-
-  if (metric === 'inclusion') {
-    return 'item_inclusion';
-  }
-
-  return 'item_winrate';
 }
 
 function CardsDashboard({
@@ -171,7 +180,7 @@ function CardsDashboard({
   locale,
   search,
 }: {
-  data: CardsPageData;
+  data: ManifestDictionaryPageData;
   client: RuntimeMetricsClient;
   locale: Locale;
   search: string;
@@ -179,7 +188,7 @@ function CardsDashboard({
   const params = new URLSearchParams(search);
   const requestedMetric = parseCardMetric(params.get('m'));
   const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialMetricKey = getCardMetricManifestKey(requestedMetric);
+  const initialMetricKey = getCardMetricPayloadMetric(requestedMetric);
   const initialTierOptions = getAvailableTiers(
     data.manifest,
     initialSelectedWindow,
@@ -202,31 +211,19 @@ function CardsDashboard({
 }
 
 export function BuildsPage({ client, locale, search }: RoutePageProps) {
-  const manifestQuery = usePageQuery(
-    ['metrics-manifest'],
-    (signal) => client.getManifest({ signal })
-  );
-  const dictionaryQuery = usePageQuery(
-    ['card-dictionary'],
-    (signal) => client.getCardDictionary({ signal })
-  );
-  const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
+  const { data, error, isLoading, progress } = useManifestDictionaryPageData(client);
 
-  if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
+  if (isLoading) {
     return <LoadingScreen locale={locale} progress={progress} />;
   }
 
-  if (!manifestQuery.data || !dictionaryQuery.data) {
-    return <ErrorScreen locale={locale} error={manifestQuery.error ?? dictionaryQuery.error} />;
+  if (!data) {
+    return <ErrorScreen locale={locale} error={error} />;
   }
 
   return (
     <BuildsDashboard
-      data={{
-        manifest: manifestQuery.data,
-        source: client.getSource(),
-        cardDictionary: dictionaryQuery.data,
-      }}
+      data={data}
       client={client}
       locale={locale}
       search={search}
@@ -240,7 +237,7 @@ function BuildsDashboard({
   locale,
   search,
 }: {
-  data: BuildsPageData;
+  data: ManifestDictionaryPageData;
   client: RuntimeMetricsClient;
   locale: Locale;
   search: string;

@@ -5,11 +5,10 @@ import { getSiteCopy } from '../../content/site-copy';
 import type {
   CardDictionary,
   CardMetric,
-  CardWinratePayload,
+  CardMetricPayload,
+  CardMetricViewRow,
   CardWinrateViewRow,
-  ItemInclusionPayload,
   ItemInclusionViewRow,
-  ItemUpliftPayload,
   ItemUpliftViewRow,
   Locale,
   ManifestPayload,
@@ -18,11 +17,10 @@ import type {
   RatingTier,
 } from '../../shared/lib/metrics';
 import {
-  buildCardWinrateViewRows,
-  buildItemInclusionViewRows,
-  buildItemUpliftViewRows,
+  buildCardMetricViewRows,
   getAvailableTiers,
   getAvailableWindowsForMetric,
+  getCardMetricPayloadMetric,
 } from '../../shared/lib/metrics';
 import type { MetricsRequestOptions, RuntimeMetricsClient } from '../../shared/lib/metrics-client';
 import {
@@ -53,15 +51,7 @@ type ViewPayload<T> = {
   rows: T[];
 };
 
-type CardWorkspaceRow =
-  | CardWinrateViewRow
-  | ItemUpliftViewRow
-  | ItemInclusionViewRow;
-
-type CardMetricPayload =
-  | CardWinratePayload
-  | ItemUpliftPayload
-  | ItemInclusionPayload;
+type CardWorkspaceRow = CardMetricViewRow;
 
 type CardAnalysisDashboardProps = {
   locale: Locale;
@@ -127,18 +117,6 @@ function getCardTableColumnWidths(metric: CardMetric): string[] {
   return CARD_WINRATE_COLUMN_WIDTHS;
 }
 
-function getMetricDataLabel(metric: CardMetric): string {
-  if (metric === 'uplift') {
-    return 'item_uplift';
-  }
-
-  if (metric === 'inclusion') {
-    return 'item_inclusion';
-  }
-
-  return 'item_winrate';
-}
-
 function loadSelectedCardPayload(
   client: RuntimeMetricsClient,
   metric: CardMetric,
@@ -171,22 +149,14 @@ function buildSelectedCardRows(
   cardDictionary: CardDictionary,
   locale: Locale
 ): CardWorkspaceRow[] {
-  if (metric === 'uplift') {
-    return buildItemUpliftViewRows(payload as ItemUpliftPayload, cardDictionary, locale);
-  }
-
-  if (metric === 'inclusion') {
-    return buildItemInclusionViewRows(payload as ItemInclusionPayload, cardDictionary, locale);
-  }
-
-  return buildCardWinrateViewRows(payload as CardWinratePayload, cardDictionary, locale);
+  return buildCardMetricViewRows(metric, payload, cardDictionary, locale);
 }
 
 function getMetricWindows(
   manifest: ManifestPayload,
   metric: CardMetric
 ): MetricWindow[] {
-  const metricName = getMetricDataLabel(metric);
+  const metricName = getCardMetricPayloadMetric(metric);
   return getAvailableWindowsForMetric(manifest, metricName);
 }
 
@@ -195,7 +165,7 @@ function getMetricTiers(
   window: MetricWindow,
   metric: CardMetric
 ): RatingTier[] {
-  return getAvailableTiers(manifest, window, getMetricDataLabel(metric));
+  return getAvailableTiers(manifest, window, getCardMetricPayloadMetric(metric));
 }
 
 function getMetricTitle(metric: CardMetric, copy: ReturnType<typeof getSiteCopy>['stats']['cards']): string {

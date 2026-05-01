@@ -196,7 +196,7 @@ describe('CardAnalysisDashboard', () => {
     expect(screen.queryByText('Coverage window')).not.toBeInTheDocument();
     expect(screen.queryByText('Workspace')).not.toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: '卡牌分析' })).toHaveLength(1);
-    expect(screen.getByText('窗口')).toBeInTheDocument();
+    expect(screen.getByText('时间窗口')).toBeInTheDocument();
     expect(screen.queryByText('Time window')).not.toBeInTheDocument();
     expect(screen.queryByText('Scope')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Metric' })).not.toBeInTheDocument();

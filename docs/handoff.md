@@ -1,13 +1,15 @@
 # Handoff
 
-Last updated: 2026-05-01
+Last updated: 2026-05-02
 
 ## Current State
 
 - The app is a Vite + React SPA with localized `zh` and `en` UI copy.
 - Top-level navigation, loading/error/not-found screens, dashboard headers, filter labels, table headers, support modal labels, and footer copy are centralized in `src/content/site-copy.ts`.
+- Cards and builds now share route-frame manifest/card dictionary loading in `src/app/route-pages.tsx`.
+- Card metric key mapping and shared card metadata enrichment now live in `src/shared/lib/metrics.ts`.
 - Existing behavior is preserved: routes, query params, metrics loading, card dictionary localization, and dashboard interactions are unchanged.
-- Verification passed on 2026-05-01:
+- Verification passed on 2026-05-02:
   - `npm test`
   - `npm run typecheck`
   - `npm run build`
@@ -15,7 +17,7 @@ Last updated: 2026-05-01
 ## Important Files
 
 - `src/app/router.ts`: SPA route definitions and canonical path handling.
-- `src/app/route-pages.tsx`: route-level data loading and dashboard entry points.
+- `src/app/route-pages.tsx`: route-level data loading, shared cards/builds route frame, and dashboard entry points.
 - `src/content/site-copy.ts`: localized UI copy.
 - `src/shared/lib/metrics.ts`: metrics payload types, parsers, card display-name localization, and view-row builders.
 - `src/shared/lib/metrics-client.ts`: browser metrics client with retries, timeout, and abort support.
@@ -25,6 +27,6 @@ Last updated: 2026-05-01
 ## Follow-Up Risks
 
 - Hero overview still loads a broad set of hero overview/daily payloads up front. If payload sizes grow, revisit incremental loading or query-level caching by selected tier/window.
-- Cards and builds share duplicated manifest/dictionary query structure in `src/app/route-pages.tsx`; a small shared loader hook would reduce drift.
+- `src/features/heroes/HeroOverviewDashboard.tsx` remains large and should be split cautiously around pure data derivation before rendering structure.
+- `src/shared/components/MetricFilterBar.tsx` appears unused by production code; decide whether to keep it as a fallback UI or remove it in a separate cleanup.
 - There is no human-facing README by project rule. If onboarding needs expand beyond these notes, create a concise README only when it has a concrete reader and purpose.
-

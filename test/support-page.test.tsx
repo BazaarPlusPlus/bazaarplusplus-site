@@ -83,14 +83,14 @@ describe('SupportPage', () => {
     stubSupporterFetch(seededSupporters);
     renderWithClient(<SupportPage locale="zh" />);
 
-    expect(screen.getByText('致谢')).toBeInTheDocument();
-    expect(screen.getByText('有你的支持,让 Bazaar++ 走得更远')).toBeInTheDocument();
+    expect(screen.getByText('支持者名单')).toBeInTheDocument();
+    expect(screen.getByText('感谢每一位支持 Bazaar++ 的朋友。')).toBeInTheDocument();
 
     expect(await screen.findByText('FeiMary')).toBeInTheDocument();
     expect(screen.getByText('EcitsujNT')).toBeInTheDocument();
     expect(screen.getByText('小和尚济海')).toBeInTheDocument();
     expect(screen.getByText('麦麦在逃脆薯饼')).toBeInTheDocument();
-    expect(screen.getByText('也感谢所有未署名的支持者')).toBeInTheDocument();
+    expect(screen.getByText('也感谢所有未署名的支持者。')).toBeInTheDocument();
 
     expect(fetch).toHaveBeenCalledWith(
       'https://bpp-static.bazaarplusplus.com/supporter-list.json',
@@ -118,7 +118,7 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     await waitFor(() =>
-      expect(screen.getByText('名单暂时拉不下来,稍后再试')).toBeInTheDocument()
+      expect(screen.getByText('暂时无法加载支持者名单，请稍后再试。')).toBeInTheDocument()
     );
   });
 
@@ -127,7 +127,7 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     await waitFor(() =>
-      expect(screen.getByText('名单还在收集中,稍后再来看看')).toBeInTheDocument()
+      expect(screen.getByText('支持者名单还在整理中，请稍后再来看看。')).toBeInTheDocument()
     );
   });
 });

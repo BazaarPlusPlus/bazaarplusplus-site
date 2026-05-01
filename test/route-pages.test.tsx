@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 
-import { BuildsPage, CardsPage } from '../src/app/route-pages';
+import { BuildsPage, CardsPage, getManifestDictionaryProgress } from '../src/app/route-pages';
 import type {
   CardDictionary,
   CardWinratePayload,
@@ -34,6 +34,24 @@ function renderWithQueryClient(ui: ReactNode, queryClient = makeQueryClient()) {
 }
 
 describe('route page data queries', () => {
+  test('reports shared manifest and card dictionary loading progress', () => {
+    expect(getManifestDictionaryProgress(false, false)).toEqual({
+      completed: 0,
+      total: 2,
+      label: 'Loading manifest',
+    });
+    expect(getManifestDictionaryProgress(true, false)).toEqual({
+      completed: 1,
+      total: 2,
+      label: 'Loading card dictionary',
+    });
+    expect(getManifestDictionaryProgress(true, true)).toEqual({
+      completed: 2,
+      total: 2,
+      label: 'Loaded card dictionary',
+    });
+  });
+
   test('CardsPage loads only the selected card metric payload and reuses raw data across locale changes', async () => {
     const manifest: ManifestPayload = {
       generatedAt: '2026-04-25T14:46:33Z',

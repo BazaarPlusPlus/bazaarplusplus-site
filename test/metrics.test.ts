@@ -4,10 +4,12 @@ import { describe, expect, test, vi } from 'vitest';
 
 import { createMetricsRepository } from '../src/shared/lib/metrics-node';
 import {
+  buildCardMetricViewRows,
   buildFinalBuildViewRows,
   buildItemInclusionViewRows,
   buildItemUpliftViewRows,
   getCardDisplayName,
+  getCardMetricPayloadMetric,
   parseCardMetric,
   parseLocale,
   type CardDictionary,
@@ -55,6 +57,12 @@ describe('createMetricsRepository', () => {
     expect(getCardDisplayName(dictionary, 'localized', 'zh')).toBe('鹰之护符');
     expect(getCardDisplayName(dictionary, 'localized', 'en')).toBe('Eagle Talisman');
     expect(getCardDisplayName(dictionary, 'def', 'zh')).toBe('Stove');
+  });
+
+  test('maps card dashboard metrics to payload metric names', () => {
+    expect(getCardMetricPayloadMetric('winrate')).toBe('item_winrate');
+    expect(getCardMetricPayloadMetric('uplift')).toBe('item_uplift');
+    expect(getCardMetricPayloadMetric('inclusion')).toBe('item_inclusion');
   });
 
   test('reads metric payloads from the remote repository', async () => {
@@ -343,5 +351,78 @@ describe('createMetricsRepository', () => {
     expect(buildItemInclusionViewRows(inclusion, cardDictionary, 'en')[0]?.displayName).toBe(
       'Amber Core'
     );
+  });
+
+  test('resolves shared card metadata for every card metric view row builder', () => {
+    const cardDictionary: CardDictionary = {
+      'card-a': {
+        name: { en: 'Amber Core', zh: '琥珀核心' },
+        image_url: 'https://img.example/a.png',
+        size: 'large',
+      },
+    };
+    const winrate: CardWinratePayload = {
+      metric: 'item_winrate',
+      generatedAt: '2026-04-18T18:57:46Z',
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Mak',
+          template_id: 'card-a',
+          appearances: 10,
+          wins: 7,
+          win_rate: 0.7,
+          win_rate_wilson_lower: 0.62,
+        },
+      ],
+    };
+    const uplift: ItemUpliftPayload = {
+      metric: 'item_uplift',
+      generatedAt: winrate.generatedAt,
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Mak',
+          template_id: 'card-a',
+          runs_with: 130,
+          runs_without: 162,
+          win_rate_with: 0.8153,
+          win_rate_without: 0.5308,
+          uplift: 0.2845,
+          uplift_ci_95_lower: 0.1827,
+          uplift_ci_95_upper: 0.3862,
+        },
+      ],
+    };
+    const inclusion: ItemInclusionPayload = {
+      metric: 'item_inclusion',
+      generatedAt: winrate.generatedAt,
+      rowCount: 1,
+      rows: [
+        {
+          hero: 'Mak',
+          template_id: 'card-a',
+          runs_total_10w: 4609,
+          runs_with_card: 3007,
+          inclusion_rate: 0.6524191799,
+        },
+      ],
+    };
+
+    expect(buildCardMetricViewRows('winrate', winrate, cardDictionary, 'zh')[0]).toMatchObject({
+      displayName: '琥珀核心',
+      imageUrl: 'https://img.example/a.png',
+      cardSize: 'large',
+    });
+    expect(buildCardMetricViewRows('uplift', uplift, cardDictionary, 'zh')[0]).toMatchObject({
+      displayName: '琥珀核心',
+      imageUrl: 'https://img.example/a.png',
+      cardSize: 'large',
+    });
+    expect(buildCardMetricViewRows('inclusion', inclusion, cardDictionary, 'zh')[0]).toMatchObject({
+      displayName: '琥珀核心',
+      imageUrl: 'https://img.example/a.png',
+      cardSize: 'large',
+    });
   });
 });

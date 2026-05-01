@@ -19,9 +19,9 @@ describe('StatsPageShell', () => {
       </StatsPageShell>
     );
 
-    const cardsLink = screen.getByRole('link', { name: '卡牌数据' });
+    const cardsLink = screen.getByRole('link', { name: '卡牌统计' });
     expect(cardsLink).toHaveAttribute('href', '/cards');
-    expect(screen.getByRole('link', { name: '英雄数据' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '英雄统计' })).toHaveAttribute(
       'href',
       '/heroes'
     );

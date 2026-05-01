@@ -17,19 +17,19 @@ describe('SiteHeader', () => {
   test('renders localized primary and secondary nav with stats live feed pill', () => {
     const { container } = render(<SiteHeader activeSection="cards" locale="zh" liveFeedSource="remote" />);
 
-    expect(screen.getByRole('link', { name: '英雄数据' })).toHaveAttribute('href', '/heroes');
-    expect(screen.getByRole('link', { name: '卡牌数据' })).toHaveAttribute('href', '/cards');
+    expect(screen.getByRole('link', { name: '英雄统计' })).toHaveAttribute('href', '/heroes');
+    expect(screen.getByRole('link', { name: '卡牌统计' })).toHaveAttribute('href', '/cards');
     expect(screen.getByRole('link', { name: '终局构筑' })).toHaveAttribute('href', '/builds');
 
     expect(screen.getByRole('link', { name: '下载' })).toHaveAttribute('href', '/download');
-    expect(screen.getByRole('link', { name: '赞助' })).toHaveAttribute('href', '/support');
+    expect(screen.getByRole('link', { name: '支持' })).toHaveAttribute('href', '/support');
     expect(screen.queryByRole('link', { name: '支持者' })).not.toBeInTheDocument();
 
     expect(container.querySelector('source')).not.toBeInTheDocument();
     expect(container.querySelector('img[src="/bazaarplusplus-icon.webp"]')).toBeInTheDocument();
     expect(container.querySelector('img[src="/bazaarplusplus-icon.png"]')).not.toBeInTheDocument();
     expect(screen.getByText('实时数据')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '卡牌数据' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: '卡牌统计' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('hides live feed pill on info pages and uses english labels when explicitly selected', () => {

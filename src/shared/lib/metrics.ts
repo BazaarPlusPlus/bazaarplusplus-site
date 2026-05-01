@@ -126,6 +126,18 @@ export type ItemInclusionViewRow = ItemInclusionRow & {
   cardSize: 'small' | 'medium' | 'large';
 };
 
+export type CardMetricPayload =
+  | CardWinratePayload
+  | ItemUpliftPayload
+  | ItemInclusionPayload;
+
+export type CardMetricViewRow =
+  | CardWinrateViewRow
+  | ItemUpliftViewRow
+  | ItemInclusionViewRow;
+
+export type CardMetricPayloadMetric = CardMetricPayload['metric'];
+
 type FinalBuildRow = {
   hero: string;
   sig: string;
@@ -200,6 +212,9 @@ type CardDictionaryEntry = {
 
 export type CardDictionary = Record<string, CardDictionaryEntry>;
 
+const METRIC_WINDOW_ORDER: MetricWindow[] = ['1d', '3d', '7d'];
+const RATING_TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
+
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
 }
@@ -236,6 +251,30 @@ export function parseCardMetric(value: string | null): CardMetric {
   return isCardMetric(value) ? value : 'winrate';
 }
 
+export function getCardMetricPayloadMetric(metric: CardMetric): CardMetricPayloadMetric {
+  if (metric === 'uplift') {
+    return 'item_uplift';
+  }
+
+  if (metric === 'inclusion') {
+    return 'item_inclusion';
+  }
+
+  return 'item_winrate';
+}
+
+function sortMetricWindows(windows: Iterable<MetricWindow>): MetricWindow[] {
+  return Array.from(windows).sort(
+    (a, b) => METRIC_WINDOW_ORDER.indexOf(a) - METRIC_WINDOW_ORDER.indexOf(b)
+  );
+}
+
+function sortRatingTiers(tiers: Iterable<RatingTier>): RatingTier[] {
+  return Array.from(tiers).sort(
+    (a, b) => RATING_TIER_ORDER.indexOf(a) - RATING_TIER_ORDER.indexOf(b)
+  );
+}
+
 export function getAvailableTiers(
   manifest: ManifestPayload,
   window: MetricWindow,
@@ -254,10 +293,7 @@ export function getAvailableTiers(
     }
   }
 
-  return Array.from(tiers).sort((a, b) => {
-    const order: RatingTier[] = ['all', 'low', 'mid', 'high'];
-    return order.indexOf(a) - order.indexOf(b);
-  });
+  return sortRatingTiers(tiers);
 }
 
 export function getAvailableWindowsForMetric(
@@ -277,8 +313,7 @@ export function getAvailableWindowsForMetric(
     }
   }
 
-  const order: MetricWindow[] = ['1d', '3d', '7d'];
-  return Array.from(windows).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return sortMetricWindows(windows);
 }
 
 export function getCommonAvailableTiers(
@@ -302,8 +337,7 @@ export function getCommonAvailableTiers(
     }
   }
 
-  const order: RatingTier[] = ['all', 'low', 'mid', 'high'];
-  return Array.from(initial).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return sortRatingTiers(initial);
 }
 
 export function getAvailableTiersForWindowlessMetric(
@@ -323,10 +357,7 @@ export function getAvailableTiersForWindowlessMetric(
     }
   }
 
-  return Array.from(tiers).sort((a, b) => {
-    const order: RatingTier[] = ['all', 'low', 'mid', 'high'];
-    return order.indexOf(a) - order.indexOf(b);
-  });
+  return sortRatingTiers(tiers);
 }
 
 export function getAvailableWindows(manifest: ManifestPayload): MetricWindow[] {
@@ -334,7 +365,7 @@ export function getAvailableWindows(manifest: ManifestPayload): MetricWindow[] {
     isMetricWindow(window)
   );
 
-  return windows.length > 0 ? windows : ['1d', '3d', '7d'];
+  return windows.length > 0 ? windows : [...METRIC_WINDOW_ORDER];
 }
 
 export function getCardDisplayName(
@@ -344,10 +375,18 @@ export function getCardDisplayName(
 ): string {
   const entry = cardDictionary[templateId];
   if (locale === 'zh') {
-    return entry?.name?.zh ?? entry?.name?.['zh-CN'] ?? entry?.name?.en ?? entry?.name?.['en-US'] ?? templateId;
+    return entry?.name?.zh ??
+      entry?.name?.['zh-CN'] ??
+      entry?.name?.en ??
+      entry?.name?.['en-US'] ??
+      templateId;
   }
 
-  return entry?.name?.en ?? entry?.name?.['en-US'] ?? entry?.name?.zh ?? entry?.name?.['zh-CN'] ?? templateId;
+  return entry?.name?.en ??
+    entry?.name?.['en-US'] ??
+    entry?.name?.zh ??
+    entry?.name?.['zh-CN'] ??
+    templateId;
 }
 
 function getCardSize(value?: string): 'small' | 'medium' | 'large' {
@@ -364,6 +403,20 @@ function getCardSize(value?: string): 'small' | 'medium' | 'large' {
   return 'medium';
 }
 
+function getCardViewMetadata(
+  cardDictionary: CardDictionary,
+  templateId: string,
+  locale: Locale
+): Pick<CardMetricViewRow, 'displayName' | 'imageUrl' | 'cardSize'> {
+  const entry = cardDictionary[templateId];
+
+  return {
+    displayName: getCardDisplayName(cardDictionary, templateId, locale),
+    imageUrl: entry?.image_url,
+    cardSize: getCardSize(entry?.size),
+  };
+}
+
 export function buildCardWinrateViewRows(
   cardWinrate: CardWinratePayload,
   cardDictionary: CardDictionary,
@@ -371,9 +424,7 @@ export function buildCardWinrateViewRows(
 ): CardWinrateViewRow[] {
   return cardWinrate.rows.map((row) => ({
     ...row,
-    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
-    imageUrl: cardDictionary[row.template_id]?.image_url,
-    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
+    ...getCardViewMetadata(cardDictionary, row.template_id, locale),
   }));
 }
 
@@ -384,9 +435,7 @@ export function buildItemUpliftViewRows(
 ): ItemUpliftViewRow[] {
   return itemUplift.rows.map((row) => ({
     ...row,
-    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
-    imageUrl: cardDictionary[row.template_id]?.image_url,
-    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
+    ...getCardViewMetadata(cardDictionary, row.template_id, locale),
   }));
 }
 
@@ -397,10 +446,25 @@ export function buildItemInclusionViewRows(
 ): ItemInclusionViewRow[] {
   return itemInclusion.rows.map((row) => ({
     ...row,
-    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
-    imageUrl: cardDictionary[row.template_id]?.image_url,
-    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
+    ...getCardViewMetadata(cardDictionary, row.template_id, locale),
   }));
+}
+
+export function buildCardMetricViewRows(
+  metric: CardMetric,
+  payload: CardMetricPayload,
+  cardDictionary: CardDictionary,
+  locale: Locale
+): CardMetricViewRow[] {
+  if (metric === 'uplift') {
+    return buildItemUpliftViewRows(payload as ItemUpliftPayload, cardDictionary, locale);
+  }
+
+  if (metric === 'inclusion') {
+    return buildItemInclusionViewRows(payload as ItemInclusionPayload, cardDictionary, locale);
+  }
+
+  return buildCardWinrateViewRows(payload as CardWinratePayload, cardDictionary, locale);
 }
 
 export function buildFinalBuildViewRows(

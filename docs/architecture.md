@@ -1,6 +1,6 @@
 # BazaarPlusPlus Stats Architecture
 
-Last updated: 2026-05-01
+Last updated: 2026-05-02
 
 ## Purpose
 
@@ -10,7 +10,7 @@ This site renders BazaarPlusPlus stats dashboards for heroes, cards, final build
 
 1. `src/main.tsx` mounts the React app inside `Providers`.
 2. `src/app/App.tsx` creates the runtime metrics client, reads the browser path and query string, resolves the SPA route, parses locale, and sets document title/lang.
-3. `src/app/route-pages.tsx` uses React Query to load the manifest, card dictionary, and selected metrics payloads.
+3. `src/app/route-pages.tsx` uses React Query to load route data. Cards and builds share a manifest/card dictionary route frame, while hero overview uses a bounded-concurrency page-data loader.
 4. Feature dashboards transform raw payloads into view rows and render shared shells, filters, and tables.
 5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, stats dashboards, download, support, loading, error, and not-found states.
 
@@ -66,7 +66,7 @@ Date and integer formatting live in `src/shared/lib/dashboard.ts`. Percent forma
 ## Performance Notes
 
 - React Query caches queries for five minutes and avoids refetch-on-focus.
-- Cards and builds pages load manifest and dictionary first, then lazily load only the selected metrics payload.
+- Cards and builds pages share manifest/card dictionary queries, then lazily load only the selected metrics payload.
 - Hero overview uses `loadHeroOverviewPageData` and fetches multiple hero overview/daily payloads with bounded concurrency.
 - `VirtualizedMetricTable` is used for large card/build tables.
 
@@ -79,4 +79,3 @@ npm test
 npm run typecheck
 npm run build
 ```
-

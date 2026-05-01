@@ -195,28 +195,28 @@ describe('CardAnalysisDashboard', () => {
     expect(screen.queryByText('Tracked rows')).not.toBeInTheDocument();
     expect(screen.queryByText('Coverage window')).not.toBeInTheDocument();
     expect(screen.queryByText('Workspace')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { name: 'Card analysis' })).toHaveLength(1);
-    expect(screen.getByText('Window')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: '卡牌分析' })).toHaveLength(1);
+    expect(screen.getByText('窗口')).toBeInTheDocument();
     expect(screen.queryByText('Time window')).not.toBeInTheDocument();
     expect(screen.queryByText('Scope')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Metric' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Phase' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Value' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Win rate' })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: '胜率' })[0]).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
-    const scopeFilters = screen.getByRole('region', { name: 'Card scope filters' });
-    const tierGroup = within(scopeFilters).getByRole('group', { name: 'Tier' });
+    const scopeFilters = screen.getByRole('region', { name: '卡牌范围筛选' });
+    const tierGroup = within(scopeFilters).getByRole('group', { name: '分段' });
     expect(tierGroup.parentElement?.className).toContain('gap-x-10');
-    expect(within(tierGroup).getByRole('button', { name: 'All' })).toBeInTheDocument();
+    expect(within(tierGroup).getByRole('button', { name: '全部' })).toBeInTheDocument();
     expect(within(tierGroup).queryByRole('button', { name: 'Low' })).not.toBeInTheDocument();
     expect(within(tierGroup).queryByRole('button', { name: 'Mid' })).not.toBeInTheDocument();
-    expect(within(tierGroup).getByRole('button', { name: 'High' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(tierGroup).getByRole('button', { name: '高' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: 'All players' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Low rank' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mid rank' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'High rank' })).not.toBeInTheDocument();
-    const heroGroup = within(scopeFilters).getByRole('group', { name: 'Hero' });
-    expect(within(heroGroup).getByRole('button', { name: 'All' })).toBeInTheDocument();
+    const heroGroup = within(scopeFilters).getByRole('group', { name: '英雄' });
+    expect(within(heroGroup).getByRole('button', { name: '全部' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mak' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Enchants' })).not.toBeInTheDocument();
@@ -224,24 +224,24 @@ describe('CardAnalysisDashboard', () => {
     expect(await screen.findByText('75.0%')).toBeInTheDocument();
     expect(window.location.search).not.toContain('pm=');
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Win rate' })[0]!);
-    expect(screen.getAllByRole('button', { name: 'Win rate' })[0]).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getAllByRole('button', { name: '胜率' })[0]!);
+    expect(screen.getAllByRole('button', { name: '胜率' })[0]).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('75.0%')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Brass Bug' })).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Eagle Talisman' })).not.toBeInTheDocument();
     expect(window.location.search).toContain('hero=Mak');
-    fireEvent.click(within(heroGroup).getByRole('button', { name: 'All' }));
+    fireEvent.click(within(heroGroup).getByRole('button', { name: '全部' }));
     expect(await screen.findByText('62.8%')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Eagle Talisman' })).toBeInTheDocument();
     expect(window.location.search).not.toContain('hero=');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Win rate' })[1]!);
+    fireEvent.click(screen.getAllByRole('button', { name: '胜率' })[1]!);
     const cardRows = screen
       .getAllByRole('row')
       .filter((row) => row.textContent?.includes('Eagle Talisman') || row.textContent?.includes('Brass Bug'));
     expect(cardRows[0]?.textContent).toContain('Brass Bug');
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Uplift' })[0]!);
-    expect(screen.getAllByRole('button', { name: 'Uplift' })[0]).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getAllByRole('button', { name: '提升' })[0]!);
+    expect(screen.getAllByRole('button', { name: '提升' })[0]).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('+28.4%')).toBeInTheDocument();
     expect(window.location.search).toContain('m=uplift');
     expect(window.location.search).not.toContain('lang=');

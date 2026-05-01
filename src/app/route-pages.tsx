@@ -84,11 +84,11 @@ export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
   );
 
   if (isLoading) {
-    return <LoadingScreen progress={progress} />;
+    return <LoadingScreen locale={locale} progress={progress} />;
   }
 
   if (!data) {
-    return <ErrorScreen error={error} />;
+    return <ErrorScreen locale={locale} error={error} />;
   }
 
   return <HeroOverviewDashboard data={data} locale={locale} search={search} />;
@@ -132,11 +132,11 @@ export function CardsPage({ client, locale, search }: RoutePageProps) {
   const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
 
   if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
-    return <LoadingScreen progress={progress} />;
+    return <LoadingScreen locale={locale} progress={progress} />;
   }
 
   if (!manifestQuery.data || !dictionaryQuery.data) {
-    return <ErrorScreen error={manifestQuery.error ?? dictionaryQuery.error} />;
+    return <ErrorScreen locale={locale} error={manifestQuery.error ?? dictionaryQuery.error} />;
   }
 
   return (
@@ -213,11 +213,11 @@ export function BuildsPage({ client, locale, search }: RoutePageProps) {
   const progress = getCombinedProgress(Boolean(manifestQuery.data), Boolean(dictionaryQuery.data));
 
   if (manifestQuery.isLoading || dictionaryQuery.isLoading) {
-    return <LoadingScreen progress={progress} />;
+    return <LoadingScreen locale={locale} progress={progress} />;
   }
 
   if (!manifestQuery.data || !dictionaryQuery.data) {
-    return <ErrorScreen error={manifestQuery.error ?? dictionaryQuery.error} />;
+    return <ErrorScreen locale={locale} error={manifestQuery.error ?? dictionaryQuery.error} />;
   }
 
   return (

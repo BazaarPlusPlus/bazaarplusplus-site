@@ -124,7 +124,7 @@ export default function SupportPage({ locale }: SupportPageProps) {
                 {copy.wechat.title}
               </h2>
               <span className="text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-text-faint)]">
-                CN
+                {copy.wechat.regionLabel}
               </span>
             </div>
             <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">
@@ -146,7 +146,7 @@ export default function SupportPage({ locale }: SupportPageProps) {
                 {copy.kofi.title}
               </h2>
               <span className="text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-text-faint)]">
-                Global
+                {copy.kofi.regionLabel}
               </span>
             </div>
             <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">
@@ -205,7 +205,7 @@ export default function SupportPage({ locale }: SupportPageProps) {
           <div
             className="flex h-56 w-56 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white p-3"
             dangerouslySetInnerHTML={{ __html: wechatPayQrSvg }}
-            aria-label="WeChat Pay QR code"
+            aria-label={copy.wechat.qrAriaLabel}
             role="img"
           />
         </div>

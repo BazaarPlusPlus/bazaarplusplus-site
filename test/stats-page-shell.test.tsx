@@ -30,11 +30,11 @@ describe('StatsPageShell', () => {
       '/builds'
     );
     expect(
-      within(screen.getByRole('navigation', { name: 'Primary' })).queryByText('Analytics')
+      within(screen.getByRole('navigation', { name: '主要导航' })).queryByText('Analytics')
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(cardsLink.className).toContain('text-[color:var(--color-accent-bright)]');
-    expect(screen.getByText('Live feed')).toBeInTheDocument();
+    expect(screen.getByText('实时数据')).toBeInTheDocument();
     expect(screen.getByText('BazaarPlusPlus analytics')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Card winrate' }).className).not.toContain(
       'sr-only'

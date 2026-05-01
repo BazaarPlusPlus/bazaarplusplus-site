@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
+import { getSiteCopy } from '../../content/site-copy';
 import type {
   CardDictionary,
   FinalBuildsPayload,
@@ -75,6 +76,8 @@ export default function FinalBuildDashboard({
   cardDictionary,
   rowsByWindow = {},
 }: FinalBuildDashboardProps) {
+  const copy = getSiteCopy(locale);
+  const buildCopy = copy.stats.builds;
   const windowOptions = useMemo(() => getWindowOptionsFromManifest(manifest), [manifest]);
   const initialSelection = useMemo(
     () =>
@@ -166,13 +169,14 @@ export default function FinalBuildDashboard({
     <StatsPageShell
       activeSection="builds"
       locale={locale}
-      eyebrow="Bazaar Almanac · Winning blueprints"
-      title="Final builds"
+      eyebrow={buildCopy.eyebrow}
+      title={buildCopy.title}
       source={source}
       generatedAt={manifest.generatedAt}
       filters={
         <ScopeFilterPanel
-          ariaLabel="Build scope filters"
+          ariaLabel={buildCopy.scopeAriaLabel}
+          locale={locale}
           windowOptions={windowOptions}
           tierOptions={tierOptions}
           selectedWindow={selectedWindow}
@@ -188,15 +192,15 @@ export default function FinalBuildDashboard({
       <section className="surface overflow-hidden">
         {isRowsLoading ? (
           <div role="status" className="px-6 py-8 text-sm text-[color:var(--color-text-muted)]">
-            Loading build data
+            {buildCopy.loading}
           </div>
         ) : remoteBuildsQuery.isError ? (
           <div role="alert" className="px-6 py-8 text-sm text-[color:var(--color-neg)]">
-            Build data unavailable
+            {buildCopy.unavailable}
           </div>
         ) : (
           <VirtualizedMetricTable
-            ariaLabel="Final builds"
+            ariaLabel={buildCopy.tableAriaLabel}
             columnCount={6}
             columnWidths={FINAL_BUILD_COLUMN_WIDTHS}
             rows={sortedRows}
@@ -206,31 +210,31 @@ export default function FinalBuildDashboard({
             columns={
               <tr>
                 <SortableHeader
-                  label="Hero"
+                  label={buildCopy.tableHeaders.hero}
                   className="px-5 py-4"
                   activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
                   onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
                 />
-                <th className="px-5 py-4">Build</th>
+                <th className="px-5 py-4">{buildCopy.tableHeaders.build}</th>
                 <SortableHeader
-                  label="Runs"
+                  label={buildCopy.tableHeaders.runs}
                   className="px-5 py-4"
                   activeDirection={sortState.key === 'runCount' ? sortState.direction : undefined}
                   onToggle={() => setSortState((current) => toggleSort(current, 'runCount', 'desc'))}
                 />
                 <SortableHeader
-                  label="Gold score"
+                  label={buildCopy.tableHeaders.goldScore}
                   className="px-5 py-4"
                   activeDirection={sortState.key === 'goldScore' ? sortState.direction : undefined}
                   onToggle={() => setSortState((current) => toggleSort(current, 'goldScore', 'desc'))}
                 />
                 <SortableHeader
-                  label="Rank"
+                  label={buildCopy.tableHeaders.rank}
                   className="px-5 py-4"
                   activeDirection={sortState.key === 'rank' ? sortState.direction : undefined}
                   onToggle={() => setSortState((current) => toggleSort(current, 'rank', 'asc'))}
                 />
-                <th className="px-5 py-4">Contributor</th>
+                <th className="px-5 py-4">{buildCopy.tableHeaders.contributor}</th>
               </tr>
             }
             renderRow={(row) => (
@@ -245,7 +249,7 @@ export default function FinalBuildDashboard({
               <td className="px-5 py-4">
                 <FinalBuildCardStrip cards={row.build_cards} title={row.card_names.join(', ')} />
               </td>
-              <td className="px-5 py-4 tnum">{formatInteger(row.run_count)}</td>
+              <td className="px-5 py-4 tnum">{formatInteger(row.run_count, locale)}</td>
               <td className="px-5 py-4 tnum font-semibold text-[color:var(--color-accent-bright)]">
                 {formatGoldScore(row.gold_score)}
               </td>
@@ -264,7 +268,7 @@ export default function FinalBuildDashboard({
                   </div>
                 ) : (
                   <span className="text-xs text-[color:var(--color-text-muted)]">
-                    No contributor
+                    {buildCopy.noContributor}
                   </span>
                 )}
               </td>

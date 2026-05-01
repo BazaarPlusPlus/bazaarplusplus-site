@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { getSiteCopy } from '../../content/site-copy';
 import type { Locale, MetricsSource } from '../lib/metrics';
 import { formatDateTime } from '../lib/dashboard';
 import FooterCredit from './FooterCredit';
@@ -28,7 +29,8 @@ export default function StatsPageShell({
   filters,
   children,
 }: StatsPageShellProps) {
-  const formattedGeneratedAt = formatDateTime(generatedAt);
+  const commonCopy = getSiteCopy(locale).common;
+  const formattedGeneratedAt = formatDateTime(generatedAt, locale);
 
   return (
     <div className="relative min-h-screen">
@@ -63,9 +65,9 @@ export default function StatsPageShell({
         {children}
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border-soft)] pt-6 text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-text-faint)]">
-          <FooterCredit />
+          <FooterCredit locale={locale} />
           <span className="tnum">
-            <span className="text-[color:var(--color-text-muted)]">last sync</span> · {formattedGeneratedAt}
+            <span className="text-[color:var(--color-text-muted)]">{commonCopy.lastSync}</span> · {formattedGeneratedAt}
           </span>
         </footer>
       </main>

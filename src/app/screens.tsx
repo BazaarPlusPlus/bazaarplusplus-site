@@ -1,10 +1,32 @@
 import type { PageLoadProgress } from './page-data';
+import { getSiteCopy } from '../content/site-copy';
+import { buildLocalizedHref } from '../shared/lib/dashboard';
+import type { Locale } from '../shared/lib/metrics';
 
 type LoadingScreenProps = {
+  locale?: Locale;
   progress?: PageLoadProgress;
 };
 
-export function LoadingScreen({ progress }: LoadingScreenProps) {
+function translateProgressLabel(label: string, locale: Locale): string {
+  const copy = getSiteCopy(locale).common.loading;
+  const prefixTranslations = [
+    ['Loading ', copy.loadingPrefix],
+    ['Loaded ', copy.loadedPrefix],
+    ['Failed ', copy.failedPrefix],
+  ] as const;
+
+  for (const [sourcePrefix, localizedPrefix] of prefixTranslations) {
+    if (label.startsWith(sourcePrefix)) {
+      return `${localizedPrefix} ${label.slice(sourcePrefix.length)}`;
+    }
+  }
+
+  return label;
+}
+
+export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
+  const copy = getSiteCopy(locale).common.loading;
   const progressPercent =
     progress && progress.total > 0
       ? Math.min(100, Math.round((progress.completed / progress.total) * 100))
@@ -18,17 +40,17 @@ export function LoadingScreen({ progress }: LoadingScreenProps) {
           <span className="relative h-3 w-3 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_18px_rgba(232,185,74,0.7)]" />
         </span>
         <span className="font-display-italic text-lg tracking-[0.18em] text-[color:var(--color-text-muted)]">
-          tallying the bazaar…
+          {copy.title}
         </span>
       </div>
       <div className="grid w-64 gap-2">
         <div className="flex items-center justify-between gap-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
-          <span>{progress ? 'Loading data' : 'Connecting'}</span>
+          <span>{progress ? copy.dataLabel : copy.connectingLabel}</span>
           {progress ? <span className="tnum">{progress.completed} / {progress.total}</span> : null}
         </div>
         <div
           role="progressbar"
-          aria-label="Data loading progress"
+          aria-label={copy.progressAriaLabel}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={progressPercent}
@@ -41,7 +63,7 @@ export function LoadingScreen({ progress }: LoadingScreenProps) {
         </div>
         {progress ? (
           <p className="truncate text-center text-xs text-[color:var(--color-text-muted)]">
-            {progress.label}
+            {translateProgressLabel(progress.label, locale)}
           </p>
         ) : null}
       </div>
@@ -49,42 +71,45 @@ export function LoadingScreen({ progress }: LoadingScreenProps) {
   );
 }
 
-export function ErrorScreen({ error }: { error: unknown }) {
-  const message = error instanceof Error ? error.message : 'Unknown error';
+export function ErrorScreen({ error, locale = 'en' }: { error: unknown; locale?: Locale }) {
+  const copy = getSiteCopy(locale).common.error;
+  const message = error instanceof Error ? error.message : copy.unknownMessage;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
-      <p className="eyebrow eyebrow-rule">A hush falls over the bazaar</p>
+      <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-        The ledger is{' '}
-        <span className="font-display-italic text-[color:var(--color-neg)]">silent</span>
+        {copy.titlePrefix}{' '}
+        <span className="font-display-italic text-[color:var(--color-neg)]">{copy.titleHighlight}</span>
       </h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-[color:var(--color-text-muted)]">
         {message}
       </p>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href="/heroes"
+        href={buildLocalizedHref('/heroes', { lang: locale })}
       >
-        ← Back to hero overview
+        {copy.backToHeroes}
       </a>
     </main>
   );
 }
 
-export function NotFoundScreen() {
+export function NotFoundScreen({ locale = 'en' }: { locale?: Locale }) {
+  const copy = getSiteCopy(locale).common.notFound;
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
-      <p className="eyebrow eyebrow-rule">Off the bazaar map</p>
+      <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-        This page is{' '}
-        <span className="font-display-italic text-[color:var(--color-accent-bright)]">unwritten</span>
+        {copy.titlePrefix}{' '}
+        <span className="font-display-italic text-[color:var(--color-accent-bright)]">{copy.titleHighlight}</span>
       </h1>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href="/heroes"
+        href={buildLocalizedHref('/heroes', { lang: locale })}
       >
-        ← Back to hero overview
+        {copy.backToHeroes}
       </a>
     </main>
   );

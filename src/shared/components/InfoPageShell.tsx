@@ -61,7 +61,7 @@ export default function InfoPageShell({
         {children}
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border-soft)] pt-6 text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-text-faint)]">
-          <FooterCredit />
+          <FooterCredit locale={locale} />
         </footer>
       </main>
     </div>

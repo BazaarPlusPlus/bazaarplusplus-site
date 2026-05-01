@@ -98,5 +98,5 @@ export default function App() {
     return <SupportPage locale={locale} />;
   }
 
-  return <NotFoundScreen />;
+  return <NotFoundScreen locale={locale} />;
 }

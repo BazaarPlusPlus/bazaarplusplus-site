@@ -60,6 +60,7 @@ function buildLocaleToggleHref(targetLocale: Locale): string {
 
 export default function SiteHeader({ activeSection, locale, liveFeedSource }: SiteHeaderProps) {
   const copy = getSiteCopy(locale);
+  const commonCopy = copy.common;
 
   return (
     <header
@@ -70,7 +71,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
       <div className="mx-auto grid w-full max-w-[1440px] items-center gap-4 px-6 py-4 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <a
           href={buildLocalizedHref('/', { lang: locale })}
-          aria-label="BazaarPlusPlus home"
+          aria-label={commonCopy.homeAriaLabel}
           className="group flex w-fit items-center gap-3"
         >
           <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
@@ -89,7 +90,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
           </span>
         </a>
 
-        <nav aria-label="Primary" className="flex min-w-0 items-center justify-center gap-1">
+        <nav aria-label={commonCopy.primaryNavAriaLabel} className="flex min-w-0 items-center justify-center gap-1">
           {STATS_NAV_ITEMS.map((item) => {
             const active = item.key === activeSection;
             const label = copy.primaryNav[item.key];
@@ -132,7 +133,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
                 <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--color-pos)] opacity-50" />
                 <span className="relative h-2 w-2 rounded-full bg-[color:var(--color-pos)] shadow-[0_0_10px_rgba(109,191,122,0.7)]" />
               </span>
-              <span className="text-[color:var(--color-text-base)]">Live feed</span>
+              <span className="text-[color:var(--color-text-base)]">{commonCopy.liveFeed}</span>
             </span>
           ) : null}
 
@@ -140,7 +141,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
             <span aria-hidden="true" className="hidden h-4 w-px bg-[color:var(--color-border-soft)] sm:block" />
           ) : null}
 
-          <nav aria-label="Secondary" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <nav aria-label={commonCopy.secondaryNavAriaLabel} className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {INFO_NAV_ITEMS.map((item) => {
               const active = item.key === activeSection;
               const label = copy.nav[item.key];
@@ -180,7 +181,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
 
           <div
             role="group"
-            aria-label="Language"
+            aria-label={commonCopy.languageLabel}
             className="inline-flex items-center rounded-full border border-[color:var(--color-border-soft)] p-0.5 text-[0.7rem] font-medium tracking-[0.08em]"
           >
             {LOCALE_OPTIONS.map((option) => {

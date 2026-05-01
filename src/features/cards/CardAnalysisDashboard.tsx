@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { getSiteCopy } from '../../content/site-copy';
 import type {
   CardDictionary,
   CardMetric,
@@ -27,7 +28,6 @@ import type { MetricsRequestOptions, RuntimeMetricsClient } from '../../shared/l
 import {
   formatInteger,
   formatPercent,
-  TIER_LABELS,
   WINDOW_LABELS,
 } from '../../shared/lib/dashboard';
 import { getHeroColor } from '../../shared/lib/heroes';
@@ -79,12 +79,10 @@ type CardAnalysisDashboardProps = {
 
 const CARD_METRIC_TABS: Array<{
   key: CardMetric;
-  label: string;
-  ariaLabel?: string;
 }> = [
-  { key: 'winrate', label: 'Win rate' },
-  { key: 'uplift', label: 'Uplift' },
-  { key: 'inclusion', label: 'Inclusion', ariaLabel: 'Card inclusion' },
+  { key: 'winrate' },
+  { key: 'uplift' },
+  { key: 'inclusion' },
 ];
 
 const CARD_WINRATE_COLUMN_WIDTHS = ['11%', '14%', '31%', '14%', '15%', '15%'];
@@ -200,30 +198,8 @@ function getMetricTiers(
   return getAvailableTiers(manifest, window, getMetricDataLabel(metric));
 }
 
-function getMetricTitle(metric: CardMetric): string {
-  return CARD_METRIC_TABS.find((tab) => tab.key === metric)?.label ?? 'Win rate';
-}
-
-function getTopRowDetail(
-  row: CardWorkspaceRow | undefined,
-  metric: CardMetric
-): string {
-  if (!row) {
-    return 'No data';
-  }
-
-  if (metric === 'uplift') {
-    const upliftRow = row as ItemUpliftViewRow;
-    return `${upliftRow.hero} · ${formatPercent(upliftRow.uplift)} uplift`;
-  }
-
-  if (metric === 'inclusion') {
-    const inclusionRow = row as ItemInclusionViewRow;
-    return `${inclusionRow.hero} · ${formatPercent(inclusionRow.inclusion_rate)} inclusion`;
-  }
-
-  const winrateRow = row as CardWinrateViewRow;
-  return `${winrateRow.hero} · ${formatInteger(winrateRow.appearances)} appearances`;
+function getMetricTitle(metric: CardMetric, copy: ReturnType<typeof getSiteCopy>['stats']['cards']): string {
+  return copy.metricTabs[metric].label;
 }
 
 export default function CardAnalysisDashboard({
@@ -239,6 +215,9 @@ export default function CardAnalysisDashboard({
   upliftByWindow = {},
   inclusionByWindow = {},
 }: CardAnalysisDashboardProps) {
+  const copy = getSiteCopy(locale);
+  const cardCopy = copy.stats.cards;
+  const scopeCopy = copy.common.scope;
   const queryClient = useQueryClient();
   const manifestWindows = useMemo(() => getWindowOptionsFromManifest(manifest), [manifest]);
   const initialSelection = useMemo(
@@ -449,8 +428,8 @@ export default function CardAnalysisDashboard({
     () => sortRows(filteredRows, sortState, sortAccessors),
     [filteredRows, sortAccessors, sortState]
   );
-  const title = 'Card analysis';
-  const metricTitle = getMetricTitle(selectedMetric);
+  const title = cardCopy.title;
+  const metricTitle = getMetricTitle(selectedMetric, cardCopy);
   const columnCount =
     selectedMetric === 'uplift'
       ? 8
@@ -460,13 +439,13 @@ export default function CardAnalysisDashboard({
   const columnWidths = getCardTableColumnWidths(selectedMetric);
 
   const totalRows = sortedRows.length;
-  const refreshLabel = `Updating ${WINDOW_LABELS[selectedWindow]} ${TIER_LABELS[selectedTier]} data`;
+  const refreshLabel = `${cardCopy.updating} ${WINDOW_LABELS[selectedWindow]} ${scopeCopy.fullTierLabels[selectedTier]} ${cardCopy.data}`;
 
   return (
     <StatsPageShell
       activeSection="cards"
       locale={locale}
-      eyebrow={`Bazaar Almanac · ${metricTitle} ledger`}
+      eyebrow={`${cardCopy.eyebrowLead}${metricTitle}${cardCopy.eyebrowLedgerSuffix}`}
       title={title}
       source={source}
       generatedAt={manifest.generatedAt}
@@ -475,12 +454,13 @@ export default function CardAnalysisDashboard({
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex flex-wrap items-center gap-1.5">
               {CARD_METRIC_TABS.map((option) => {
+                const optionCopy = cardCopy.metricTabs[option.key];
                 const active = option.key === selectedMetric;
                 return (
                   <button
                     key={option.key}
                     type="button"
-                    aria-label={option.ariaLabel}
+                    aria-label={optionCopy.ariaLabel}
                     aria-pressed={active}
                     onClick={() => setSelectedMetric(option.key)}
                     className={`group relative inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
@@ -497,18 +477,19 @@ export default function CardAnalysisDashboard({
                     >
                       {String(CARD_METRIC_TABS.indexOf(option) + 1).padStart(2, '0')}
                     </span>
-                    {option.label}
+                    {optionCopy.label}
                   </button>
                 );
               })}
             </div>
             <p className="font-display-italic text-[0.78rem] tracking-[0.12em] text-[color:var(--color-text-muted)]">
-              <span className="tnum text-[color:var(--color-accent-bright)]">{formatInteger(totalRows)}</span> cards in view
+              <span className="tnum text-[color:var(--color-accent-bright)]">{formatInteger(totalRows, locale)}</span> {cardCopy.cardsInView}
             </p>
           </div>
 
           <ScopeFilterPanel
-            ariaLabel="Card scope filters"
+            ariaLabel={cardCopy.scopeAriaLabel}
+            locale={locale}
             windowOptions={availableWindows}
             tierOptions={tierOptions}
             selectedWindow={selectedWindow}
@@ -527,11 +508,11 @@ export default function CardAnalysisDashboard({
       <section className="surface relative overflow-hidden" aria-busy={isRowsLoading || isRowsRefreshing}>
         {isRowsLoading ? (
           <div role="status" className="px-6 py-8 text-sm text-[color:var(--color-text-muted)]">
-            Loading card data
+            {cardCopy.loading}
           </div>
         ) : remotePayloadQuery.isError ? (
           <div role="alert" className="px-6 py-8 text-sm text-[color:var(--color-neg)]">
-            Card data unavailable
+            {cardCopy.unavailable}
           </div>
         ) : (
           <div className={remotePayloadQuery.isPlaceholderData ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
@@ -555,38 +536,38 @@ export default function CardAnalysisDashboard({
               getRowKey={(row) => `${row.hero}:${row.template_id}`}
               columns={
                 <tr>
-                  <th className="px-5 py-4">Card</th>
+                  <th className="px-5 py-4">{cardCopy.tableHeaders.card}</th>
                   <SortableHeader
-                    label="Hero"
+                    label={cardCopy.tableHeaders.hero}
                     className="px-5 py-4"
                     activeDirection={sortState.key === 'hero' ? sortState.direction : undefined}
                     onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))}
                   />
                   <SortableHeader
-                    label="Name"
+                    label={cardCopy.tableHeaders.name}
                     className="px-5 py-4"
                     activeDirection={sortState.key === 'name' ? sortState.direction : undefined}
                     onToggle={() => setSortState((current) => toggleSort(current, 'name', 'asc'))}
                   />
                   {selectedMetric === 'uplift' ? (
                     <>
-                      <SortableHeader label="Uplift" className="px-5 py-4" activeDirection={sortState.key === 'uplift' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'uplift', 'desc'))} />
-                      <SortableHeader label="CI lower" className="px-5 py-4" activeDirection={sortState.key === 'ciLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciLower', 'desc'))} />
-                      <SortableHeader label="CI upper" className="px-5 py-4" activeDirection={sortState.key === 'ciUpper' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciUpper', 'desc'))} />
-                      <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
-                      <SortableHeader label="Runs without" className="px-5 py-4" activeDirection={sortState.key === 'runsWithout' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWithout', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.uplift} className="px-5 py-4" activeDirection={sortState.key === 'uplift' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'uplift', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.ciLower} className="px-5 py-4" activeDirection={sortState.key === 'ciLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciLower', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.ciUpper} className="px-5 py-4" activeDirection={sortState.key === 'ciUpper' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'ciUpper', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.runsWith} className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.runsWithout} className="px-5 py-4" activeDirection={sortState.key === 'runsWithout' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWithout', 'desc'))} />
                     </>
                   ) : selectedMetric === 'inclusion' ? (
                     <>
-                      <SortableHeader label="Inclusion" className="px-5 py-4" activeDirection={sortState.key === 'inclusionRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'inclusionRate', 'desc'))} />
-                      <SortableHeader label="Runs with" className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
-                      <SortableHeader label="Hero 10W total" className="px-5 py-4" activeDirection={sortState.key === 'runsTotal10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal10w', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.inclusion} className="px-5 py-4" activeDirection={sortState.key === 'inclusionRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'inclusionRate', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.runsWith} className="px-5 py-4" activeDirection={sortState.key === 'runsWith' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsWith', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.hero10wTotal} className="px-5 py-4" activeDirection={sortState.key === 'runsTotal10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal10w', 'desc'))} />
                     </>
                   ) : (
                     <>
-                      <SortableHeader label="Win rate" className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
-                      <SortableHeader label="Appearances" className="px-5 py-4" activeDirection={sortState.key === 'appearances' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'appearances', 'desc'))} />
-                      <SortableHeader label="Wins" className="px-5 py-4" activeDirection={sortState.key === 'wins' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.winRate} className="px-5 py-4" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.appearances} className="px-5 py-4" activeDirection={sortState.key === 'appearances' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'appearances', 'desc'))} />
+                      <SortableHeader label={cardCopy.tableHeaders.wins} className="px-5 py-4" activeDirection={sortState.key === 'wins' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins', 'desc'))} />
                     </>
                   )}
                 </tr>
@@ -628,10 +609,10 @@ export default function CardAnalysisDashboard({
                       {formatPercent((row as ItemUpliftViewRow).uplift_ci_95_upper)}
                     </td>
                     <td className="px-5 py-4 tnum">
-                      {formatInteger((row as ItemUpliftViewRow).runs_with)}
+                      {formatInteger((row as ItemUpliftViewRow).runs_with, locale)}
                     </td>
                     <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                      {formatInteger((row as ItemUpliftViewRow).runs_without)}
+                      {formatInteger((row as ItemUpliftViewRow).runs_without, locale)}
                     </td>
                   </>
                 ) : selectedMetric === 'inclusion' ? (
@@ -640,10 +621,10 @@ export default function CardAnalysisDashboard({
                       {formatPercent((row as ItemInclusionViewRow).inclusion_rate)}
                     </td>
                     <td className="px-5 py-4 tnum">
-                      {formatInteger((row as ItemInclusionViewRow).runs_with_card)}
+                      {formatInteger((row as ItemInclusionViewRow).runs_with_card, locale)}
                     </td>
                     <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                      {formatInteger((row as ItemInclusionViewRow).runs_total_10w)}
+                      {formatInteger((row as ItemInclusionViewRow).runs_total_10w, locale)}
                     </td>
                   </>
                 ) : (
@@ -652,10 +633,10 @@ export default function CardAnalysisDashboard({
                       {formatPercent((row as CardWinrateViewRow).win_rate)}
                     </td>
                     <td className="px-5 py-4 tnum">
-                      {formatInteger((row as CardWinrateViewRow).appearances)}
+                      {formatInteger((row as CardWinrateViewRow).appearances, locale)}
                     </td>
                     <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                      {formatInteger((row as CardWinrateViewRow).wins)}
+                      {formatInteger((row as CardWinrateViewRow).wins, locale)}
                     </td>
                   </>
                 )}

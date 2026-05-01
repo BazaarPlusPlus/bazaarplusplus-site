@@ -6,23 +6,20 @@ export const WINDOW_LABELS: Record<MetricWindow, string> = {
   '7d': '7D',
 };
 
-export const TIER_LABELS: Record<RatingTier, string> = {
-  all: 'All players',
-  low: 'Low rank',
-  mid: 'Mid rank',
-  high: 'High rank',
-};
+function getIntlLocale(locale: Locale): string {
+  return locale === 'zh' ? 'zh-CN' : 'en-US';
+}
 
 export function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-export function formatInteger(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value);
+export function formatInteger(value: number, locale: Locale = 'en'): string {
+  return new Intl.NumberFormat(getIntlLocale(locale)).format(value);
 }
 
-export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+export function formatDateTime(value: string, locale: Locale = 'en'): string {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -32,8 +29,8 @@ export function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
-export function formatShortDate(value: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+export function formatShortDate(value: string, locale: Locale = 'en'): string {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     month: 'short',
     day: 'numeric',
   }).format(new Date(value));

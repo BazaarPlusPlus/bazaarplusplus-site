@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
+import { getSiteCopy } from '../../content/site-copy';
 import type { CardMetric, Locale, MetricWindow, RatingTier } from '../lib/metrics';
-import { TIER_LABELS, WINDOW_LABELS, buildLocalizedHref } from '../lib/dashboard';
+import { WINDOW_LABELS, buildLocalizedHref } from '../lib/dashboard';
 import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
 
 type MetricFilterBarProps = {
@@ -40,6 +41,8 @@ export default function MetricFilterBar({
   onHeroSelect,
 }: MetricFilterBarProps) {
   const showHeroFilter = heroOptions.length > 0;
+  const copy = getSiteCopy(locale).common;
+  const scopeCopy = copy.scope;
 
   if (compact) {
     return (
@@ -51,14 +54,14 @@ export default function MetricFilterBar({
             <span />
           )}
           <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
-            Metric: <span className="text-[color:var(--color-text-base)]">{metricLabel}</span>
+            {copy.metric}: <span className="text-[color:var(--color-text-base)]">{metricLabel}</span>
           </p>
         </div>
 
         <div className="flex flex-wrap items-start gap-4 sm:gap-6">
           <FilterGroup
             compact
-            label="Window"
+            label={scopeCopy.window}
             options={windowOptions}
             selected={selectedWindow}
             buildHref={(window) =>
@@ -74,7 +77,7 @@ export default function MetricFilterBar({
           />
           <FilterGroup
             compact
-            label="Tier"
+            label={scopeCopy.tier}
             options={tierOptions}
             selected={selectedTier}
             buildHref={(tier) =>
@@ -85,13 +88,13 @@ export default function MetricFilterBar({
                 lang: locale,
               })
             }
-            renderLabel={(tier) => TIER_LABELS[tier]}
+            renderLabel={(tier) => scopeCopy.fullTierLabels[tier]}
             onSelect={onTierSelect}
           />
           {showHeroFilter ? (
             <FilterGroup
               compact
-              label="Hero"
+              label={scopeCopy.hero}
               options={heroOptions}
               selected={selectedHero}
               buildHref={(hero) =>
@@ -103,7 +106,7 @@ export default function MetricFilterBar({
                   lang: locale,
                 })
               }
-              renderLabel={(hero) => renderHeroFilterLabel(hero, true)}
+              renderLabel={(hero) => renderHeroFilterLabel(hero, true, scopeCopy.allHero)}
               onSelect={onHeroSelect}
             />
           ) : null}
@@ -117,18 +120,18 @@ export default function MetricFilterBar({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">
-            Filters
+            {copy.filters}
           </p>
           <h2 className="mt-2 text-xl text-[color:var(--color-text-base)]">{title}</h2>
         </div>
         <p className="text-sm text-[color:var(--color-text-muted)]">
-          Metric: <span className="text-[color:var(--color-text-base)]">{metricLabel}</span>
+          {copy.metric}: <span className="text-[color:var(--color-text-base)]">{metricLabel}</span>
         </p>
       </div>
 
       <div className={`grid gap-3 ${showHeroFilter ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <FilterGroup
-          label="Window"
+          label={scopeCopy.window}
           options={windowOptions}
           selected={selectedWindow}
           buildHref={(window) =>
@@ -143,7 +146,7 @@ export default function MetricFilterBar({
           onSelect={onWindowSelect}
         />
         <FilterGroup
-          label="Tier"
+          label={scopeCopy.tier}
           options={tierOptions}
           selected={selectedTier}
           buildHref={(tier) =>
@@ -154,12 +157,12 @@ export default function MetricFilterBar({
               lang: locale,
             })
           }
-          renderLabel={(tier) => TIER_LABELS[tier]}
+          renderLabel={(tier) => scopeCopy.fullTierLabels[tier]}
           onSelect={onTierSelect}
         />
         {showHeroFilter ? (
           <FilterGroup
-            label="Hero"
+            label={scopeCopy.hero}
             options={heroOptions}
             selected={selectedHero}
             buildHref={(hero) =>
@@ -171,7 +174,7 @@ export default function MetricFilterBar({
                 lang: locale,
               })
             }
-            renderLabel={(hero) => renderHeroFilterLabel(hero, false)}
+            renderLabel={(hero) => renderHeroFilterLabel(hero, false, scopeCopy.allHero)}
             onSelect={onHeroSelect}
           />
         ) : null}
@@ -236,9 +239,9 @@ function FilterGroup<T extends string>({
   );
 }
 
-function renderHeroFilterLabel(hero: string, compact: boolean): ReactNode {
+function renderHeroFilterLabel(hero: string, compact: boolean, allHeroLabel: string): ReactNode {
   if (hero === 'all') {
-    return 'All heroes';
+    return allHeroLabel;
   }
 
   return <HeroFilterLabel hero={hero} compact={compact} />;

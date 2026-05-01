@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
+import { getSiteCopy } from '../../content/site-copy';
 import {
   DEFAULT_LOCALE,
   type HeroOverviewPayload,
@@ -93,11 +94,6 @@ const WINDOW_DAY_COUNT: Record<MetricWindow, number> = {
 };
 const TREND_WINDOW: MetricWindow = '7d';
 const TREND_TIER_OPTIONS: TrendTier[] = ['all', 'mid', 'high'];
-const TREND_TIER_LABELS: Record<TrendTier, string> = {
-  all: 'All',
-  mid: 'Mid',
-  high: 'High',
-};
 const SNAPSHOT_COLUMN_WIDTHS = ['18%', '12%', '11%', '10%', '11%', '10%', '10%', '9%', '9%'];
 
 function isMetricWindow(value: string | null): value is MetricWindow {
@@ -305,6 +301,9 @@ export default function DailyHeroDashboard({
   dailyByTier,
   overviewByWindow,
 }: DailyHeroDashboardProps) {
+  const copy = getSiteCopy(locale);
+  const heroCopy = copy.stats.heroes;
+  const scopeCopy = copy.common.scope;
   const initialSelection = useMemo(
     () =>
       readInitialSelection(
@@ -509,8 +508,8 @@ export default function DailyHeroDashboard({
     <StatsPageShell
       activeSection="heroes"
       locale={locale}
-      eyebrow="Bazaar Almanac · Hero Currents"
-      title="Hero overview"
+      eyebrow={heroCopy.eyebrow}
+      title={heroCopy.title}
       source={source}
       generatedAt={generatedAt}
       filters={null}
@@ -532,16 +531,16 @@ export default function DailyHeroDashboard({
             {/* Row 1, col 1: Header + focus card */}
             <div className="flex flex-col gap-4 lg:h-full">
               <div>
-                <p className="eyebrow eyebrow-rule">{WINDOW_LABELS[TREND_WINDOW]} winrate trend</p>
+                <p className="eyebrow eyebrow-rule">{WINDOW_LABELS[TREND_WINDOW]} {heroCopy.trend.winrateTrend}</p>
                 <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  Hero <span className="font-display-italic text-[color:var(--color-accent-bright)]">currents</span>
+                  {heroCopy.trend.titleLead} <span className="font-display-italic text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
                 </h2>
               </div>
 
               {focusedTrendHero ? (
                 <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 lg:flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="eyebrow text-[0.66rem] tracking-[0.22em]">In focus</span>
+                    <span className="eyebrow text-[0.66rem] tracking-[0.22em]">{heroCopy.trend.inFocus}</span>
                     {focusedDelta ? (
                       <span
                         className={`tnum text-[0.7rem] font-semibold ${
@@ -574,14 +573,14 @@ export default function DailyHeroDashboard({
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div>
-                      <div className="eyebrow text-[0.62rem] tracking-[0.2em]">Latest</div>
+                      <div className="eyebrow text-[0.62rem] tracking-[0.2em]">{heroCopy.trend.latest}</div>
                       <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-accent-bright)]">
                         {formatPercent(focusedTrendHero.latestWinRate)}
                       </div>
                     </div>
                     {focusedDelta ? (
                       <div>
-                        <div className="eyebrow text-[0.62rem] tracking-[0.2em]">Started at</div>
+                        <div className="eyebrow text-[0.62rem] tracking-[0.2em]">{heroCopy.trend.startedAt}</div>
                         <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-text-muted)]">
                           {formatPercent(focusedDelta.first)}
                         </div>
@@ -601,7 +600,7 @@ export default function DailyHeroDashboard({
                   viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
                   className="block h-full w-full"
                   role="img"
-                  aria-label="Hero winrate chart"
+                  aria-label={heroCopy.trend.chartAriaLabel}
                 >
                   <defs>
                     {focusedTrendHero ? (
@@ -661,7 +660,7 @@ export default function DailyHeroDashboard({
                           fontWeight={isLast ? '600' : '400'}
                           textAnchor="middle"
                         >
-                          {formatShortDate(day)}
+                          {formatShortDate(day, locale)}
                         </text>
                       </g>
                     );
@@ -748,7 +747,7 @@ export default function DailyHeroDashboard({
                             onFocus={() => showTrendPoint(point)}
                             onBlur={clearTrendPoint}
                             tabIndex={0}
-                            aria-label={`${heroSeries.hero} ${formatShortDate(point.day)} ${formatPercent(point.winRate)}`}
+                            aria-label={`${heroSeries.hero} ${formatShortDate(point.day, locale)} ${formatPercent(point.winRate)}`}
                           />
                         ))}
                       </g>
@@ -813,7 +812,7 @@ export default function DailyHeroDashboard({
                         fontFamily="JetBrains Mono, monospace"
                         letterSpacing="0.06em"
                       >
-                        {formatShortDate(hoveredTrendPoint.day)}
+                        {formatShortDate(hoveredTrendPoint.day, locale)}
                       </text>
                       <text
                         x={trendTooltipX + POINT_TOOLTIP_WIDTH - 14}
@@ -835,7 +834,7 @@ export default function DailyHeroDashboard({
             <div className="flex items-center gap-3">
               {trendTierOptions.length > 0 ? (
                 <>
-                  <p className="eyebrow whitespace-nowrap text-[0.66rem] tracking-[0.22em]">Tier</p>
+                  <p className="eyebrow whitespace-nowrap text-[0.66rem] tracking-[0.22em]">{scopeCopy.tier}</p>
                   <SegmentedControl>
                     {trendTierOptions.map((tierOption) => (
                       <SegmentedButton
@@ -843,7 +842,7 @@ export default function DailyHeroDashboard({
                         active={tierOption === activeTrendTier}
                         onClick={() => setSelectedTrendTier(tierOption)}
                       >
-                        {TREND_TIER_LABELS[tierOption]}
+                        {scopeCopy.tierLabels[tierOption]}
                       </SegmentedButton>
                     ))}
                   </SegmentedControl>
@@ -902,14 +901,14 @@ export default function DailyHeroDashboard({
         <section className="surface overflow-hidden">
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5">
               <div>
-                <p className="eyebrow eyebrow-rule">Snapshot · {latestDay ? formatShortDate(latestDay) : 'No data'}</p>
+                <p className="eyebrow eyebrow-rule">{heroCopy.snapshot.label} · {latestDay ? formatShortDate(latestDay, locale) : heroCopy.snapshot.noData}</p>
                 <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  Hero <span className="font-display-italic text-[color:var(--color-accent-bright)]">ledger</span>
+                  {heroCopy.snapshot.titleLead} <span className="font-display-italic text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
                 </h2>
               </div>
               <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
                 <div>
-                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">Window</p>
+                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">{scopeCopy.window}</p>
                   <div className="mt-1.5">
                     <SegmentedControl>
                       {availableWindows.map((option) => (
@@ -925,7 +924,7 @@ export default function DailyHeroDashboard({
                   </div>
                 </div>
                 <div>
-                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">Tier</p>
+                  <p className="eyebrow text-[0.66rem] tracking-[0.22em]">{scopeCopy.tier}</p>
                   <div className="mt-1.5">
                     <SegmentedControl>
                       {snapshotTierOptions.map((option) => (
@@ -934,7 +933,7 @@ export default function DailyHeroDashboard({
                           active={option === activeSnapshotTier}
                           onClick={() => setSelectedTier(option)}
                         >
-                          {TREND_TIER_LABELS[option]}
+                          {scopeCopy.tierLabels[option]}
                         </SegmentedButton>
                       ))}
                     </SegmentedControl>
@@ -952,15 +951,15 @@ export default function DailyHeroDashboard({
               </colgroup>
               <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
                 <tr>
-                  <SortableHeader label="Hero" className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
-                  <SortableHeader label="Win rate" className="px-5 py-3.5" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
-                  <SortableHeader label="Runs" className="px-5 py-3.5" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
-                  <SortableHeader label="Share" className="px-5 py-3.5" activeDirection={sortState.key === 'runsShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsShare', 'desc'))} />
-                  <SortableHeader label="10W wins" className="px-5 py-3.5" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
-                  <SortableHeader label="Perfect" className="px-5 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
-                  <SortableHeader label="Gold" className="px-5 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
-                  <SortableHeader label="Silver" className="px-5 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
-                  <SortableHeader label="Bronze" className="px-5 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.hero} className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'winRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'winRate', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.runs} className="px-5 py-3.5" activeDirection={sortState.key === 'runsTotal' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsTotal', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.share} className="px-5 py-3.5" activeDirection={sortState.key === 'runsShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsShare', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-5 py-3.5" activeDirection={sortState.key === 'wins10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'wins10w', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-5 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.gold} className="px-5 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.silver} className="px-5 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
+                  <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-5 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
                 </tr>
               </thead>
               <tbody>
@@ -996,14 +995,14 @@ export default function DailyHeroDashboard({
                         <span className="relative">{formatPercent(row.winRate)}</span>
                       </td>
                       <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
-                        {row.runsTotal == null ? '—' : formatInteger(row.runsTotal)}
+                        {row.runsTotal == null ? '—' : formatInteger(row.runsTotal, locale)}
                       </td>
                       <td className="px-5 py-4 tnum text-[color:var(--color-text-muted)]">
                         {row.runsTotal == null || totalRunsInTable === 0
                           ? '—'
                           : formatPercent(row.runsTotal / totalRunsInTable)}
                       </td>
-                      <td className="px-5 py-4 tnum text-[color:var(--color-text-base)]">{formatInteger(row.wins10w)}</td>
+                      <td className="px-5 py-4 tnum text-[color:var(--color-text-base)]">{formatInteger(row.wins10w, locale)}</td>
                       <td className="px-5 py-4 tnum">
                         {row.perfectRate === null ? '—' : formatPercent(row.perfectRate)}
                       </td>

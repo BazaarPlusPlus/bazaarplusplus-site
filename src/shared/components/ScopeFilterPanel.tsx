@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 
+import { getSiteCopy } from '../../content/site-copy';
 import { WINDOW_LABELS } from '../lib/dashboard';
 import { getHeroColor, getHeroShortLabel } from '../lib/heroes';
 import { ALL_HEROES } from '../lib/interactive-filters';
-import type { MetricWindow, RatingTier } from '../lib/metrics';
+import type { Locale, MetricWindow, RatingTier } from '../lib/metrics';
 
 type ScopeFilterPanelProps = {
   ariaLabel: string;
+  locale: Locale;
   windowOptions: MetricWindow[];
   tierOptions: RatingTier[];
   selectedWindow: MetricWindow;
@@ -20,15 +22,9 @@ type ScopeFilterPanelProps = {
   onTierPreview?: (tier: RatingTier) => void;
 };
 
-const SCOPE_TIER_LABELS: Record<RatingTier, string> = {
-  all: 'All',
-  low: 'Low',
-  mid: 'Mid',
-  high: 'High',
-};
-
 export default function ScopeFilterPanel({
   ariaLabel,
+  locale,
   windowOptions,
   tierOptions,
   selectedWindow,
@@ -41,13 +37,15 @@ export default function ScopeFilterPanel({
   onWindowPreview,
   onTierPreview,
 }: ScopeFilterPanelProps) {
+  const scopeCopy = getSiteCopy(locale).common.scope;
+
   return (
     <section
       aria-label={ariaLabel}
       className="surface px-6 py-5"
     >
       <div className="grid gap-5 lg:grid-cols-[auto_auto_1fr] lg:items-start lg:gap-x-10">
-        <ScopeFilterGroup label="Window">
+        <ScopeFilterGroup label={scopeCopy.window}>
           <SegmentedControl>
             {windowOptions.map((option) => (
               <SegmentedButton
@@ -62,7 +60,7 @@ export default function ScopeFilterPanel({
           </SegmentedControl>
         </ScopeFilterGroup>
 
-        <ScopeFilterGroup label="Tier">
+        <ScopeFilterGroup label={scopeCopy.tier}>
           <SegmentedControl>
             {tierOptions.map((option) => (
               <SegmentedButton
@@ -71,19 +69,20 @@ export default function ScopeFilterPanel({
                 onClick={() => onTierSelect(option)}
                 onPreview={() => onTierPreview?.(option)}
               >
-                {SCOPE_TIER_LABELS[option]}
+                {scopeCopy.tierLabels[option]}
               </SegmentedButton>
             ))}
           </SegmentedControl>
         </ScopeFilterGroup>
 
-        <ScopeFilterGroup label="Hero">
+        <ScopeFilterGroup label={scopeCopy.hero}>
           <div className="flex flex-wrap gap-1.5">
             {heroOptions.map((option) => (
               <HeroFilterButton
                 key={option}
                 hero={option}
                 active={option === selectedHero}
+                allHeroLabel={scopeCopy.allHero}
                 onClick={() => onHeroSelect(option)}
               />
             ))}
@@ -149,10 +148,12 @@ export function SegmentedButton({
 function HeroFilterButton({
   hero,
   active,
+  allHeroLabel,
   onClick,
 }: {
   hero: string;
   active: boolean;
+  allHeroLabel: string;
   onClick: () => void;
 }) {
   if (hero === ALL_HEROES) {
@@ -167,7 +168,7 @@ function HeroFilterButton({
             : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] text-[color:var(--color-text-muted)] hover:border-[color:var(--color-accent-deep)] hover:text-[color:var(--color-text-base)]'
         }`}
       >
-        All
+        {allHeroLabel}
       </button>
     );
   }

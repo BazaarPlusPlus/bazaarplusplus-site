@@ -28,7 +28,7 @@ describe('SiteHeader', () => {
     expect(container.querySelector('source')).not.toBeInTheDocument();
     expect(container.querySelector('img[src="/bazaarplusplus-icon.webp"]')).toBeInTheDocument();
     expect(container.querySelector('img[src="/bazaarplusplus-icon.png"]')).not.toBeInTheDocument();
-    expect(screen.getByText('Live feed')).toBeInTheDocument();
+    expect(screen.getByText('实时数据')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '卡牌数据' })).toHaveAttribute('aria-current', 'page');
   });
 
@@ -71,7 +71,7 @@ describe('SiteHeader', () => {
     expect(enLink).toHaveAttribute('hrefLang', 'en');
 
     const zhSegment = screen
-      .getByRole('group', { name: 'Language' })
+      .getByRole('group', { name: '语言' })
       .querySelector('span[aria-current="true"]');
     expect(zhSegment).toHaveTextContent('中');
   });

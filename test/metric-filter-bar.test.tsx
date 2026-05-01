@@ -23,11 +23,11 @@ describe('MetricFilterBar', () => {
       'href',
       '/cards?t=high'
     );
-    expect(screen.getByRole('link', { name: 'All players' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '全部玩家' })).toHaveAttribute(
       'href',
       '/cards?w=3d'
     );
-    expect(screen.getByRole('link', { name: 'High rank' }).className).toContain(
+    expect(screen.getByRole('link', { name: '高分段' }).className).toContain(
       'text-[color:#130f08]'
     );
   });
@@ -54,7 +54,7 @@ describe('MetricFilterBar', () => {
     expect(compactHeroButton).toHaveAttribute('aria-pressed', 'true');
     expect(compactHeroButton.querySelector('[data-hero-short-label="MAK"]')).not.toBeNull();
     expect(compactHeroButton.querySelector('[data-hero-color-dot="Mak"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'All heroes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '全部' })).toBeInTheDocument();
 
     rerender(
       <MetricFilterBar

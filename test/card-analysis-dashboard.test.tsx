@@ -110,9 +110,9 @@ describe('CardAnalysisDashboard', () => {
         wins: 15932,
         win_rate: 0.6284316819,
         win_rate_wilson_lower: 0.6224642674,
-        display_name: 'Eagle Talisman',
-        image_url: 'https://img.example/eagle-talisman.png',
-        card_size: 'medium',
+        displayName: 'Eagle Talisman',
+        imageUrl: 'https://img.example/eagle-talisman.png',
+        cardSize: 'medium',
       },
       {
         hero: 'Mak',
@@ -121,9 +121,9 @@ describe('CardAnalysisDashboard', () => {
         wins: 9000,
         win_rate: 0.75,
         win_rate_wilson_lower: 0.741,
-        display_name: 'Brass Bug',
-        image_url: 'https://img.example/brass-bug.png',
-        card_size: 'small',
+        displayName: 'Brass Bug',
+        imageUrl: 'https://img.example/brass-bug.png',
+        cardSize: 'small',
       },
     ];
 
@@ -138,9 +138,9 @@ describe('CardAnalysisDashboard', () => {
         uplift: 0.2845,
         uplift_ci_95_lower: 0.1827,
         uplift_ci_95_upper: 0.3862,
-        display_name: 'Amber Core',
-        image_url: 'https://img.example/amber-core.png',
-        card_size: 'large',
+        displayName: 'Amber Core',
+        imageUrl: 'https://img.example/amber-core.png',
+        cardSize: 'large',
       },
     ];
 
@@ -151,9 +151,9 @@ describe('CardAnalysisDashboard', () => {
         runs_total_10w: 4609,
         runs_with_card: 3007,
         inclusion_rate: 0.6524191799,
-        display_name: 'Fiery Conduit',
-        image_url: 'https://img.example/fiery-conduit.png',
-        card_size: 'medium',
+        displayName: 'Fiery Conduit',
+        imageUrl: 'https://img.example/fiery-conduit.png',
+        cardSize: 'medium',
       },
     ];
 

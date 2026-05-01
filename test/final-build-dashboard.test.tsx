@@ -71,7 +71,7 @@ describe('FinalBuildDashboard', () => {
         item_count: 2,
         slot_count: 5,
         is_complete_build: false,
-        build_cards: [
+        buildCards: [
           {
             id: 'card-a',
             name: 'Amber Core',
@@ -89,7 +89,7 @@ describe('FinalBuildDashboard', () => {
             tier: 'Diamond',
           },
         ],
-        card_names: ['Amber Core', 'Eagle Talisman'],
+        cardNames: ['Amber Core', 'Eagle Talisman'],
       },
       {
         hero: 'Vanessa',
@@ -104,11 +104,11 @@ describe('FinalBuildDashboard', () => {
         item_count: 2,
         slot_count: 10,
         is_complete_build: true,
-        build_cards: [
+        buildCards: [
           { id: 'card-c', name: 'Caltrops', imageUrl: 'https://img.example/c.png' },
           { id: 'card-d', name: 'Crow\'s Nest', imageUrl: 'https://img.example/d.png' },
         ],
-        card_names: ['Caltrops', "Crow's Nest"],
+        cardNames: ['Caltrops', "Crow's Nest"],
       },
     ];
 
@@ -126,11 +126,11 @@ describe('FinalBuildDashboard', () => {
         item_count: 2,
         slot_count: 10,
         is_complete_build: true,
-        build_cards: [
+        buildCards: [
           { id: 'card-x', name: 'Chronobarrier', imageUrl: 'https://img.example/x.png' },
           { id: 'card-y', name: 'Stove', imageUrl: 'https://img.example/y.png' },
         ],
-        card_names: ['Chronobarrier', 'Stove'],
+        cardNames: ['Chronobarrier', 'Stove'],
       },
     ];
 

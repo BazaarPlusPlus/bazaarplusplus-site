@@ -407,7 +407,7 @@ export default function CardAnalysisDashboard({
   const sortAccessors = useMemo(
     () => ({
       hero: (row) => row.hero,
-      name: (row) => row.display_name,
+      name: (row) => row.displayName,
       winRate: (row) =>
         'win_rate' in row ? row.win_rate : null,
       appearances: (row) =>
@@ -581,15 +581,15 @@ export default function CardAnalysisDashboard({
                 <td className="px-5 py-4">
                   <CardThumb
                     templateId={row.template_id}
-                    name={row.display_name}
-                    imageUrl={row.image_url}
-                    cardSize={row.card_size}
+                    name={row.displayName}
+                    imageUrl={row.imageUrl}
+                    cardSize={row.cardSize}
                   />
                 </td>
                 <td className="px-5 py-4">
                   <HeroBadge hero={row.hero} size="sm" />
                 </td>
-                <td className="px-5 py-4 font-medium text-[color:var(--color-text-base)]">{row.display_name}</td>
+                <td className="px-5 py-4 font-medium text-[color:var(--color-text-base)]">{row.displayName}</td>
                 {selectedMetric === 'uplift' ? (
                   <>
                     <td

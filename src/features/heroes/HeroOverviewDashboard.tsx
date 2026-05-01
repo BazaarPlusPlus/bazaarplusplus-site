@@ -23,7 +23,7 @@ import { SegmentedButton, SegmentedControl } from '../../shared/components/Scope
 import SortableHeader from '../../shared/components/SortableHeader';
 import StatsPageShell from '../../shared/components/StatsPageShell';
 
-type DailyHeroDashboardProps = {
+type HeroOverviewDashboardProps = {
   locale: Locale;
   source: MetricsSource;
   availableWindows: MetricWindow[];
@@ -291,7 +291,7 @@ function computeTrendDelta(series: HeroSeries): { delta: number; first: number }
   return { delta: series.latestWinRate - first, first };
 }
 
-export default function DailyHeroDashboard({
+export default function HeroOverviewDashboard({
   locale,
   source,
   availableWindows,
@@ -300,7 +300,7 @@ export default function DailyHeroDashboard({
   initialSelectedTier,
   dailyByTier,
   overviewByWindow,
-}: DailyHeroDashboardProps) {
+}: HeroOverviewDashboardProps) {
   const copy = getSiteCopy(locale);
   const heroCopy = copy.stats.heroes;
   const scopeCopy = copy.common.scope;

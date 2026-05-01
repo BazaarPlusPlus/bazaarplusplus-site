@@ -247,7 +247,7 @@ export default function FinalBuildDashboard({
                 <HeroBadge hero={row.hero} size="sm" />
               </td>
               <td className="px-5 py-4">
-                <FinalBuildCardStrip cards={row.build_cards} title={row.card_names.join(', ')} />
+                <FinalBuildCardStrip cards={row.buildCards} title={row.cardNames.join(', ')} />
               </td>
               <td className="px-5 py-4 tnum">{formatInteger(row.run_count, locale)}</td>
               <td className="px-5 py-4 tnum font-semibold text-[color:var(--color-accent-bright)]">

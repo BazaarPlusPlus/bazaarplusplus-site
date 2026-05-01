@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import FinalBuildDashboard from '../features/builds/FinalBuildDashboard';
 import CardAnalysisDashboard from '../features/cards/CardAnalysisDashboard';
-import DailyHeroDashboard from '../features/heroes/DailyHeroDashboard';
+import HeroOverviewDashboard from '../features/heroes/HeroOverviewDashboard';
 import {
   type CardDictionary,
   getAvailableTiers,
@@ -91,10 +91,10 @@ export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
     return <ErrorScreen locale={locale} error={error} />;
   }
 
-  return <HeroOverviewDashboard data={data} locale={locale} search={search} />;
+  return <HeroOverviewRouteContent data={data} locale={locale} search={search} />;
 }
 
-function HeroOverviewDashboard({
+function HeroOverviewRouteContent({
   data,
   locale,
   search,
@@ -107,7 +107,7 @@ function HeroOverviewDashboard({
   const initialSelectedTier = getInitialTier(data.availableTiers, search);
 
   return (
-    <DailyHeroDashboard
+    <HeroOverviewDashboard
       locale={locale}
       source={data.source}
       availableWindows={data.availableWindows}
@@ -153,16 +153,16 @@ export function CardsPage({ client, locale, search }: RoutePageProps) {
   );
 }
 
-function getCardMetricLabels(metric: CardMetric): string[] {
+function getCardMetricManifestKey(metric: CardMetric): string {
   if (metric === 'uplift') {
-    return ['item_uplift'];
+    return 'item_uplift';
   }
 
   if (metric === 'inclusion') {
-    return ['item_inclusion'];
+    return 'item_inclusion';
   }
 
-  return ['item_winrate'];
+  return 'item_winrate';
 }
 
 function CardsDashboard({
@@ -179,11 +179,11 @@ function CardsDashboard({
   const params = new URLSearchParams(search);
   const requestedMetric = parseCardMetric(params.get('m'));
   const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialMetricLabel = getCardMetricLabels(requestedMetric)[0] ?? 'item_winrate';
+  const initialMetricKey = getCardMetricManifestKey(requestedMetric);
   const initialTierOptions = getAvailableTiers(
     data.manifest,
     initialSelectedWindow,
-    initialMetricLabel
+    initialMetricKey
   );
   const initialSelectedTier = getInitialTier(initialTierOptions, search);
 

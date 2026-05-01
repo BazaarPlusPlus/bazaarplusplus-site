@@ -211,9 +211,9 @@ describe('createMetricsRepository', () => {
 
     const rows = buildFinalBuildViewRows(payload, cardDictionary, 'en');
 
-    expect(rows[0]?.build_cards).toHaveLength(5);
-    expect(rows[0]?.build_cards[0]?.name).toBe('Amber Core');
-    expect(rows[0]?.build_cards[4]?.imageUrl).toBe('https://img.example/e.png');
+    expect(rows[0]?.buildCards).toHaveLength(5);
+    expect(rows[0]?.buildCards[0]?.name).toBe('Amber Core');
+    expect(rows[0]?.buildCards[4]?.imageUrl).toBe('https://img.example/e.png');
   });
 
   test('uses final build item layout and representative user fields from the raw payload', () => {
@@ -275,13 +275,13 @@ describe('createMetricsRepository', () => {
 
     expect(rows[0]?.representative_user_display_name).toBe('Socket Master');
     expect(rows[0]?.representative_user_run_count).toBe(3);
-    expect(rows[0]?.build_cards.map((card) => card.id)).toEqual(['card-a', 'card-b', 'card-c']);
-    expect(rows[0]?.build_cards[0]).toMatchObject({
+    expect(rows[0]?.buildCards.map((card) => card.id)).toEqual(['card-a', 'card-b', 'card-c']);
+    expect(rows[0]?.buildCards[0]).toMatchObject({
       socket: 0,
       slotSize: 3,
       tier: 'Gold',
     });
-    expect(rows[0]?.build_cards[1]).toMatchObject({
+    expect(rows[0]?.buildCards[1]).toMatchObject({
       socket: 3,
       slotSize: 3,
       tier: 'Silver',
@@ -313,8 +313,8 @@ describe('createMetricsRepository', () => {
 
     const rows = buildItemUpliftViewRows(payload, cardDictionary, 'en');
 
-    expect(rows[0]?.display_name).toBe('Amber Core');
-    expect(rows[0]?.image_url).toBe('https://img.example/a.png');
+    expect(rows[0]?.displayName).toBe('Amber Core');
+    expect(rows[0]?.imageUrl).toBe('https://img.example/a.png');
   });
 
   test('resolves item inclusion metadata', () => {
@@ -340,7 +340,7 @@ describe('createMetricsRepository', () => {
       ],
     };
 
-    expect(buildItemInclusionViewRows(inclusion, cardDictionary, 'en')[0]?.display_name).toBe(
+    expect(buildItemInclusionViewRows(inclusion, cardDictionary, 'en')[0]?.displayName).toBe(
       'Amber Core'
     );
   });

@@ -201,7 +201,7 @@ export type SupportPageCopy = {
 type LocalizedSiteCopy = {
   common: CommonCopy;
   primaryNav: PrimaryNavCopy;
-  nav: SecondaryNavCopy;
+  secondaryNav: SecondaryNavCopy;
   pageTitles: PageTitleCopy;
   stats: StatsCopy;
   download: DownloadPageCopy;
@@ -269,7 +269,7 @@ const zh: LocalizedSiteCopy = {
     cards: '卡牌数据',
     builds: '终局构筑',
   },
-  nav: {
+  secondaryNav: {
     download: '下载',
     support: '赞助',
   },
@@ -477,7 +477,7 @@ const en: LocalizedSiteCopy = {
     cards: 'Card Stats',
     builds: 'Final Builds',
   },
-  nav: {
+  secondaryNav: {
     download: 'Download',
     support: 'Support',
   },

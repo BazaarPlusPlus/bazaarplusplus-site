@@ -144,7 +144,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
           <nav aria-label={commonCopy.secondaryNavAriaLabel} className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {INFO_NAV_ITEMS.map((item) => {
               const active = item.key === activeSection;
-              const label = copy.nav[item.key];
+              const label = copy.secondaryNav[item.key];
               const labelTypography =
                 locale === 'zh'
                   ? 'text-[0.84rem] tracking-normal'

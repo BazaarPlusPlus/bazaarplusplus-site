@@ -75,9 +75,9 @@ export type CardWinratePayload = {
 };
 
 export type CardWinrateViewRow = CardWinrateRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
+  displayName: string;
+  imageUrl?: string;
+  cardSize: 'small' | 'medium' | 'large';
 };
 
 type ItemUpliftRow = {
@@ -100,9 +100,9 @@ export type ItemUpliftPayload = {
 };
 
 export type ItemUpliftViewRow = ItemUpliftRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
+  displayName: string;
+  imageUrl?: string;
+  cardSize: 'small' | 'medium' | 'large';
 };
 
 type ItemInclusionRow = {
@@ -121,9 +121,9 @@ export type ItemInclusionPayload = {
 };
 
 export type ItemInclusionViewRow = ItemInclusionRow & {
-  display_name: string;
-  image_url?: string;
-  card_size: 'small' | 'medium' | 'large';
+  displayName: string;
+  imageUrl?: string;
+  cardSize: 'small' | 'medium' | 'large';
 };
 
 type FinalBuildRow = {
@@ -160,7 +160,7 @@ export type FinalBuildsPayload = {
 };
 
 export type FinalBuildViewRow = FinalBuildRow & {
-  build_cards: Array<{
+  buildCards: Array<{
     id: string;
     name: string;
     imageUrl?: string;
@@ -169,7 +169,7 @@ export type FinalBuildViewRow = FinalBuildRow & {
     slotSize?: number;
     tier?: string | null;
   }>;
-  card_names: string[];
+  cardNames: string[];
 };
 
 type HeroWinrateDailyRow = {
@@ -371,9 +371,9 @@ export function buildCardWinrateViewRows(
 ): CardWinrateViewRow[] {
   return cardWinrate.rows.map((row) => ({
     ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
+    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
+    imageUrl: cardDictionary[row.template_id]?.image_url,
+    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
   }));
 }
 
@@ -384,9 +384,9 @@ export function buildItemUpliftViewRows(
 ): ItemUpliftViewRow[] {
   return itemUplift.rows.map((row) => ({
     ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
+    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
+    imageUrl: cardDictionary[row.template_id]?.image_url,
+    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
   }));
 }
 
@@ -397,9 +397,9 @@ export function buildItemInclusionViewRows(
 ): ItemInclusionViewRow[] {
   return itemInclusion.rows.map((row) => ({
     ...row,
-    display_name: getCardDisplayName(cardDictionary, row.template_id, locale),
-    image_url: cardDictionary[row.template_id]?.image_url,
-    card_size: getCardSize(cardDictionary[row.template_id]?.size),
+    displayName: getCardDisplayName(cardDictionary, row.template_id, locale),
+    imageUrl: cardDictionary[row.template_id]?.image_url,
+    cardSize: getCardSize(cardDictionary[row.template_id]?.size),
   }));
 }
 
@@ -454,8 +454,8 @@ export function buildFinalBuildViewRows(
 
     return {
       ...row,
-      build_cards: buildCards,
-      card_names: buildCards.map((card) => card.name),
+      buildCards,
+      cardNames: buildCards.map((card) => card.name),
     };
   });
 }

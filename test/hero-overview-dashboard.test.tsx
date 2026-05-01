@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
-import DailyHeroDashboard from '../src/features/heroes/DailyHeroDashboard';
+import HeroOverviewDashboard from '../src/features/heroes/HeroOverviewDashboard';
 import { formatShortDate } from '../src/shared/lib/dashboard';
 import type {
   HeroOverviewPayload,
@@ -50,7 +50,7 @@ function createDailyPayload(
   };
 }
 
-describe('DailyHeroDashboard', () => {
+describe('HeroOverviewDashboard', () => {
   test('hydrates from URL params and switches window or tier while showing victory tier rates', () => {
     window.history.replaceState({}, '', '/?w=3d&t=high');
 
@@ -258,7 +258,7 @@ describe('DailyHeroDashboard', () => {
     } satisfies Record<'1d' | '3d' | '7d', Partial<Record<RatingTier, HeroOverviewPayload>>>;
 
     const { container } = render(
-      <DailyHeroDashboard
+      <HeroOverviewDashboard
         locale="en"
         source="remote"
         availableWindows={['1d', '3d', '7d']}

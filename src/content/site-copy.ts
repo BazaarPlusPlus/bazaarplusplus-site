@@ -7,6 +7,7 @@ type PrimaryNavCopy = {
 };
 
 type SecondaryNavCopy = {
+  tutorial: string;
   download: string;
   support: string;
 };
@@ -198,12 +199,44 @@ export type SupportPageCopy = {
   };
 };
 
+export type TutorialPageCopy = {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  primaryActionLabel: string;
+  secondaryActionLabel: string;
+  featureHeading: string;
+  featureIntro: string;
+  features: Array<{
+    title: string;
+    description: string;
+    details: string[];
+  }>;
+  installation: {
+    heading: string;
+    intro: string;
+    requirements: string[];
+    steps: Array<{
+      title: string;
+      description: string;
+    }>;
+  };
+  quickStart: {
+    heading: string;
+    items: Array<{
+      label: string;
+      value: string;
+    }>;
+  };
+};
+
 type LocalizedSiteCopy = {
   common: CommonCopy;
   primaryNav: PrimaryNavCopy;
   secondaryNav: SecondaryNavCopy;
   pageTitles: PageTitleCopy;
   stats: StatsCopy;
+  tutorial: TutorialPageCopy;
   download: DownloadPageCopy;
   support: SupportPageCopy;
 };
@@ -270,6 +303,7 @@ const zh: LocalizedSiteCopy = {
     builds: '终局构筑',
   },
   secondaryNav: {
+    tutorial: '教程',
     download: '下载',
     support: '支持',
   },
@@ -277,6 +311,7 @@ const zh: LocalizedSiteCopy = {
     heroes: '英雄统计',
     cards: '卡牌统计',
     builds: '终局构筑',
+    tutorial: '教程',
     download: '下载',
     support: '支持',
     'not-found': '页面不存在',
@@ -359,6 +394,81 @@ const zh: LocalizedSiteCopy = {
         rank: '排名',
         contributor: '贡献者',
       },
+    },
+  },
+  tutorial: {
+    eyebrow: 'Bazaar++ 教程',
+    title: 'Bazaar++ 使用教程',
+    intro: 'BazaarPlusPlus 是面向《The Bazaar》的 BepInEx 模组，把战斗信息、历史记录、回放和云同步整合进游戏内工作流。',
+    primaryActionLabel: '打开下载页',
+    secondaryActionLabel: '前往打赏',
+    featureHeading: '模组主要功能',
+    featureIntro: '以下内容根据当前 BazaarPlusPlus 模组仓库整理，重点覆盖玩家安装后会直接用到的能力。',
+    features: [
+      {
+        title: '战斗与提示增强',
+        description: '战斗状态条会在底部 HUD 显示逻辑战斗时间、已处理帧数、暂停状态和速度档位。',
+        details: [
+          '怪物预览默认沿用游戏原生流程，Bazaar++ 会在 tooltip 路径补充上下文。',
+          '附魔预览和升级预览可通过设置与热键控制，默认按住 Ctrl 查看附魔，按住 Shift 查看升级预览。',
+        ],
+      },
+      {
+        title: '历史记录与回放',
+        description: 'Live run 会写入本地 SQLite，HistoryPanel 可浏览 runs、PVP battles、ghost battles 和保存的棋盘快照。',
+        details: [
+          '在大厅或非战斗界面按 F8 打开 HistoryPanel，Esc 可关闭面板。',
+          '条件满足时可以从 HistoryPanel 回放本地 PVP 战斗或 ghost replay。',
+        ],
+      },
+      {
+        title: '大厅与个性化设置',
+        description: '设置坞集中管理 Game History、Anonymous Mode、Legendary 位置展示、附魔预览、战斗状态条和中文术语模式。',
+        details: [
+          'Anonymous Mode 可以把本地玩家名替换为 Anonymous。',
+          '模组还包含随机英雄池、随机皮肤池、主菜单版本号和终局自动截图等小功能。',
+        ],
+      },
+    ],
+    installation: {
+      heading: '安装指南',
+      intro: '推荐从本站下载页获取最新安装器。手动安装时，请先确认已经安装《The Bazaar》和 BepInEx 5。',
+      requirements: [
+        '电脑上已经安装并能正常启动《The Bazaar》。',
+        '游戏目录中已经安装 BepInEx 5。',
+        '安装或更新前建议先退出游戏。',
+      ],
+      steps: [
+        {
+          title: '下载最新安装器',
+          description: '进入下载页，按系统选择 Windows .exe 或 macOS .dmg。',
+        },
+        {
+          title: '运行安装器',
+          description: '关闭游戏后运行安装器。更新时建议先卸载旧版本，再安装新版本。',
+        },
+        {
+          title: '启动游戏生成配置',
+          description: '首次启动后，配置文件会写入 BepInEx/config/BazaarPlusPlus.cfg。',
+        },
+        {
+          title: '确认模组生效',
+          description: '主菜单会显示 Bazaar++ 版本号；进入设置可看到 Bazaar++ 设置入口。',
+        },
+        {
+          title: '手动安装选项',
+          description: '如果不用安装器，请把 BazaarPlusPlus.dll 和 SQLite 运行时依赖复制到游戏的 BepInEx/plugins/ 目录。',
+        },
+      ],
+    },
+    quickStart: {
+      heading: '常用入口',
+      items: [
+        { label: 'F8', value: '在大厅或非战斗 UI 打开 HistoryPanel。' },
+        { label: 'Ctrl', value: '附魔预览未设为始终显示时，按住查看附魔提示。' },
+        { label: 'Shift', value: '悬停 tooltip 时按住查看升级预览。' },
+        { label: '设置坞', value: '管理战斗状态条、匿名模式、中文术语和其他 Bazaar++ 开关。' },
+      ],
     },
   },
   download: {
@@ -478,6 +588,7 @@ const en: LocalizedSiteCopy = {
     builds: 'Final Builds',
   },
   secondaryNav: {
+    tutorial: 'Tutorial',
     download: 'Download',
     support: 'Support',
   },
@@ -485,6 +596,7 @@ const en: LocalizedSiteCopy = {
     heroes: 'Hero Stats',
     cards: 'Card Stats',
     builds: 'Final Builds',
+    tutorial: 'Tutorial',
     download: 'Download',
     support: 'Support',
     'not-found': 'Page Not Found',
@@ -567,6 +679,81 @@ const en: LocalizedSiteCopy = {
         rank: 'Rank',
         contributor: 'Contributor',
       },
+    },
+  },
+  tutorial: {
+    eyebrow: 'Bazaar++ Tutorial',
+    title: 'Bazaar++ Tutorial',
+    intro: 'BazaarPlusPlus is a BepInEx mod for The Bazaar that brings combat information, run history, replay tooling, and background sync into the game.',
+    primaryActionLabel: 'Open downloads',
+    secondaryActionLabel: 'Support Bazaar++',
+    featureHeading: 'What the mod adds',
+    featureIntro: 'This page summarizes the current mod repository so players can understand what changes after installation.',
+    features: [
+      {
+        title: 'Combat UI enhancements',
+        description: 'The combat status bar shows logical combat time, processed frames, pause state, and discrete speed multipliers in a bottom HUD.',
+        details: [
+          'Monster preview keeps the native game flow while Bazaar++ augments tooltip context where needed.',
+          'Enchant and upgrade previews are controlled by settings and hotkeys: hold Ctrl for enchant preview and Shift for upgrade preview by default.',
+        ],
+      },
+      {
+        title: 'Run history and replays',
+        description: 'Live runs are written to local SQLite, and the HistoryPanel browses runs, PvP battles, ghost battles, and saved board snapshots.',
+        details: [
+          'Press F8 in the lobby or other non-combat UI to open HistoryPanel, then Esc to close it.',
+          'When conditions are met, HistoryPanel can replay saved local PvP battles or downloaded ghost replays.',
+        ],
+      },
+      {
+        title: 'Lobby and personalization tools',
+        description: 'The Bazaar++ settings dock groups Game History, Anonymous Mode, Legendary position display, enchant preview, combat status bar, and Chinese locale controls.',
+        details: [
+          'Anonymous Mode can replace the local player name with Anonymous.',
+          'The mod also includes random hero and skin pools, a main-menu version label, and automatic end-of-run screenshots.',
+        ],
+      },
+    ],
+    installation: {
+      heading: 'Installation guide',
+      intro: 'The easiest path is the installer on this site. For manual installation, make sure BepInEx 5 and The Bazaar are already installed first.',
+      requirements: [
+        'The Bazaar is installed and launches normally.',
+        'BepInEx 5 is installed in the game directory.',
+        'The game is closed before installing or updating BazaarPlusPlus.',
+      ],
+      steps: [
+        {
+          title: 'Download latest installer',
+          description: 'Open the downloads page and choose the Windows .exe or macOS .dmg for your system.',
+        },
+        {
+          title: 'Run the installer',
+          description: 'Close the game first. For updates, uninstall the old build before installing the new one.',
+        },
+        {
+          title: 'Start the game once',
+          description: 'After the first launch, Bazaar++ writes its config file to BepInEx/config/BazaarPlusPlus.cfg.',
+        },
+        {
+          title: 'Confirm the mod loaded',
+          description: 'The main menu shows the Bazaar++ version label, and the settings menu includes Bazaar++ entries.',
+        },
+        {
+          title: 'Manual install option',
+          description: 'Without the installer, copy BazaarPlusPlus.dll and the SQLite runtime dependencies into the game BepInEx/plugins/ directory.',
+        },
+      ],
+    },
+    quickStart: {
+      heading: 'Common controls',
+      items: [
+        { label: 'F8', value: 'Open HistoryPanel from lobby or other non-combat UI.' },
+        { label: 'Ctrl', value: 'Hold for enchant preview when always-show is disabled.' },
+        { label: 'Shift', value: 'Hold while hovering a tooltip to enter upgrade preview.' },
+        { label: 'Settings dock', value: 'Manage combat status bar, anonymous mode, Chinese locale, and other Bazaar++ toggles.' },
+      ],
     },
   },
   download: {

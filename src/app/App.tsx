@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import DownloadPage from '../features/download/DownloadPage';
 import SupportPage from '../features/support/SupportPage';
+import TutorialPage from '../features/tutorial/TutorialPage';
 import { getPageTitle } from '../content/site-copy';
 import { parseLocale, type Locale } from '../shared/lib/metrics';
 import { createRuntimeMetricsClient } from '../shared/lib/metrics-client';
@@ -88,6 +89,10 @@ export default function App() {
 
   if (route.page === 'builds') {
     return <BuildsPage client={client} locale={locale} search={location.search} />;
+  }
+
+  if (route.page === 'tutorial') {
+    return <TutorialPage locale={locale} />;
   }
 
   if (route.page === 'download') {

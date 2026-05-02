@@ -21,6 +21,7 @@ describe('SiteHeader', () => {
     expect(screen.getByRole('link', { name: '卡牌统计' })).toHaveAttribute('href', '/cards');
     expect(screen.getByRole('link', { name: '终局构筑' })).toHaveAttribute('href', '/builds');
 
+    expect(screen.getByRole('link', { name: '教程' })).toHaveAttribute('href', '/tutorial');
     expect(screen.getByRole('link', { name: '下载' })).toHaveAttribute('href', '/download');
     expect(screen.getByRole('link', { name: '支持' })).toHaveAttribute('href', '/support');
     expect(screen.queryByRole('link', { name: '支持者' })).not.toBeInTheDocument();
@@ -40,6 +41,7 @@ describe('SiteHeader', () => {
     expect(screen.getByRole('link', { name: 'Hero Stats' })).toHaveAttribute('href', '/heroes?lang=en');
     expect(screen.getByRole('link', { name: 'Card Stats' })).toHaveAttribute('href', '/cards?lang=en');
     expect(screen.getByRole('link', { name: 'Final Builds' })).toHaveAttribute('href', '/builds?lang=en');
+    expect(screen.getByRole('link', { name: 'Tutorial' })).toHaveAttribute('href', '/tutorial?lang=en');
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('href', '/download?lang=en');
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute('href', '/support?lang=en');
@@ -74,5 +76,11 @@ describe('SiteHeader', () => {
       .getByRole('group', { name: '语言' })
       .querySelector('span[aria-current="true"]');
     expect(zhSegment).toHaveTextContent('中');
+  });
+
+  test('marks tutorial as active in the secondary nav', () => {
+    render(<SiteHeader activeSection="tutorial" locale="en" />);
+
+    expect(screen.getByRole('link', { name: 'Tutorial' })).toHaveAttribute('aria-current', 'page');
   });
 });

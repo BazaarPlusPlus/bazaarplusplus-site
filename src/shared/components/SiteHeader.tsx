@@ -6,6 +6,7 @@ type SiteHeaderActiveSection =
   | 'heroes'
   | 'cards'
   | 'builds'
+  | 'tutorial'
   | 'download'
   | 'support';
 
@@ -22,12 +23,13 @@ const STATS_NAV_ITEMS: StatsNavItem[] = [
 ];
 
 type InfoNavItem = {
-  key: 'download' | 'support';
+  key: 'tutorial' | 'download' | 'support';
   href: string;
   glyph: string;
 };
 
 const INFO_NAV_ITEMS: InfoNavItem[] = [
+  { key: 'tutorial', href: '/tutorial', glyph: '?' },
   { key: 'download', href: '/download', glyph: '↓' },
   { key: 'support', href: '/support', glyph: '♥' },
 ];

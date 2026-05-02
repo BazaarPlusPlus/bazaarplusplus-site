@@ -5,7 +5,7 @@ import FooterCredit from './FooterCredit';
 import SiteHeader from './SiteHeader';
 
 type InfoPageShellProps = {
-  activeSection: 'download' | 'support';
+  activeSection: 'tutorial' | 'download' | 'support';
   locale: Locale;
   eyebrow: string;
   title: string;

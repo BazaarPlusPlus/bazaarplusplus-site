@@ -11,8 +11,10 @@ describe('spa router', () => {
 
   test('resolves info pages', () => {
     expect(resolveSpaRoute('/')).toEqual({ page: 'support' });
+    expect(resolveSpaRoute('/tutorial')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
     expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
+    expect(resolveSpaRoute('/tutorial/')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
   });
 
@@ -38,6 +40,7 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });
     expect(isSpaRoutePath('/heroes')).toBe(true);
     expect(isSpaRoutePath('/cards')).toBe(true);
+    expect(isSpaRoutePath('/tutorial')).toBe(true);
     expect(isSpaRoutePath('/download')).toBe(true);
     expect(isSpaRoutePath('/support')).toBe(true);
     expect(isSpaRoutePath('/archetypes')).toBe(false);

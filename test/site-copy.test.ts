@@ -23,6 +23,7 @@ describe('site copy', () => {
     expect(getPageTitle('heroes', 'en')).toBe('Hero Stats | BazaarPlusPlus');
     expect(getPageTitle('cards', 'zh')).toBe('卡牌统计 | BazaarPlusPlus');
     expect(getPageTitle('builds', 'zh')).toBe('终局构筑 | BazaarPlusPlus');
+    expect(getPageTitle('tutorial', 'en')).toBe('Tutorial | BazaarPlusPlus');
     expect(getPageTitle('download', 'en')).toBe('Download | BazaarPlusPlus');
     expect(getPageTitle('support', 'zh')).toBe('支持 | BazaarPlusPlus');
     expect(getPageTitle('not-found', 'en')).toBe('Page Not Found | BazaarPlusPlus');
@@ -38,10 +39,14 @@ describe('site copy', () => {
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
     expect(zhCopy.stats.cards.metricTabs.uplift.label).toBe('提升');
     expect(zhCopy.stats.builds.tableHeaders.contributor).toBe('贡献者');
+    expect(zhCopy.secondaryNav.tutorial).toBe('教程');
+    expect(zhCopy.tutorial.installation.steps[0]?.title).toBe('下载最新安装器');
 
     expect(enCopy.common.liveFeed).toBe('Live feed');
     expect(enCopy.common.scope.tierLabels.high).toBe('High');
     expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('Win rate');
+    expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
+    expect(enCopy.tutorial.features.map((feature) => feature.title)).toContain('Run history and replays');
   });
 
   test('uses Chinese punctuation in Chinese copy', () => {

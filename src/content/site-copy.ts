@@ -401,7 +401,7 @@ const zh: LocalizedSiteCopy = {
     title: 'BazaarPlusPlus 使用教程',
     intro: 'BazaarPlusPlus 是面向《The Bazaar》的 BepInEx 模组，把战斗信息、历史记录、回放和云同步整合进游戏内工作流。',
     primaryActionLabel: '打开下载页',
-    secondaryActionLabel: '前往打赏',
+    secondaryActionLabel: '前往支持',
     featureHeading: '模组主要功能',
     featureIntro: '以下内容根据当前 BazaarPlusPlus 模组仓库整理，重点覆盖玩家安装后会直接用到的能力。',
     features: [

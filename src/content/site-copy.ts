@@ -26,6 +26,10 @@ type ScopeCopy = {
 };
 
 type CommonCopy = {
+  brand: {
+    name: string;
+    subtitle: string;
+  };
   liveFeed: string;
   filters: string;
   metric: string;
@@ -248,6 +252,10 @@ type LocalizedSiteCopy = {
 
 const zh: LocalizedSiteCopy = {
   common: {
+    brand: {
+      name: 'BazaarPlusPlus',
+      subtitle: 'Bazaar Almanac',
+    },
     liveFeed: '实时数据',
     filters: '筛选',
     metric: '指标',
@@ -575,6 +583,10 @@ const zh: LocalizedSiteCopy = {
 
 const en: LocalizedSiteCopy = {
   common: {
+    brand: {
+      name: 'BazaarPlusPlus',
+      subtitle: 'Bazaar Almanac',
+    },
     liveFeed: 'Live feed',
     filters: 'Filters',
     metric: 'Metric',

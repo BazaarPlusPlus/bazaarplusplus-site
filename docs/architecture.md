@@ -1,6 +1,6 @@
 # BazaarPlusPlus Site Architecture
 
-Last updated: 2026-05-02
+Last updated: 2026-05-04
 
 ## Purpose
 
@@ -12,13 +12,14 @@ This site renders the BazaarPlusPlus public website, including support, download
 2. `src/app/App.tsx` creates the runtime metrics client, reads the browser path and query string, resolves the SPA route, parses locale, and sets document title/lang.
 3. `src/app/route-pages.tsx` uses React Query to load route data. Cards and builds share a manifest/card dictionary route frame, while hero overview uses a bounded-concurrency page-data loader.
 4. Feature dashboards transform raw payloads into view rows and render shared shells, filters, and tables.
-5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, stats dashboards, download, support, loading, error, and not-found states.
+5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, stats dashboards, tutorial, download, support, loading, error, and not-found states.
 
 ## Routes
 
 - `/` -> support page
 - `/support` -> support page
 - `/supporters` -> canonicalized to `/support`
+- `/tutorial` -> mod tutorial, install guide, and hotkeys
 - `/download` -> installer downloads
 - `/heroes` -> hero overview dashboard
 - `/cards` -> card analysis dashboard
@@ -59,7 +60,7 @@ Supported locales are `zh` and `en`; `zh` is the default. Locale selection uses 
 - default Chinese: no `lang` parameter
 - English: `?lang=en`
 
-All UI copy should live in `src/content/site-copy.ts`. Components should receive `locale` and look up copy from that module rather than hardcoding display text. Shared labels for navigation, loading, errors, filters, footers, stats headers, and table headers are localized there.
+All UI copy should live in `src/content/site-copy.ts`. Components should receive `locale` and look up copy from that module rather than hardcoding display text. Shared labels for navigation, loading, errors, filters, footers, tutorial, stats headers, and table headers are localized there.
 
 Date and integer formatting live in `src/shared/lib/dashboard.ts`. Percent formatting intentionally stays fixed as `12.3%` to keep metric tables compact and stable across locales.
 

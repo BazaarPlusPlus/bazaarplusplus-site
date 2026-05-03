@@ -57,6 +57,8 @@ describe('DownloadPage', () => {
     );
 
     expect(screen.getAllByText(/v3\.1\.1/)).toHaveLength(2);
+    expect(screen.getByText(/check the troubleshooting notes or reinstall the game and BazaarPlusPlus/)).toBeInTheDocument();
+    expect(screen.queryByText(/deleting the entire The Bazaar directory/)).not.toBeInTheDocument();
   });
 
   test('shows fallback message and GitHub release link when fetch fails', async () => {

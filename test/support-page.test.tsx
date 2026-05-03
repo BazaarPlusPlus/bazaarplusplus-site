@@ -70,7 +70,7 @@ describe('SupportPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Show QR code/ }));
 
-    const dialog = screen.getByRole('dialog', { name: /Buy Bazaar\+\+ a drink/ });
+    const dialog = screen.getByRole('dialog', { name: /Buy BazaarPlusPlus a drink/ });
     expect(dialog).toBeInTheDocument();
     expect(screen.getByLabelText('WeChat Pay QR code')).toBeInTheDocument();
 

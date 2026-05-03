@@ -4,6 +4,7 @@
 
 - Never generate a README unless it is genuinely needed.
 - For Python work, prefer the `uv` toolchain and do not use `from __future__ import`.
+- Start the local dev server on port 3000.
 - Keep user-facing text in `src/content/site-copy.ts`; do not add hardcoded dashboard labels, aria labels, loading text, or footer/header text in components.
 - Preserve the SPA route model in `src/app/router.ts` unless the deployment strategy changes.
 
@@ -21,6 +22,7 @@
 
 - This is a Vite + React + TypeScript SPA deployed as Cloudflare Workers static assets.
 - Routes are resolved client-side in `src/app/router.ts`; Cloudflare uses SPA fallback.
+- Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, `/heroes`, `/cards`, and `/builds`; `/supporters` canonicalizes to `/support`.
 - React Query owns runtime data fetching and caching.
 - Metrics payloads come from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
 - Card dictionary data comes from `VITE_CARD_DICTIONARY_URL` or `/card_dict_with_url.json`.

@@ -66,7 +66,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
 
   return (
     <header
-      aria-label="BazaarPlusPlus"
+      aria-label={commonCopy.brand.name}
       className="sticky top-0 z-30 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(15,12,8,0.96),rgba(10,8,5,0.92))] backdrop-blur-md"
     >
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-[color:var(--color-accent-glow)] to-transparent" />
@@ -85,9 +85,15 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
               decoding="async"
             />
           </span>
-          <span className="grid leading-none">
+          <span className="grid gap-1.5 leading-none">
             <span className="font-display text-[1.32rem] font-semibold tracking-[-0.01em] text-[color:var(--color-accent-bright)]">
-              BazaarPlusPlus
+              {commonCopy.brand.name}
+            </span>
+            <span
+              aria-hidden="true"
+              className="font-display-italic text-[0.62rem] uppercase tracking-[0.28em] text-[color:var(--color-text-faint)]"
+            >
+              {commonCopy.brand.subtitle}
             </span>
           </span>
         </a>

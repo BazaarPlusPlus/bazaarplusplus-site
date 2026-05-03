@@ -31,7 +31,7 @@
   --color-cool: #5a8a86;
 
   /* === Type families === */
-  --font-display: "Source Serif 4", "Georgia", "Songti SC", "STSong", serif;
+  --font-display: "Newsreader", "Georgia", "Songti SC", "STSong", serif;
   --font-sans: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", "Menlo", "Consolas", ui-monospace, monospace;
 }

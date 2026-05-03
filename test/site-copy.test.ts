@@ -29,6 +29,17 @@ describe('site copy', () => {
     expect(getPageTitle('not-found', 'en')).toBe('Page Not Found | BazaarPlusPlus');
   });
 
+  test('exposes header brand copy from localized site copy', () => {
+    expect(getSiteCopy('zh').common.brand).toEqual({
+      name: 'BazaarPlusPlus',
+      subtitle: 'Bazaar Almanac',
+    });
+    expect(getSiteCopy('en').common.brand).toEqual({
+      name: 'BazaarPlusPlus',
+      subtitle: 'Bazaar Almanac',
+    });
+  });
+
   test('provides localized shared dashboard copy', () => {
     const zhCopy = getSiteCopy('zh');
     const enCopy = getSiteCopy('en');

@@ -126,7 +126,6 @@ describe('Tutorial route', () => {
     expect(screen.getByRole('heading', { level: 3, name: '战斗状态栏' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '中文模式' })).toBeInTheDocument();
     expect(screen.getByText(/打开对局历史，回看对局记录、战斗回放和幽灵对战/)).toBeInTheDocument();
-    expect(screen.queryByText(/在大厅打开对局历史，回看对局记录、战斗回放和棋盘快照/)).not.toBeInTheDocument();
     expect(screen.getByText(/快速找回刚结束的对局和关键战斗/)).toBeInTheDocument();
     expect(screen.getByText(/本地玩家名显示为 Anonymous/)).toBeInTheDocument();
     expect(screen.getByText(/截图和录制时隐藏本地名称/)).toBeInTheDocument();

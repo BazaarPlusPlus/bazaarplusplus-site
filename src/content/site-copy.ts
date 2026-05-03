@@ -493,7 +493,7 @@ const zh: LocalizedSiteCopy = {
             {
               bindings: [{ key: 'F8' }],
               title: '历史记录',
-              description: '在大厅打开最近对局、战斗和棋盘快照',
+              description: '打开对局历史，回看对局记录、战斗回放和幽灵对战',
             },
             {
               bindings: [

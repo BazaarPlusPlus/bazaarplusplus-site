@@ -390,7 +390,7 @@ const zh: LocalizedSiteCopy = {
         hero: '英雄',
         build: '构筑',
         runs: '局数',
-        goldScore: '黄金评分',
+        goldScore: '评分',
         rank: '排名',
         contributor: '贡献者',
       },

@@ -40,7 +40,7 @@ Runtime metrics are fetched through `src/shared/lib/metrics-client.ts`.
 - `final_builds/<window>/<tier>.json`
 - card dictionary JSON
 
-The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`. The default card dictionary URL is `/card_dict_with_url.json`.
+The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`. The default card dictionary URL is `https://bpp-static.bazaarplusplus.com/card_dict_with_url.json`.
 
 ## Environment Variables
 
@@ -48,7 +48,6 @@ The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`. The
 - `VITE_CARD_DICTIONARY_URL`: browser runtime card dictionary URL.
 - `BPP_REMOTE_METRICS_BASE`: Vite dev/preview proxy upstream for `/metrics/*`.
 - `PUBLIC_METRICS_BASE`: fallback upstream used by the Vite proxy and node-side repository helper.
-- `BPP_REMOTE_CARD_DICTIONARY_URL`: Vite dev/preview/build upstream for the card dictionary asset.
 - `PUBLIC_CARD_DICTIONARY_URL`: node-side repository helper fallback for the card dictionary.
 
 `PUBLIC_SITE_URL` exists in `.env.example`, but the current app code does not read it.

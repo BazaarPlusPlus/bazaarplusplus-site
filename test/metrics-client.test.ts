@@ -95,6 +95,36 @@ describe('createRuntimeMetricsClient', () => {
     );
   });
 
+  test('loads the default card dictionary from the remote static JSON URL', async () => {
+    const cardDictionary = {
+      card_a: {
+        image_url: 'https://bpp-static.bazaarplusplus.com/webp/card_a.webp',
+        name: {
+          'en-US': 'Eagle Talisman',
+          'zh-CN': '鹰之护符',
+        },
+      },
+    };
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify(cardDictionary), {
+        headers: { 'content-type': 'application/json' },
+      })
+    ) as unknown as typeof fetch;
+    const client = createRuntimeMetricsClient({
+      fetchImpl,
+      requestRetries: 0,
+    });
+
+    await expect(client.getCardDictionary()).resolves.toEqual(cardDictionary);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://bpp-static.bazaarplusplus.com/card_dict_with_url.json',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      })
+    );
+  });
+
   test('aborts a hung metric request after the configured timeout', async () => {
     const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
       if (!init?.signal) {

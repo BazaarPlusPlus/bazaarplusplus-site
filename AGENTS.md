@@ -25,8 +25,8 @@
 - Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, `/heroes`, `/cards`, and `/builds`; `/supporters` canonicalizes to `/support`.
 - React Query owns runtime data fetching and caching.
 - Metrics payloads come from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
-- Card dictionary data comes from `VITE_CARD_DICTIONARY_URL` or `/card_dict_with_url.json`.
-- Build/preview can proxy `/metrics/*` and emit `card_dict_with_url.json` through Vite plugins in `vite.config.ts`.
+- Card dictionary data comes from `VITE_CARD_DICTIONARY_URL` or `https://bpp-static.bazaarplusplus.com/card_dict_with_url.json`.
+- Build/preview can proxy `/metrics/*` through the Vite plugin in `vite.config.ts`.
 
 ## i18n Contract
 
@@ -35,4 +35,3 @@
 - `App.tsx` sets `document.documentElement.lang` and page title from localized copy.
 - Add new copy to `src/content/site-copy.ts` first, then pass it into components through existing locale props.
 - Card names are localized from the card dictionary in `src/shared/lib/metrics.ts`.
-

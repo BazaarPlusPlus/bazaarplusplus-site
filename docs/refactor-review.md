@@ -4,7 +4,7 @@ Last updated: 2026-05-02
 
 ## Architecture Summary
 
-BazaarPlusPlus Stats is a Vite + React + TypeScript SPA deployed as Cloudflare Workers static assets. `src/app/App.tsx` owns browser location state, locale parsing, title/lang side effects, SPA navigation interception, and route selection. `src/app/router.ts` keeps route resolution centralized.
+BazaarPlusPlus Site is a Vite + React + TypeScript SPA deployed as Cloudflare Workers static assets. `src/app/App.tsx` owns browser location state, locale parsing, title/lang side effects, SPA navigation interception, and route selection. `src/app/router.ts` keeps route resolution centralized.
 
 Runtime metrics flow through `src/shared/lib/metrics-client.ts`, with React Query providing request caching. Route pages in `src/app/route-pages.tsx` load the frame data needed by each dashboard, then feature dashboards transform payload rows into view rows and render shared shells, filters, and virtualized tables. UI copy remains centralized in `src/content/site-copy.ts`.
 

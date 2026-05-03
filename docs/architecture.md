@@ -1,10 +1,10 @@
-# BazaarPlusPlus Stats Architecture
+# BazaarPlusPlus Site Architecture
 
 Last updated: 2026-05-02
 
 ## Purpose
 
-This site renders BazaarPlusPlus stats dashboards for heroes, cards, final builds, downloads, and support. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
+This site renders the BazaarPlusPlus public website, including support, downloads, tutorials, and stats dashboards for heroes, cards, and final builds. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
 
 ## Runtime Flow
 

@@ -34,7 +34,7 @@ describe('site copy', () => {
     const enCopy = getSiteCopy('en');
 
     expect(zhCopy.common.liveFeed).toBe('实时数据');
-    expect(zhCopy.common.footer.madeWith).toBe('用');
+    expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
     expect(zhCopy.common.loading.title).toBe('正在加载 Bazaar++ 数据…');
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
     expect(zhCopy.stats.cards.metricTabs.uplift.label).toBe('提升');

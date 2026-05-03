@@ -252,9 +252,9 @@ const zh: LocalizedSiteCopy = {
     homeAriaLabel: 'BazaarPlusPlus 首页',
     lastSync: '最近同步',
     footer: {
-      madeWith: '用',
-      love: '爱',
-      by: '制作：',
+      madeWith: 'Made with',
+      love: 'love',
+      by: 'by',
     },
     loading: {
       title: '正在加载 Bazaar++ 数据…',

@@ -354,7 +354,7 @@ const zh: LocalizedSiteCopy = {
       metricTabs: {
         winrate: { label: '胜率' },
         uplift: { label: '提升' },
-        inclusion: { label: '登场率', ariaLabel: '卡牌登场率' },
+        inclusion: { label: '登场', ariaLabel: '卡牌登场' },
       },
       cardsInView: '张卡牌符合筛选',
       scopeAriaLabel: '卡牌范围筛选',
@@ -371,7 +371,7 @@ const zh: LocalizedSiteCopy = {
         ciUpper: '置信上限',
         runsWith: '携带局数',
         runsWithout: '未携带局数',
-        inclusion: '登场率',
+        inclusion: '登场',
         hero10wTotal: '英雄10胜总数',
         winRate: '胜率',
         appearances: '出现次数',

@@ -84,7 +84,7 @@ describe('SupportPage', () => {
     renderWithClient(<SupportPage locale="zh" />);
 
     expect(screen.getByText('支持者名单')).toBeInTheDocument();
-    expect(screen.getByText('感谢每一位支持 Bazaar++ 的朋友。')).toBeInTheDocument();
+    expect(screen.getByText('感谢每一位支持 BazaarPlusPlus 的朋友。')).toBeInTheDocument();
 
     expect(await screen.findByText('FeiMary')).toBeInTheDocument();
     expect(screen.getByText('EcitsujNT')).toBeInTheDocument();
@@ -104,10 +104,10 @@ describe('SupportPage', () => {
 
     expect(screen.getByText('Roll call')).toBeInTheDocument();
     expect(
-      screen.getByText('Thanks for backing Bazaar++. Your support keeps the project moving further')
+      screen.getByText('Thanks for backing BazaarPlusPlus. Your support keeps the project moving further')
     ).toBeInTheDocument();
     expect(
-      screen.getByText('And thanks to everyone who supported Bazaar++ without leaving a name')
+      screen.getByText('And thanks to everyone who supported BazaarPlusPlus without leaving a name')
     ).toBeInTheDocument();
 
     expect(await screen.findByText('FeiMary')).toBeInTheDocument();

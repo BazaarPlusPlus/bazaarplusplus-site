@@ -12,7 +12,7 @@ describe('LoadingScreen', () => {
       />
     );
 
-    expect(screen.getByText('正在加载 Bazaar++ 数据…')).toBeInTheDocument();
+    expect(screen.getByText('正在加载 BazaarPlusPlus 数据…')).toBeInTheDocument();
     expect(screen.getByText('正在加载数据')).toBeInTheDocument();
     expect(screen.getByText('4 / 16')).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: '数据加载进度' })).toHaveAttribute(

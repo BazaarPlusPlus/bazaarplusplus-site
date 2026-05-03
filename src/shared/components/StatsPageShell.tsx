@@ -49,7 +49,7 @@ export default function StatsPageShell({
               <h1 className="mt-3 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.025em] text-[color:var(--color-text-base)] sm:text-[3.2rem]">
                 {title.split(' ').map((word, i, arr) =>
                   i === arr.length - 1 ? (
-                    <span key={`${word}:${i}`} className="font-display-italic text-[color:var(--color-accent-bright)]">
+                    <span key={`${word}:${i}`} className="text-[color:var(--color-accent-bright)]">
                       {word}
                     </span>
                   ) : (

@@ -35,7 +35,7 @@ describe('Tutorial route', () => {
       'href',
       '/download?lang=en'
     );
-    expect(screen.getByRole('link', { name: 'Support Bazaar++' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Support BazaarPlusPlus' })).toHaveAttribute(
       'href',
       '/support?lang=en'
     );

@@ -35,7 +35,7 @@ describe('site copy', () => {
 
     expect(zhCopy.common.liveFeed).toBe('实时数据');
     expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
-    expect(zhCopy.common.loading.title).toBe('正在加载 Bazaar++ 数据…');
+    expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
     expect(zhCopy.stats.cards.metricTabs.uplift.label).toBe('提升');
     expect(zhCopy.stats.builds.tableHeaders.contributor).toBe('贡献者');
@@ -59,8 +59,8 @@ describe('site copy', () => {
   test('keeps the intended buy-a-drink support phrasing in Chinese copy', () => {
     const zhCopy = getSiteCopy('zh');
 
-    expect(zhCopy.support.wechat.description).toBe('微信扫码，请 Bazaar++ 喝一杯。');
+    expect(zhCopy.support.wechat.description).toBe('微信扫码，请 BazaarPlusPlus 喝一杯。');
     expect(zhCopy.support.wechat.modalTitle).toBe('请喝一杯');
-    expect(zhCopy.support.kofi.description).toBe('在 Ko-fi 上请 Bazaar++ 喝一杯。');
+    expect(zhCopy.support.kofi.description).toBe('在 Ko-fi 上请 BazaarPlusPlus 喝一杯。');
   });
 });

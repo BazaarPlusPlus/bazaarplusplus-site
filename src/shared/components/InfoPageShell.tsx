@@ -40,7 +40,7 @@ export default function InfoPageShell({
                   index === all.length - 1 ? (
                     <span
                       key={`${word}:${index}`}
-                      className="font-display-italic text-[color:var(--color-accent-bright)]"
+                      className="text-[color:var(--color-accent-bright)]"
                     >
                       {word}
                     </span>

@@ -533,7 +533,7 @@ export default function HeroOverviewDashboard({
               <div>
                 <p className="eyebrow eyebrow-rule">{WINDOW_LABELS[TREND_WINDOW]} {heroCopy.trend.winrateTrend}</p>
                 <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.trend.titleLead} <span className="font-display-italic text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
+                  {heroCopy.trend.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
                 </h2>
               </div>
 
@@ -903,7 +903,7 @@ export default function HeroOverviewDashboard({
               <div>
                 <p className="eyebrow eyebrow-rule">{heroCopy.snapshot.label} · {latestDay ? formatShortDate(latestDay, locale) : heroCopy.snapshot.noData}</p>
                 <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.snapshot.titleLead} <span className="font-display-italic text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
+                  {heroCopy.snapshot.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
                 </h2>
               </div>
               <div className="flex flex-wrap items-end gap-x-6 gap-y-3">

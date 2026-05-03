@@ -257,7 +257,7 @@ const zh: LocalizedSiteCopy = {
       by: 'by',
     },
     loading: {
-      title: '正在加载 Bazaar++ 数据…',
+      title: '正在加载 BazaarPlusPlus 数据…',
       dataLabel: '正在加载数据',
       connectingLabel: '正在连接数据源',
       progressAriaLabel: '数据加载进度',
@@ -318,7 +318,7 @@ const zh: LocalizedSiteCopy = {
   },
   stats: {
     heroes: {
-      eyebrow: 'Bazaar++ 数据 · 英雄趋势',
+      eyebrow: 'BazaarPlusPlus 数据 · 英雄趋势',
       title: '英雄概览',
       trend: {
         winrateTrend: '胜率趋势',
@@ -348,7 +348,7 @@ const zh: LocalizedSiteCopy = {
       },
     },
     cards: {
-      eyebrowLead: 'Bazaar++ 数据 · ',
+      eyebrowLead: 'BazaarPlusPlus 数据 · ',
       eyebrowLedgerSuffix: '榜单',
       title: '卡牌分析',
       metricTabs: {
@@ -379,7 +379,7 @@ const zh: LocalizedSiteCopy = {
       },
     },
     builds: {
-      eyebrow: 'Bazaar++ 数据 · 终局构筑',
+      eyebrow: 'BazaarPlusPlus 数据 · 终局构筑',
       title: '终局构筑',
       scopeAriaLabel: '构筑范围筛选',
       tableAriaLabel: '终局构筑',
@@ -397,8 +397,8 @@ const zh: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: 'Bazaar++ 教程',
-    title: 'Bazaar++ 使用教程',
+    eyebrow: 'BazaarPlusPlus 教程',
+    title: 'BazaarPlusPlus 使用教程',
     intro: 'BazaarPlusPlus 是面向《The Bazaar》的 BepInEx 模组，把战斗信息、历史记录、回放和云同步整合进游戏内工作流。',
     primaryActionLabel: '打开下载页',
     secondaryActionLabel: '前往打赏',
@@ -409,7 +409,7 @@ const zh: LocalizedSiteCopy = {
         title: '战斗与提示增强',
         description: '战斗状态条会在底部 HUD 显示逻辑战斗时间、已处理帧数、暂停状态和速度档位。',
         details: [
-          '怪物预览默认沿用游戏原生流程，Bazaar++ 会在 tooltip 路径补充上下文。',
+          '怪物预览默认沿用游戏原生流程，BazaarPlusPlus 会在 tooltip 路径补充上下文。',
           '附魔预览和升级预览可通过设置与热键控制，默认按住 Ctrl 查看附魔，按住 Shift 查看升级预览。',
         ],
       },
@@ -453,7 +453,7 @@ const zh: LocalizedSiteCopy = {
         },
         {
           title: '确认模组生效',
-          description: '主菜单会显示 Bazaar++ 版本号；进入设置可看到 Bazaar++ 设置入口。',
+          description: '主菜单会显示 BazaarPlusPlus 版本号；进入设置可看到 BazaarPlusPlus 设置入口。',
         },
         {
           title: '手动安装选项',
@@ -467,7 +467,7 @@ const zh: LocalizedSiteCopy = {
         { label: 'F8', value: '在大厅或非战斗 UI 打开 HistoryPanel。' },
         { label: 'Ctrl', value: '附魔预览未设为始终显示时，按住查看附魔提示。' },
         { label: 'Shift', value: '悬停 tooltip 时按住查看升级预览。' },
-        { label: '设置坞', value: '管理战斗状态条、匿名模式、中文术语和其他 Bazaar++ 开关。' },
+        { label: '设置坞', value: '管理战斗状态条、匿名模式、中文术语和其他 BazaarPlusPlus 开关。' },
       ],
     },
   },
@@ -498,11 +498,11 @@ const zh: LocalizedSiteCopy = {
   support: {
     eyebrow: '支持项目',
     title: '支持 BazaarPlusPlus',
-    intro: '你的支持会成为 Bazaar++ 持续更新的动力。',
+    intro: '你的支持会成为 BazaarPlusPlus 持续更新的动力。',
     closeLabel: '关闭',
     wechat: {
       title: '微信赞赏',
-      description: '微信扫码，请 Bazaar++ 喝一杯。',
+      description: '微信扫码，请 BazaarPlusPlus 喝一杯。',
       actionLabel: '查看赞赏码',
       regionLabel: '中国大陆',
       modalTitle: '请喝一杯',
@@ -512,13 +512,13 @@ const zh: LocalizedSiteCopy = {
     },
     kofi: {
       title: 'Ko-fi',
-      description: '在 Ko-fi 上请 Bazaar++ 喝一杯。',
+      description: '在 Ko-fi 上请 BazaarPlusPlus 喝一杯。',
       actionLabel: '前往 Ko-fi',
       regionLabel: '全球',
     },
     supporters: {
       heading: '支持者名单',
-      intro: '感谢每一位支持 Bazaar++ 的朋友。',
+      intro: '感谢每一位支持 BazaarPlusPlus 的朋友。',
       unnamedNote: '也感谢所有未署名的支持者。',
       emptyNote: '支持者名单还在整理中，请稍后再来看看。',
       errorNote: '暂时无法加载支持者名单，请稍后再试。',
@@ -682,11 +682,11 @@ const en: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: 'Bazaar++ Tutorial',
-    title: 'Bazaar++ Tutorial',
+    eyebrow: 'BazaarPlusPlus Tutorial',
+    title: 'BazaarPlusPlus Tutorial',
     intro: 'BazaarPlusPlus is a BepInEx mod for The Bazaar that brings combat information, run history, replay tooling, and background sync into the game.',
     primaryActionLabel: 'Open downloads',
-    secondaryActionLabel: 'Support Bazaar++',
+    secondaryActionLabel: 'Support BazaarPlusPlus',
     featureHeading: 'What the mod adds',
     featureIntro: 'This page summarizes the current mod repository so players can understand what changes after installation.',
     features: [
@@ -694,7 +694,7 @@ const en: LocalizedSiteCopy = {
         title: 'Combat UI enhancements',
         description: 'The combat status bar shows logical combat time, processed frames, pause state, and discrete speed multipliers in a bottom HUD.',
         details: [
-          'Monster preview keeps the native game flow while Bazaar++ augments tooltip context where needed.',
+          'Monster preview keeps the native game flow while BazaarPlusPlus augments tooltip context where needed.',
           'Enchant and upgrade previews are controlled by settings and hotkeys: hold Ctrl for enchant preview and Shift for upgrade preview by default.',
         ],
       },
@@ -708,7 +708,7 @@ const en: LocalizedSiteCopy = {
       },
       {
         title: 'Lobby and personalization tools',
-        description: 'The Bazaar++ settings dock groups Game History, Anonymous Mode, Legendary position display, enchant preview, combat status bar, and Chinese locale controls.',
+        description: 'The BazaarPlusPlus settings dock groups Game History, Anonymous Mode, Legendary position display, enchant preview, combat status bar, and Chinese locale controls.',
         details: [
           'Anonymous Mode can replace the local player name with Anonymous.',
           'The mod also includes random hero and skin pools, a main-menu version label, and automatic end-of-run screenshots.',
@@ -734,11 +734,11 @@ const en: LocalizedSiteCopy = {
         },
         {
           title: 'Start the game once',
-          description: 'After the first launch, Bazaar++ writes its config file to BepInEx/config/BazaarPlusPlus.cfg.',
+          description: 'After the first launch, BazaarPlusPlus writes its config file to BepInEx/config/BazaarPlusPlus.cfg.',
         },
         {
           title: 'Confirm the mod loaded',
-          description: 'The main menu shows the Bazaar++ version label, and the settings menu includes Bazaar++ entries.',
+          description: 'The main menu shows the BazaarPlusPlus version label, and the settings menu includes BazaarPlusPlus entries.',
         },
         {
           title: 'Manual install option',
@@ -752,7 +752,7 @@ const en: LocalizedSiteCopy = {
         { label: 'F8', value: 'Open HistoryPanel from lobby or other non-combat UI.' },
         { label: 'Ctrl', value: 'Hold for enchant preview when always-show is disabled.' },
         { label: 'Shift', value: 'Hold while hovering a tooltip to enter upgrade preview.' },
-        { label: 'Settings dock', value: 'Manage combat status bar, anonymous mode, Chinese locale, and other Bazaar++ toggles.' },
+        { label: 'Settings dock', value: 'Manage combat status bar, anonymous mode, Chinese locale, and other BazaarPlusPlus toggles.' },
       ],
     },
   },
@@ -787,24 +787,24 @@ const en: LocalizedSiteCopy = {
     closeLabel: 'Close',
     wechat: {
       title: 'WeChat Pay',
-      description: 'Scan to buy Bazaar++ a drink.',
+      description: 'Scan to buy BazaarPlusPlus a drink.',
       actionLabel: 'Show QR code',
       regionLabel: 'CN',
-      modalTitle: 'Buy Bazaar++ a drink',
+      modalTitle: 'Buy BazaarPlusPlus a drink',
       modalSubtitle: 'WeChat Pay',
       modalHint: 'Leave your ID in the payment note if you want to appear in the Supporters list.',
       qrAriaLabel: 'WeChat Pay QR code',
     },
     kofi: {
       title: 'Ko-fi',
-      description: 'Buy Bazaar++ a drink on Ko-fi.',
+      description: 'Buy BazaarPlusPlus a drink on Ko-fi.',
       actionLabel: 'Open Ko-fi',
       regionLabel: 'Global',
     },
     supporters: {
       heading: 'Roll call',
-      intro: 'Thanks for backing Bazaar++. Your support keeps the project moving further',
-      unnamedNote: 'And thanks to everyone who supported Bazaar++ without leaving a name',
+      intro: 'Thanks for backing BazaarPlusPlus. Your support keeps the project moving further',
+      unnamedNote: 'And thanks to everyone who supported BazaarPlusPlus without leaving a name',
       emptyNote: 'The roll call is still being gathered — check back soon',
       errorNote: 'Could not load the roll call right now — try again in a moment',
     },

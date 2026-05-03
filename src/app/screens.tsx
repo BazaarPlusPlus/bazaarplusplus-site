@@ -80,7 +80,7 @@ export function ErrorScreen({ error, locale = 'en' }: { error: unknown; locale?:
       <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
         {copy.titlePrefix}{' '}
-        <span className="font-display-italic text-[color:var(--color-neg)]">{copy.titleHighlight}</span>
+        <span className="text-[color:var(--color-neg)]">{copy.titleHighlight}</span>
       </h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-[color:var(--color-text-muted)]">
         {message}
@@ -103,7 +103,7 @@ export function NotFoundScreen({ locale = 'en' }: { locale?: Locale }) {
       <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
         {copy.titlePrefix}{' '}
-        <span className="font-display-italic text-[color:var(--color-accent-bright)]">{copy.titleHighlight}</span>
+        <span className="text-[color:var(--color-accent-bright)]">{copy.titleHighlight}</span>
       </h1>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"

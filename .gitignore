@@ -24,6 +24,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+.trae/
 .env.development
 .gstack/
 .superpowers/

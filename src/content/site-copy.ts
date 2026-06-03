@@ -12,7 +12,7 @@ type SecondaryNavCopy = {
   support: string;
 };
 
-type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'not-found';
+type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'download-preview' | 'not-found';
 
 type PageTitleCopy = Record<PageTitleKey, string>;
 
@@ -168,6 +168,13 @@ export type DownloadPageCopy = {
     title: string;
     arch: string;
     actionLabel: string;
+  };
+  preview: {
+    eyebrow: string;
+    title: string;
+    versionLabel: string;
+    cautionTitle: string;
+    cautionBody: string;
   };
   noteTitle: string;
   noteParagraphs: string[];
@@ -326,6 +333,7 @@ const zh: LocalizedSiteCopy = {
     builds: '终局构筑',
     tutorial: '教程',
     download: '下载',
+    'download-preview': '预览下载',
     support: '支持',
     'not-found': '页面不存在',
   },
@@ -544,6 +552,14 @@ const zh: LocalizedSiteCopy = {
       arch: 'Apple Silicon · arm64',
       actionLabel: '下载 .dmg',
     },
+    preview: {
+      eyebrow: '预览版下载',
+      title: '下载 BazaarPlusPlus 4.0.0 Preview',
+      versionLabel: '预览版本',
+      cautionTitle: 'Caution',
+      cautionBody:
+        '预览版尚未经过完整测试，存在已知或未知风险：可能导致游戏卡顿、闪退、存档异常或与游戏更新不兼容。请仅在了解风险的情况下谨慎更新。',
+    },
     noteTitle: '安装提示',
     noteParagraphs: [
       '建议先退出游戏再安装。更新时建议先卸载旧版本，再安装新版本',
@@ -657,6 +673,7 @@ const en: LocalizedSiteCopy = {
     builds: 'Final Builds',
     tutorial: 'Tutorial',
     download: 'Download',
+    'download-preview': 'Preview Download',
     support: 'Support',
     'not-found': 'Page Not Found',
   },
@@ -878,6 +895,14 @@ const en: LocalizedSiteCopy = {
       title: 'macOS',
       arch: 'Apple Silicon · arm64',
       actionLabel: 'Download .dmg',
+    },
+    preview: {
+      eyebrow: 'Preview downloads',
+      title: 'Download BazaarPlusPlus 4.0.0 Preview',
+      versionLabel: 'Preview version',
+      cautionTitle: 'Caution',
+      cautionBody:
+        'This preview build has not been fully tested and carries known and unknown risks: it may cause stutters, crashes, save corruption, or incompatibility with future game updates. Update only if you understand the risks.',
     },
     noteTitle: 'Install notes',
     noteParagraphs: [

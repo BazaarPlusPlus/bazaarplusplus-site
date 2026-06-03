@@ -82,4 +82,25 @@ describe('DownloadPage', () => {
     const winButton = screen.getByRole('link', { name: /Download \.exe/ });
     expect(winButton).toHaveAttribute('aria-disabled', 'true');
   });
+
+  test('renders preview download links without fetching latest version', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderWithClient(<DownloadPage locale="en" variant="preview" />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Download BazaarPlusPlus 4.0.0 Preview' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Caution' })).toBeInTheDocument();
+    expect(screen.getAllByText(/v4\.0\.0/)).toHaveLength(3);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect(screen.getByRole('link', { name: /Download \.exe/ })).toHaveAttribute(
+      'href',
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/windows-x86_64/BazaarPlusPlus_4.0.0_x64-setup.exe'
+    );
+    expect(screen.getByRole('link', { name: /Download \.dmg/ })).toHaveAttribute(
+      'href',
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/darwin-aarch64/BazaarPlusPlus_4.0.0_aarch64.dmg'
+    );
+  });
 });

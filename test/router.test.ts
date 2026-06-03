@@ -13,9 +13,11 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/tutorial')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
+    expect(resolveSpaRoute('/download/preview')).toEqual({ page: 'download-preview' });
     expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/tutorial/')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
+    expect(resolveSpaRoute('/download/preview/')).toEqual({ page: 'download-preview' });
   });
 
   test('treats /supporters as an alias of /support', () => {
@@ -42,6 +44,7 @@ describe('spa router', () => {
     expect(isSpaRoutePath('/cards')).toBe(true);
     expect(isSpaRoutePath('/tutorial')).toBe(true);
     expect(isSpaRoutePath('/download')).toBe(true);
+    expect(isSpaRoutePath('/download/preview')).toBe(true);
     expect(isSpaRoutePath('/support')).toBe(true);
     expect(isSpaRoutePath('/archetypes')).toBe(false);
     expect(isSpaRoutePath('/unknown')).toBe(false);

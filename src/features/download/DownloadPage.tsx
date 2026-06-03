@@ -5,7 +5,6 @@ import {
   buildDownloadUrl,
   fetchLatestVersion,
   GITHUB_RELEASE_URL,
-  type DownloadPlatform,
 } from './installer';
 import type { Locale } from '../../shared/lib/metrics';
 import { macIconDataUri, windowsIconDataUri } from './platform-icons';
@@ -13,26 +12,33 @@ import { getSiteCopy, type DownloadPageCopy } from '../../content/site-copy';
 
 type PlatformCopy = DownloadPageCopy['windows'];
 
+const PREVIEW_DOWNLOADS = {
+  version: '4.0.0',
+  windowsUrl:
+    'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/windows-x86_64/BazaarPlusPlus_4.0.0_x64-setup.exe',
+  macUrl:
+    'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/darwin-aarch64/BazaarPlusPlus_4.0.0_aarch64.dmg',
+} as const;
+
 type DownloadCardProps = {
-  platform: DownloadPlatform;
   iconSrc: string;
   copy: PlatformCopy;
   version: string | undefined;
+  downloadUrl: string | undefined;
   isLoading: boolean;
   versionLabel: string;
   versionPending: string;
 };
 
 function DownloadCard({
-  platform,
   iconSrc,
   copy,
   version,
+  downloadUrl,
   isLoading,
   versionLabel,
   versionPending,
 }: DownloadCardProps) {
-  const downloadUrl = version ? buildDownloadUrl(platform, version) : undefined;
   const disabled = !downloadUrl;
 
   return (
@@ -91,6 +97,7 @@ function DownloadCard({
 
 type DownloadPageContentProps = {
   locale: Locale;
+  variant?: 'latest' | 'preview';
 };
 
 function FailureFallback({ copy }: { copy: DownloadPageCopy }) {
@@ -111,45 +118,105 @@ function FailureFallback({ copy }: { copy: DownloadPageCopy }) {
   );
 }
 
-export default function DownloadPage({ locale }: DownloadPageContentProps) {
+export default function DownloadPage({ locale, variant = 'latest' }: DownloadPageContentProps) {
   const copy = getSiteCopy(locale).download;
+  const isPreview = variant === 'preview';
   const { data, isLoading, isError } = useQuery({
     queryKey: ['latest-version'],
     queryFn: ({ signal }) => fetchLatestVersion(signal),
+    enabled: !isPreview,
     staleTime: 5 * 60_000,
   });
 
-  const version = data?.version;
+  const version = isPreview ? PREVIEW_DOWNLOADS.version : data?.version;
+  const windowsUrl = isPreview
+    ? PREVIEW_DOWNLOADS.windowsUrl
+    : version
+      ? buildDownloadUrl('windows', version)
+      : undefined;
+  const macUrl = isPreview
+    ? PREVIEW_DOWNLOADS.macUrl
+    : version
+      ? buildDownloadUrl('mac', version)
+      : undefined;
 
   return (
     <InfoPageShell
       activeSection="download"
       locale={locale}
-      eyebrow={copy.eyebrow}
-      title={copy.title}
+      eyebrow={isPreview ? copy.preview.eyebrow : copy.eyebrow}
+      title={isPreview ? copy.preview.title : copy.title}
     >
       <section className="flex flex-col gap-6">
+        {isPreview ? (
+          <div
+            role="note"
+            className="surface relative overflow-hidden py-5 pl-7 pr-6"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 w-[3px] bg-[color:var(--color-warn)]"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-10 -top-12 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(230,182,74,0.12),transparent_70%)] blur-2xl"
+            />
+            <div className="relative flex items-start gap-4">
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(230,182,74,0.4)] bg-[rgba(230,182,74,0.1)] text-[color:var(--color-warn)]">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z" />
+                  <line x1="12" y1="9" x2="12" y2="13.5" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h2 className="eyebrow text-[color:var(--color-warn)]">
+                    {copy.preview.cautionTitle}
+                  </h2>
+                  {version ? (
+                    <span className="tnum rounded-full border border-[rgba(230,182,74,0.4)] px-2.5 py-0.5 text-[0.7rem] font-medium tracking-[0.02em] text-[color:var(--color-warn)]">
+                      v{version}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--color-text-muted)]">
+                  {copy.preview.cautionBody}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-6 md:grid-cols-2">
           <DownloadCard
-            platform="windows"
             iconSrc={windowsIconDataUri}
             copy={copy.windows}
             version={version}
-            isLoading={isLoading}
-            versionLabel={copy.versionLabel}
+            downloadUrl={windowsUrl}
+            isLoading={!isPreview && isLoading}
+            versionLabel={isPreview ? copy.preview.versionLabel : copy.versionLabel}
             versionPending={copy.versionPending}
           />
           <DownloadCard
-            platform="mac"
             iconSrc={macIconDataUri}
             copy={copy.mac}
             version={version}
-            isLoading={isLoading}
-            versionLabel={copy.versionLabel}
+            downloadUrl={macUrl}
+            isLoading={!isPreview && isLoading}
+            versionLabel={isPreview ? copy.preview.versionLabel : copy.versionLabel}
             versionPending={copy.versionPending}
           />
         </div>
-        {isError ? <FailureFallback copy={copy} /> : null}
+        {!isPreview && isError ? <FailureFallback copy={copy} /> : null}
       </section>
 
       <section className="surface-flat flex flex-col gap-3 px-6 py-6">

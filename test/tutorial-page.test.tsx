@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import App from '../src/app/App';
@@ -125,8 +125,11 @@ describe('Tutorial route', () => {
     expect(screen.getByRole('heading', { level: 3, name: '附魔与升级预览' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '战斗状态栏' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '中文模式' })).toBeInTheDocument();
-    expect(screen.getByText(/打开对局历史，回看对局记录、战斗回放和幽灵对战/)).toBeInTheDocument();
-    expect(screen.getByText(/快速找回刚结束的对局和关键战斗/)).toBeInTheDocument();
+    const runHistoryCard = screen.getByRole('heading', { level: 3, name: '对局历史' }).closest('article');
+    expect(runHistoryCard).not.toBeNull();
+    const runHistory = within(runHistoryCard as HTMLElement);
+    expect(runHistory.getByText(/打开对局历史，回看对局记录、战斗回放和幽灵对战/)).toBeInTheDocument();
+    expect(runHistory.getByText(/快速找回刚结束的对局和关键战斗/)).toBeInTheDocument();
     expect(screen.getByText(/本地玩家名显示为 Anonymous/)).toBeInTheDocument();
     expect(screen.getByText(/截图和录制时隐藏本地名称/)).toBeInTheDocument();
     expect(screen.getByText(/直播或分享画面时保持匿名展示/)).toBeInTheDocument();

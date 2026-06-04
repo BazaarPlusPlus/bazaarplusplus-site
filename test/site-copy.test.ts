@@ -128,11 +128,13 @@ describe('site copy', () => {
     expect(stringsWithAsciiCommas).toEqual([]);
   });
 
-  test('keeps the intended buy-a-drink support phrasing in Chinese copy', () => {
+  test('keeps WeChat localized and Ko-fi global in Chinese support copy', () => {
     const zhCopy = getSiteCopy('zh');
 
     expect(zhCopy.support.wechat.description).toBe('微信扫码，请 BazaarPlusPlus 喝一杯。');
     expect(zhCopy.support.wechat.modalTitle).toBe('请喝一杯');
-    expect(zhCopy.support.kofi.description).toBe('在 Ko-fi 上请 BazaarPlusPlus 喝一杯。');
+    expect(zhCopy.support.kofi.description).toBe('Buy BazaarPlusPlus a drink on Ko-fi.');
+    expect(zhCopy.support.kofi.actionLabel).toBe('Open Ko-fi');
+    expect(zhCopy.support.kofi.regionLabel).toBe('Global');
   });
 });

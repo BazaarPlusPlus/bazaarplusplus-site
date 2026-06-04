@@ -62,6 +62,16 @@ describe('SupportPage', () => {
     expect(kofiLink).toHaveAttribute('rel', 'noreferrer');
   });
 
+  test('renders the Ko-fi card in English for Chinese locale', () => {
+    stubSupporterFetch(seededSupporters);
+    renderWithClient(<SupportPage locale="zh" />);
+
+    expect(screen.getByText('Global')).toBeInTheDocument();
+    expect(screen.getByText('Buy BazaarPlusPlus a drink on Ko-fi.')).toBeInTheDocument();
+    expect(screen.queryByText('在 Ko-fi 上请 BazaarPlusPlus 喝一杯。')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open Ko-fi/ })).toHaveAttribute('href', 'https://ko-fi.com/cauyxy');
+  });
+
   test('opens and closes the WeChat modal', () => {
     stubSupporterFetch(seededSupporters);
     renderWithClient(<SupportPage locale="en" />);

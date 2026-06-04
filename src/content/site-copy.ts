@@ -514,9 +514,9 @@ const zh: LocalizedSiteCopy = {
     },
     kofi: {
       title: 'Ko-fi',
-      description: '在 Ko-fi 上请 BazaarPlusPlus 喝一杯。',
-      actionLabel: '前往 Ko-fi',
-      regionLabel: '全球',
+      description: 'Buy BazaarPlusPlus a drink on Ko-fi.',
+      actionLabel: 'Open Ko-fi',
+      regionLabel: 'Global',
     },
     supporters: {
       heading: '支持者名单',

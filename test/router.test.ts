@@ -47,10 +47,12 @@ describe('spa router', () => {
     expect(isSpaRoutePath('/unknown')).toBe(false);
   });
 
-  test('treats removed card and build routes as not found', () => {
+  test('treats removed card, build, and preview release routes as not found', () => {
     expect(resolveSpaRoute('/cards')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/builds')).toEqual({ page: 'not-found' });
+    expect(resolveSpaRoute('/release/preview')).toEqual({ page: 'not-found' });
     expect(isSpaRoutePath('/cards')).toBe(false);
     expect(isSpaRoutePath('/builds')).toBe(false);
+    expect(isSpaRoutePath('/release/preview')).toBe(false);
   });
 });

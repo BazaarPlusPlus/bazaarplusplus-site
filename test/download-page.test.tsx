@@ -83,24 +83,50 @@ describe('DownloadPage', () => {
     expect(winButton).toHaveAttribute('aria-disabled', 'true');
   });
 
-  test('renders preview download links without fetching latest version', () => {
-    const fetchMock = vi.fn();
+  test('renders preview download links from preview manifest', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ version: '4.0.1' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     renderWithClient(<DownloadPage locale="en" variant="preview" />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Download BazaarPlusPlus 4.0.0 Preview' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Download BazaarPlusPlus Preview' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'Caution' })).toBeInTheDocument();
-    expect(screen.getAllByText(/v4\.0\.0/)).toHaveLength(3);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(await screen.findAllByText(/v4\.0\.1/)).toHaveLength(3);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://bppinstaller.bazaarplusplus.com/preview.json',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+      })
+    );
 
     expect(screen.getByRole('link', { name: /Download \.exe/ })).toHaveAttribute(
       'href',
-      'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/windows-x86_64/BazaarPlusPlus_4.0.0_x64-setup.exe'
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/windows-x86_64/BazaarPlusPlus_4.0.1_x64-setup.exe'
     );
     expect(screen.getByRole('link', { name: /Download \.dmg/ })).toHaveAttribute(
       'href',
-      'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/darwin-aarch64/BazaarPlusPlus_4.0.0_aarch64.dmg'
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/darwin-aarch64/BazaarPlusPlus_4.0.1_aarch64.dmg'
     );
+  });
+
+  test('shows preview manifest failure without linking to stable releases', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
+    );
+
+    renderWithClient(<DownloadPage locale="en" variant="preview" />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/Cannot reach the Preview version right now/)).toBeInTheDocument()
+    );
+
+    expect(screen.queryByRole('link', { name: 'GitHub Release' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Download \.exe/ })).toHaveAttribute('aria-disabled', 'true');
   });
 });

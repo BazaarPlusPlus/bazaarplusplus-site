@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
   GITHUB_RELEASE_URL,
+  buildPreviewDownloadUrl,
   buildDownloadUrl,
   fetchLatestVersion,
+  fetchPreviewVersion,
   INSTALLER_BASE,
 } from '../src/features/download/installer';
 
@@ -17,6 +19,15 @@ describe('buildDownloadUrl', () => {
   test('builds the mac installer url', () => {
     expect(buildDownloadUrl('mac', '3.1.1')).toBe(
       'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg'
+    );
+  });
+
+  test('builds preview installer urls', () => {
+    expect(buildPreviewDownloadUrl('windows', '4.0.1')).toBe(
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/windows-x86_64/BazaarPlusPlus_4.0.1_x64-setup.exe'
+    );
+    expect(buildPreviewDownloadUrl('mac', '4.0.1')).toBe(
+      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/darwin-aarch64/BazaarPlusPlus_4.0.1_aarch64.dmg'
     );
   });
 
@@ -47,6 +58,24 @@ describe('fetchLatestVersion', () => {
     await expect(fetchLatestVersion()).resolves.toEqual({ version: '3.1.1' });
     expect(fetchMock).toHaveBeenCalledWith(
       'https://bppinstaller.bazaarplusplus.com/latest.json',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+      })
+    );
+  });
+
+  test('returns the preview version from preview.json', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ version: '4.0.1' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchPreviewVersion()).resolves.toEqual({ version: '4.0.1' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://bppinstaller.bazaarplusplus.com/preview.json',
       expect.objectContaining({
         headers: { Accept: 'application/json' },
       })

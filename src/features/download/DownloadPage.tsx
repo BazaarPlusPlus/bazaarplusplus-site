@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 
 import InfoPageShell from '../../shared/components/InfoPageShell';
 import {
+  buildPreviewDownloadUrl,
   buildDownloadUrl,
   fetchLatestVersion,
+  fetchPreviewVersion,
   GITHUB_RELEASE_URL,
 } from './installer';
 import type { Locale } from '../../shared/lib/metrics';
@@ -12,22 +14,16 @@ import { getSiteCopy, type DownloadPageCopy } from '../../content/site-copy';
 
 type PlatformCopy = DownloadPageCopy['windows'];
 
-const PREVIEW_DOWNLOADS = {
-  version: '4.0.0',
-  windowsUrl:
-    'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/windows-x86_64/BazaarPlusPlus_4.0.0_x64-setup.exe',
-  macUrl:
-    'https://bppinstaller.bazaarplusplus.com/preview/4.0.0/darwin-aarch64/BazaarPlusPlus_4.0.0_aarch64.dmg',
-} as const;
-
 type DownloadCardProps = {
   iconSrc: string;
   copy: PlatformCopy;
   version: string | undefined;
   downloadUrl: string | undefined;
   isLoading: boolean;
+  isError: boolean;
   versionLabel: string;
   versionPending: string;
+  versionUnavailable: string;
 };
 
 function DownloadCard({
@@ -36,8 +32,10 @@ function DownloadCard({
   version,
   downloadUrl,
   isLoading,
+  isError,
   versionLabel,
   versionPending,
+  versionUnavailable,
 }: DownloadCardProps) {
   const disabled = !downloadUrl;
 
@@ -71,6 +69,8 @@ function DownloadCard({
           <span className="tnum text-xl font-medium text-[color:var(--color-accent-bright)]">
             v{version}
           </span>
+        ) : isError ? (
+          <span className="text-sm text-[color:var(--color-text-muted)]">{versionUnavailable}</span>
         ) : (
           <span className="text-sm text-[color:var(--color-text-muted)]">{versionPending}</span>
         )}
@@ -100,7 +100,15 @@ type DownloadPageContentProps = {
   variant?: 'latest' | 'preview';
 };
 
-function FailureFallback({ copy }: { copy: DownloadPageCopy }) {
+function FailureFallback({ copy, variant }: { copy: DownloadPageCopy; variant: 'latest' | 'preview' }) {
+  if (variant === 'preview') {
+    return (
+      <p className="-mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">
+        {copy.preview.versionFailed}
+      </p>
+    );
+  }
+
   return (
     <p className="-mt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">
       {copy.versionFailed}
@@ -122,23 +130,22 @@ export default function DownloadPage({ locale, variant = 'latest' }: DownloadPag
   const copy = getSiteCopy(locale).download;
   const isPreview = variant === 'preview';
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['latest-version'],
-    queryFn: ({ signal }) => fetchLatestVersion(signal),
-    enabled: !isPreview,
+    queryKey: [isPreview ? 'preview-version' : 'latest-version'],
+    queryFn: ({ signal }) => isPreview ? fetchPreviewVersion(signal) : fetchLatestVersion(signal),
     staleTime: 5 * 60_000,
   });
 
-  const version = isPreview ? PREVIEW_DOWNLOADS.version : data?.version;
-  const windowsUrl = isPreview
-    ? PREVIEW_DOWNLOADS.windowsUrl
-    : version
-      ? buildDownloadUrl('windows', version)
-      : undefined;
-  const macUrl = isPreview
-    ? PREVIEW_DOWNLOADS.macUrl
-    : version
-      ? buildDownloadUrl('mac', version)
-      : undefined;
+  const version = data?.version;
+  const windowsUrl = version
+    ? isPreview
+      ? buildPreviewDownloadUrl('windows', version)
+      : buildDownloadUrl('windows', version)
+    : undefined;
+  const macUrl = version
+    ? isPreview
+      ? buildPreviewDownloadUrl('mac', version)
+      : buildDownloadUrl('mac', version)
+    : undefined;
 
   return (
     <InfoPageShell
@@ -202,21 +209,25 @@ export default function DownloadPage({ locale, variant = 'latest' }: DownloadPag
             copy={copy.windows}
             version={version}
             downloadUrl={windowsUrl}
-            isLoading={!isPreview && isLoading}
+            isLoading={isLoading}
+            isError={isError}
             versionLabel={isPreview ? copy.preview.versionLabel : copy.versionLabel}
-            versionPending={copy.versionPending}
+            versionPending={isPreview ? copy.preview.versionPending : copy.versionPending}
+            versionUnavailable={isPreview ? copy.preview.versionUnavailable : copy.versionUnavailable}
           />
           <DownloadCard
             iconSrc={macIconDataUri}
             copy={copy.mac}
             version={version}
             downloadUrl={macUrl}
-            isLoading={!isPreview && isLoading}
+            isLoading={isLoading}
+            isError={isError}
             versionLabel={isPreview ? copy.preview.versionLabel : copy.versionLabel}
-            versionPending={copy.versionPending}
+            versionPending={isPreview ? copy.preview.versionPending : copy.versionPending}
+            versionUnavailable={isPreview ? copy.preview.versionUnavailable : copy.versionUnavailable}
           />
         </div>
-        {!isPreview && isError ? <FailureFallback copy={copy} /> : null}
+        {isError ? <FailureFallback copy={copy} variant={variant} /> : null}
       </section>
 
       <section className="surface-flat flex flex-col gap-3 px-6 py-6">

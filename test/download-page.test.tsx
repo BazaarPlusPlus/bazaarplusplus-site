@@ -57,6 +57,11 @@ describe('DownloadPage', () => {
     );
 
     expect(screen.getAllByText(/v3\.1\.1/)).toHaveLength(2);
+    expect(screen.getByRole('heading', { level: 2, name: 'Want the preview build?' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open Preview downloads/ })).toHaveAttribute(
+      'href',
+      '/download/preview?lang=en'
+    );
     expect(screen.getByText(/check the troubleshooting notes or reinstall the game and BazaarPlusPlus/)).toBeInTheDocument();
     expect(screen.queryByText(/deleting the entire The Bazaar directory/)).not.toBeInTheDocument();
   });
@@ -95,7 +100,13 @@ describe('DownloadPage', () => {
     renderWithClient(<DownloadPage locale="en" variant="preview" />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Download BazaarPlusPlus Preview' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Caution' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Preview Risk Notice' })).toBeInTheDocument();
+    expect(screen.getByText(/not been fully verified yet/)).toBeInTheDocument();
+    expect(screen.getByText(/wait for the stable release/)).toBeInTheDocument();
+    expect(screen.getByText('Preview Feedback')).toBeInTheDocument();
+    expect(screen.getByText(/join the Preview QQ group/)).toBeInTheDocument();
+    expect(screen.getByText(/672424871/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Open Preview downloads/ })).not.toBeInTheDocument();
     expect(await screen.findAllByText(/v4\.0\.1/)).toHaveLength(3);
     expect(fetchMock).toHaveBeenCalledWith(
       'https://bppinstaller.bazaarplusplus.com/preview.json',

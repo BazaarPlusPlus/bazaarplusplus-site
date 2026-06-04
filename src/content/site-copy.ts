@@ -131,7 +131,19 @@ export type DownloadPageCopy = {
     versionUnavailable: string;
     versionFailed: string;
     cautionTitle: string;
-    cautionBody: string;
+    cautionLead: string;
+    cautionItems: string[];
+    cautionFeedback: {
+      title: string;
+      body: string;
+      groupLabel: string;
+      groupValue: string;
+    };
+  };
+  previewCta: {
+    eyebrow: string;
+    title: string;
+    actionLabel: string;
   };
   noteTitle: string;
   noteParagraphs: string[];
@@ -459,9 +471,25 @@ const zh: LocalizedSiteCopy = {
       versionPending: '正在获取 Preview 版本...',
       versionUnavailable: 'Preview 获取失败',
       versionFailed: '暂时无法获取 Preview 版本，请稍后重试。',
-      cautionTitle: 'Caution',
-      cautionBody:
-        '预览版尚未经过完整测试，存在已知或未知风险：可能导致游戏卡顿、闪退、存档异常或与游戏更新不兼容。请仅在了解风险的情况下谨慎更新。',
+      cautionTitle: 'Preview 风险提示',
+      cautionLead:
+        'Preview 版本包含尚未完全验证的新改动，适合愿意提前试用并反馈问题的用户。',
+      cautionItems: [
+        '游戏稳定性可能受到影响',
+        '可能与游戏更新内容不兼容',
+        '稳定性优先的用户建议等待正式版',
+      ],
+      cautionFeedback: {
+        title: '预览反馈',
+        body: '如果遇到问题，欢迎加入预览版 QQ 群反馈。',
+        groupLabel: 'QQ群',
+        groupValue: '672424871',
+      },
+    },
+    previewCta: {
+      eyebrow: 'Preview',
+      title: '想先体验预览版？',
+      actionLabel: '打开 Preview 下载页',
     },
     noteTitle: '安装提示',
     noteParagraphs: [
@@ -749,9 +777,25 @@ const en: LocalizedSiteCopy = {
       versionPending: 'Fetching Preview version...',
       versionUnavailable: 'Preview unavailable',
       versionFailed: 'Cannot reach the Preview version right now. Please try again later.',
-      cautionTitle: 'Caution',
-      cautionBody:
-        'This preview build has not been fully tested and carries known and unknown risks: it may cause stutters, crashes, save corruption, or incompatibility with future game updates. Update only if you understand the risks.',
+      cautionTitle: 'Preview Risk Notice',
+      cautionLead:
+        'Preview builds include changes that have not been fully verified yet, and are intended for users who want to try updates early and report issues.',
+      cautionItems: [
+        'Game stability may be affected.',
+        'This build may be incompatible with game updates.',
+        'If stability matters most, wait for the stable release.',
+      ],
+      cautionFeedback: {
+        title: 'Preview Feedback',
+        body: 'If you run into issues, join the Preview QQ group and send feedback.',
+        groupLabel: 'QQ Group',
+        groupValue: '672424871',
+      },
+    },
+    previewCta: {
+      eyebrow: 'Preview',
+      title: 'Want the preview build?',
+      actionLabel: 'Open Preview downloads',
     },
     noteTitle: 'Install notes',
     noteParagraphs: [

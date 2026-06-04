@@ -12,7 +12,12 @@ type SecondaryNavCopy = {
   support: string;
 };
 
-type PageTitleKey = keyof PrimaryNavCopy | keyof SecondaryNavCopy | 'download-preview' | 'not-found';
+type PageTitleKey =
+  | keyof PrimaryNavCopy
+  | keyof SecondaryNavCopy
+  | 'download-preview'
+  | 'preview-release'
+  | 'not-found';
 
 type PageTitleCopy = Record<PageTitleKey, string>;
 
@@ -246,6 +251,55 @@ export type TutorialPageCopy = {
   };
 };
 
+type PreviewReleaseFeatureIcon =
+  | 'almanac'
+  | 'enchant'
+  | 'compact'
+  | 'icons'
+  | 'record'
+  | 'installer';
+
+export type PreviewReleasePageCopy = {
+  hero: {
+    titleLead: string;
+    titleAccent: string;
+    date: string;
+    releaseType: string;
+    deck: string;
+    primaryActionLabel: string;
+    secondaryActionLabel: string;
+  };
+  notes: {
+    kicker: string;
+    title: string;
+    intro: string;
+  };
+  featureSectionTitle: string;
+  features: Array<{
+    icon: PreviewReleaseFeatureIcon;
+    title: string;
+    description: string;
+  }>;
+  interfaceSection: {
+    title: string;
+    itemTitle: string;
+    itemDescription: string;
+  };
+  previewSection: {
+    title: string;
+    items: Array<{
+      title: string;
+      body: string;
+    }>;
+  };
+  downloadCallout: {
+    title: string;
+    body: string;
+    urlText: string;
+    actionLabel: string;
+  };
+};
+
 type LocalizedSiteCopy = {
   common: CommonCopy;
   primaryNav: PrimaryNavCopy;
@@ -254,6 +308,7 @@ type LocalizedSiteCopy = {
   stats: StatsCopy;
   tutorial: TutorialPageCopy;
   download: DownloadPageCopy;
+  releasePreview: PreviewReleasePageCopy;
   support: SupportPageCopy;
 };
 
@@ -334,6 +389,7 @@ const zh: LocalizedSiteCopy = {
     tutorial: '教程',
     download: '下载',
     'download-preview': '预览下载',
+    'preview-release': 'Preview 更新公告',
     support: '支持',
     'not-found': '页面不存在',
   },
@@ -566,6 +622,87 @@ const zh: LocalizedSiteCopy = {
       '如果安装后未生效，或被安全软件拦截，可以参考故障排查说明，或重新安装游戏与 BazaarPlusPlus',
     ],
   },
+  releasePreview: {
+    hero: {
+      titleLead: 'BazaarPlusPlus Preview',
+      titleAccent: '更新公告',
+      date: '2026.06 Preview',
+      releaseType: '预览版本',
+      deck:
+        '这一版把更多信息带到你真正需要它的地方：卡牌图鉴上线，附魔展示更聪明，战斗状态与图标细节重新打磨，并加入单场战斗录制能力。',
+      primaryActionLabel: '下载 Preview',
+      secondaryActionLabel: '查看更新内容',
+    },
+    notes: {
+      kicker: 'Patch Notes',
+      title: '更新内容',
+      intro:
+        '本次 Preview 聚焦在图鉴、提示、战斗复盘和安装体验。它会比正式版更早开放新功能，也意味着需要你对预览版本的风险有清晰预期。',
+    },
+    featureSectionTitle: '功能更新',
+    features: [
+      {
+        icon: 'almanac',
+        title: '卡牌图鉴',
+        description:
+          '新增卡牌图鉴入口，集中查看物品、技能与相关筛选信息，方便在对局间快速查找卡牌、理解构筑组件与效果来源。',
+      },
+      {
+        icon: 'enchant',
+        title: '智能的附魔展示',
+        description:
+          '附魔提示会更主动地理解当前物品和效果，展示附魔后的关键变化，让你在比较不同选择时少做猜测。',
+      },
+      {
+        icon: 'compact',
+        title: 'Compact State Bar 展示优化',
+        description:
+          'Compact State Bar 重新调整信息层级和视觉密度，战斗中的速度、暂停和状态信息更清晰，也更适合复盘时快速扫读。',
+      },
+      {
+        icon: 'icons',
+        title: '图标展示效果优化',
+        description:
+          '多个入口与功能图标统一了尺寸、边缘和可读性，在深色背景、游戏画面和面板叠层中都更稳定。',
+      },
+      {
+        icon: 'record',
+        title: '录制一场战斗',
+        description:
+          '新增单场战斗录制能力，可在合适的战斗节点记录并回放，为复盘、反馈和分享保留更完整的素材。',
+      },
+    ],
+    interfaceSection: {
+      title: '界面改进',
+      itemTitle: 'Installer UI 革新',
+      itemDescription:
+        '安装器界面经过重新整理，信息更聚焦，安装、更新和状态确认流程更清晰，整体观感也更贴近当前 BazaarPlusPlus 的视觉体系。',
+    },
+    previewSection: {
+      title: '预览版说明',
+      items: [
+        {
+          title: '如何获取',
+          body: '当前发布的是 Preview 版本，需要下载的话请前往 Preview 下载页。',
+        },
+        {
+          title: '自动更新节奏',
+          body: '正式版预计周末会推送自动更新；如果希望保持稳妥，可以等待正式版本通过自动更新送达。',
+        },
+        {
+          title: '风险提示',
+          body:
+            '预览版尚未经过完整测试，存在已知或未知风险：可能导致游戏卡顿、闪退、存档异常或与游戏更新不兼容。请仅在了解风险的情况下谨慎更新。',
+        },
+      ],
+    },
+    downloadCallout: {
+      title: '获取 Preview 版本',
+      body: '当前发布的是 Preview 版本，需要下载的话请前往以下网址。',
+      urlText: 'https://bazaarplusplus.com/download/preview',
+      actionLabel: '打开下载页',
+    },
+  },
   support: {
     eyebrow: '支持项目',
     title: '支持 BazaarPlusPlus',
@@ -674,6 +811,7 @@ const en: LocalizedSiteCopy = {
     tutorial: 'Tutorial',
     download: 'Download',
     'download-preview': 'Preview Download',
+    'preview-release': 'Preview Release Notes',
     support: 'Support',
     'not-found': 'Page Not Found',
   },
@@ -909,6 +1047,87 @@ const en: LocalizedSiteCopy = {
       'Quit the game before installing. To update, uninstall the previous build first, then run the new installer.',
       'If the install does not take effect or gets blocked by security software, check the troubleshooting notes or reinstall the game and BazaarPlusPlus.',
     ],
+  },
+  releasePreview: {
+    hero: {
+      titleLead: 'BazaarPlusPlus Preview',
+      titleAccent: 'Release Notes',
+      date: '2026.06 Preview',
+      releaseType: 'Preview build',
+      deck:
+        'This build brings more information to the moment you need it: the card almanac arrives, enchantment previews become smarter, combat status and icons are polished, and single-combat recording is now available.',
+      primaryActionLabel: 'Download Preview',
+      secondaryActionLabel: 'Read the notes',
+    },
+    notes: {
+      kicker: 'Patch Notes',
+      title: 'What changed',
+      intro:
+        'This Preview focuses on card lookup, smarter tooltips, combat review, and the installer experience. It opens new functionality earlier than the stable build, with the usual preview-build risk.',
+    },
+    featureSectionTitle: 'Feature Updates',
+    features: [
+      {
+        icon: 'almanac',
+        title: 'Card Almanac',
+        description:
+          'A new card almanac entry gathers items, skills, and filters in one place so you can look up cards and understand build components between fights.',
+      },
+      {
+        icon: 'enchant',
+        title: 'Smarter Enchantment Display',
+        description:
+          'Enchantment previews now understand the inspected item and effect more directly, surfacing the key post-enchant changes with less guesswork.',
+      },
+      {
+        icon: 'compact',
+        title: 'Compact State Bar Polish',
+        description:
+          'Compact State Bar hierarchy and density have been tuned so speed, pause, and combat state are clearer during playback and review.',
+      },
+      {
+        icon: 'icons',
+        title: 'Icon Rendering Improvements',
+        description:
+          'Several entry and feature icons now share more consistent sizing, edges, and contrast across dark panels, game scenes, and overlays.',
+      },
+      {
+        icon: 'record',
+        title: 'Record One Combat',
+        description:
+          'A new single-combat recording flow lets you capture and replay a chosen fight, keeping better material for review, reports, and sharing.',
+      },
+    ],
+    interfaceSection: {
+      title: 'Interface Updates',
+      itemTitle: 'Installer UI Refresh',
+      itemDescription:
+        'The installer interface has been reorganized around clearer status, install, and update flows, with visuals that better match the current BazaarPlusPlus system.',
+    },
+    previewSection: {
+      title: 'Preview Notes',
+      items: [
+        {
+          title: 'How to get it',
+          body: 'This is a Preview release. Download it from the Preview download page.',
+        },
+        {
+          title: 'Auto-update timing',
+          body: 'The stable build is expected to roll out through auto-update over the weekend. If you prefer the safer path, wait for the stable update.',
+        },
+        {
+          title: 'Risk notice',
+          body:
+            'This preview build has not been fully tested and carries known and unknown risks: it may cause stutters, crashes, save corruption, or incompatibility with future game updates. Update only if you understand the risks.',
+        },
+      ],
+    },
+    downloadCallout: {
+      title: 'Get the Preview build',
+      body: 'This release is currently available as a Preview build. Use the following download page.',
+      urlText: 'https://bazaarplusplus.com/download/preview',
+      actionLabel: 'Open downloads',
+    },
   },
   support: {
     eyebrow: 'Support',

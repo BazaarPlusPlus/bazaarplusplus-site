@@ -5,6 +5,7 @@ type SpaRoute =
   | { page: 'tutorial' }
   | { page: 'download' }
   | { page: 'download-preview' }
+  | { page: 'preview-release' }
   | { page: 'support' }
   | { page: 'not-found' };
 
@@ -51,6 +52,10 @@ export function resolveSpaRoute(pathname: string): SpaRoute {
 
   if (resolved === '/download/preview') {
     return { page: 'download-preview' };
+  }
+
+  if (resolved === '/release/preview') {
+    return { page: 'preview-release' };
   }
 
   if (resolved === '/support') {

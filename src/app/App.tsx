@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import DownloadPage from '../features/download/DownloadPage';
+import PreviewReleasePage from '../features/release/PreviewReleasePage';
 import SupportPage from '../features/support/SupportPage';
 import TutorialPage from '../features/tutorial/TutorialPage';
 import { getPageTitle } from '../content/site-copy';
@@ -101,6 +102,10 @@ export default function App() {
 
   if (route.page === 'download-preview') {
     return <DownloadPage locale={locale} variant="preview" />;
+  }
+
+  if (route.page === 'preview-release') {
+    return <PreviewReleasePage locale={locale} />;
   }
 
   if (route.page === 'support') {

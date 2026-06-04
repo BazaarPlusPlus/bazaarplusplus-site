@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { getSiteCopy } from '../../content/site-copy';
-import type { Locale, MetricsSource } from '../lib/metrics';
+import type { Locale } from '../lib/metrics';
 import { formatDateTime } from '../lib/dashboard';
 import FooterCredit from './FooterCredit';
 import SiteHeader from './SiteHeader';
@@ -13,8 +13,8 @@ type StatsPageShellProps = {
   locale: Locale;
   eyebrow: string;
   title: string;
-  source: MetricsSource;
   generatedAt: string;
+  actions?: ReactNode;
   filters: ReactNode;
   children: ReactNode;
 };
@@ -24,8 +24,8 @@ export default function StatsPageShell({
   locale,
   eyebrow,
   title,
-  source,
   generatedAt,
+  actions,
   filters,
   children,
 }: StatsPageShellProps) {
@@ -34,7 +34,7 @@ export default function StatsPageShell({
 
   return (
     <div className="relative min-h-screen">
-      <SiteHeader activeSection={activeSection} locale={locale} liveFeedSource={source} />
+      <SiteHeader activeSection={activeSection} locale={locale} />
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 sm:px-10 sm:py-14">
         <section className="relative overflow-hidden">
@@ -43,7 +43,7 @@ export default function StatsPageShell({
             <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(208,90,74,0.06),transparent_70%)] blur-3xl" />
           </div>
 
-          <div className="grid gap-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-3xl">
               <p className="eyebrow eyebrow-rule">{eyebrow}</p>
               <h1 className="mt-3 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-[-0.025em] text-[color:var(--color-text-base)] sm:text-[3.2rem]">
@@ -58,6 +58,12 @@ export default function StatsPageShell({
                 )}
               </h1>
             </div>
+
+            {actions ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-3">
+                {actions}
+              </div>
+            ) : null}
           </div>
         </section>
 

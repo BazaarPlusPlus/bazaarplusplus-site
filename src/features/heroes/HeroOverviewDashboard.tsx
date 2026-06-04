@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
-import { getSiteCopy } from '../../content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
   DEFAULT_LOCALE,
   type HeroOverviewPayload,
   type HeroWinrateDailyPayload,
   type Locale,
-  type MetricsSource,
   type MetricWindow,
   type RatingTier,
 } from '../../shared/lib/metrics';
@@ -25,7 +24,6 @@ import StatsPageShell from '../../shared/components/StatsPageShell';
 
 type HeroOverviewDashboardProps = {
   locale: Locale;
-  source: MetricsSource;
   availableWindows: MetricWindow[];
   availableTiers: RatingTier[];
   initialSelectedWindow: MetricWindow;
@@ -293,7 +291,6 @@ function computeTrendDelta(series: HeroSeries): { delta: number; first: number }
 
 export default function HeroOverviewDashboard({
   locale,
-  source,
   availableWindows,
   availableTiers,
   initialSelectedWindow,
@@ -510,8 +507,29 @@ export default function HeroOverviewDashboard({
       locale={locale}
       eyebrow={heroCopy.eyebrow}
       title={heroCopy.title}
-      source={source}
       generatedAt={generatedAt}
+      actions={
+        <a
+          href={BAZAARDB_META_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--color-border-bright)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)] hover:text-[color:var(--color-text-base)]"
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[rgba(255,245,220,0.06)]"
+          >
+            <img
+              src={BAZAARDB_ICON_PATH}
+              alt=""
+              className="h-full w-full object-contain"
+              decoding="async"
+            />
+          </span>
+          <span>{heroCopy.detailLinkLabel}</span>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+        </a>
+      }
       filters={null}
     >
       <section className="grid gap-6">

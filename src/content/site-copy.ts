@@ -32,7 +32,6 @@ type CommonCopy = {
     name: string;
     subtitle: string;
   };
-  liveFeed: string;
   filters: string;
   metric: string;
   primaryNavAriaLabel: string;
@@ -73,6 +72,7 @@ type CommonCopy = {
 type HeroStatsCopy = {
   eyebrow: string;
   title: string;
+  detailLinkLabel: string;
   trend: {
     winrateTrend: string;
     titleLead: string;
@@ -267,7 +267,6 @@ const zh: LocalizedSiteCopy = {
       name: 'BazaarPlusPlus',
       subtitle: 'Bazaar Almanac',
     },
-    liveFeed: '实时数据',
     filters: '筛选',
     metric: '指标',
     primaryNavAriaLabel: '主要导航',
@@ -316,7 +315,7 @@ const zh: LocalizedSiteCopy = {
     },
   },
   primaryNav: {
-    heroes: '英雄统计',
+    heroes: '统计',
   },
   secondaryNav: {
     tutorial: '教程',
@@ -336,6 +335,7 @@ const zh: LocalizedSiteCopy = {
     heroes: {
       eyebrow: 'BazaarPlusPlus 数据 · 英雄趋势',
       title: '英雄概览',
+      detailLinkLabel: '在 BazaarDB 查看详细统计',
       trend: {
         winrateTrend: '胜率趋势',
         titleLead: '英雄',
@@ -631,7 +631,6 @@ const en: LocalizedSiteCopy = {
       name: 'BazaarPlusPlus',
       subtitle: 'Bazaar Almanac',
     },
-    liveFeed: 'Live feed',
     filters: 'Filters',
     metric: 'Metric',
     primaryNavAriaLabel: 'Primary',
@@ -680,7 +679,7 @@ const en: LocalizedSiteCopy = {
     },
   },
   primaryNav: {
-    heroes: 'Hero Stats',
+    heroes: 'Stats',
   },
   secondaryNav: {
     tutorial: 'Tutorial',
@@ -700,6 +699,7 @@ const en: LocalizedSiteCopy = {
     heroes: {
       eyebrow: 'Bazaar Almanac · Hero Currents',
       title: 'Hero overview',
+      detailLinkLabel: 'View detailed stats on BazaarDB',
       trend: {
         winrateTrend: 'winrate trend',
         titleLead: 'Hero',
@@ -1004,3 +1004,5 @@ export function getPageTitle(page: PageTitleKey, locale: Locale): string {
 }
 
 export const KOFI_URL = 'https://ko-fi.com/cauyxy';
+export const BAZAARDB_META_URL = 'https://bazaardb.gg/run/meta';
+export const BAZAARDB_ICON_PATH = '/bazaardb-icon.ico';

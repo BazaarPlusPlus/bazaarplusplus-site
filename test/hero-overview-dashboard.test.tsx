@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import HeroOverviewDashboard from '../src/features/heroes/HeroOverviewDashboard';
+import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL } from '../src/content/site-copy';
 import { formatShortDate } from '../src/shared/lib/dashboard';
 import type {
   HeroOverviewPayload,
@@ -260,7 +261,6 @@ describe('HeroOverviewDashboard', () => {
     const { container } = render(
       <HeroOverviewDashboard
         locale="en"
-        source="remote"
         availableWindows={['1d', '3d', '7d']}
         availableTiers={['all', 'low', 'mid', 'high']}
         initialSelectedWindow="1d"
@@ -271,6 +271,11 @@ describe('HeroOverviewDashboard', () => {
     );
 
     expect(screen.getByTestId('daily-winrate-chart')).toBeInTheDocument();
+    const detailDataLink = screen.getByRole('link', { name: 'View detailed stats on BazaarDB' });
+    expect(detailDataLink).toHaveAttribute('href', BAZAARDB_META_URL);
+    expect(detailDataLink).toHaveAttribute('target', '_blank');
+    expect(detailDataLink).toHaveAttribute('rel', 'noreferrer');
+    expect(detailDataLink.querySelector('img')).toHaveAttribute('src', BAZAARDB_ICON_PATH);
     expect(screen.getByText(formatShortDate('2026-04-10T16:00:00Z'))).toBeInTheDocument();
     expect(screen.queryByText('Hero filters')).not.toBeInTheDocument();
     expect(screen.queryByText('Focused hero')).not.toBeInTheDocument();

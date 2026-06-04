@@ -52,7 +52,6 @@ describe('page shell footer', () => {
         locale="en"
         eyebrow="Analytics"
         title="Hero winrate"
-        source="remote"
         generatedAt="2026-04-18T18:57:46Z"
         filters={<div>Filters</div>}
       >

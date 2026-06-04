@@ -43,7 +43,6 @@ describe('site copy', () => {
     const zhCopy = getSiteCopy('zh');
     const enCopy = getSiteCopy('en');
 
-    expect(zhCopy.common.liveFeed).toBe('实时数据');
     expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
     expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
@@ -79,8 +78,9 @@ describe('site copy', () => {
     ]);
     expect(zhCopy.tutorial.quickStart.groups[1]?.note).toBe('在游戏“设置” -> “游玩设置”中重绑 Ctrl / Shift 预览键位');
 
-    expect(enCopy.common.liveFeed).toBe('Live feed');
     expect(enCopy.common.scope.tierLabels.high).toBe('High');
+    expect(zhCopy.stats.heroes.detailLinkLabel).toBe('在 BazaarDB 查看详细统计');
+    expect(enCopy.stats.heroes.detailLinkLabel).toBe('View detailed stats on BazaarDB');
     expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('Win rate');
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
     expect(enCopy.tutorial.installation.steps[3]?.description).toBe(

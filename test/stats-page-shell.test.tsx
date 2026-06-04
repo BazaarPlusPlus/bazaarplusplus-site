@@ -11,7 +11,6 @@ describe('StatsPageShell', () => {
         locale="zh"
         eyebrow="BazaarPlusPlus analytics"
         title="Hero winrate"
-        source="remote"
         generatedAt="2026-04-18T18:57:46Z"
         filters={<div>Filters slot</div>}
       >
@@ -19,14 +18,14 @@ describe('StatsPageShell', () => {
       </StatsPageShell>
     );
 
-    const heroesLink = screen.getByRole('link', { name: '英雄统计' });
+    const heroesLink = screen.getByRole('link', { name: '统计' });
     expect(heroesLink).toHaveAttribute('href', '/heroes');
     expect(
       within(screen.getByRole('navigation', { name: '主要导航' })).queryByText('Analytics')
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Archetypes' })).not.toBeInTheDocument();
     expect(heroesLink.className).toContain('text-[color:var(--color-accent-bright)]');
-    expect(screen.getByText('实时数据')).toBeInTheDocument();
+    expect(screen.queryByText('实时数据')).not.toBeInTheDocument();
     expect(screen.getByText('BazaarPlusPlus analytics')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Hero winrate' }).className).not.toContain(
       'sr-only'

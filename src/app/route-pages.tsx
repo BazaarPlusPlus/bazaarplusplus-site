@@ -81,7 +81,6 @@ function HeroOverviewRouteContent({
   return (
     <HeroOverviewDashboard
       locale={locale}
-      source={data.source}
       availableWindows={data.availableWindows}
       availableTiers={data.availableTiers}
       initialSelectedWindow={initialSelectedWindow}

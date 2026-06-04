@@ -1,5 +1,5 @@
 import { buildLocalizedHref } from '../lib/dashboard';
-import { DEFAULT_LOCALE, type Locale, type MetricsSource } from '../lib/metrics';
+import { DEFAULT_LOCALE, type Locale } from '../lib/metrics';
 import { getSiteCopy } from '../../content/site-copy';
 
 type SiteHeaderActiveSection =
@@ -8,32 +8,30 @@ type SiteHeaderActiveSection =
   | 'download'
   | 'support';
 
-type StatsNavItem = {
+type PrimaryNavItem = {
   key: 'heroes';
-  numeral: string;
   href: string;
+  labelSource: 'primary';
 };
 
-const STATS_NAV_ITEMS: StatsNavItem[] = [
-  { key: 'heroes', numeral: 'I', href: '/heroes' },
-];
-
-type InfoNavItem = {
+type SecondaryNavItem = {
   key: 'tutorial' | 'download' | 'support';
   href: string;
-  glyph: string;
+  labelSource: 'secondary';
 };
 
-const INFO_NAV_ITEMS: InfoNavItem[] = [
-  { key: 'tutorial', href: '/tutorial', glyph: '?' },
-  { key: 'download', href: '/download', glyph: '↓' },
-  { key: 'support', href: '/support', glyph: '♥' },
+type HeaderNavItem = PrimaryNavItem | SecondaryNavItem;
+
+const HEADER_NAV_ITEMS: HeaderNavItem[] = [
+  { key: 'heroes', href: '/heroes', labelSource: 'primary' },
+  { key: 'tutorial', href: '/tutorial', labelSource: 'secondary' },
+  { key: 'download', href: '/download', labelSource: 'secondary' },
+  { key: 'support', href: '/support', labelSource: 'secondary' },
 ];
 
 type SiteHeaderProps = {
   activeSection: SiteHeaderActiveSection;
   locale: Locale;
-  liveFeedSource?: MetricsSource;
 };
 
 const LOCALE_OPTIONS: Array<{ code: Locale; label: string }> = [
@@ -56,7 +54,7 @@ function buildLocaleToggleHref(targetLocale: Locale): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export default function SiteHeader({ activeSection, locale, liveFeedSource }: SiteHeaderProps) {
+export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
   const copy = getSiteCopy(locale);
   const commonCopy = copy.common;
 
@@ -66,7 +64,7 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
       className="sticky top-0 z-30 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(15,12,8,0.96),rgba(10,8,5,0.92))] backdrop-blur-md"
     >
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-[color:var(--color-accent-glow)] to-transparent" />
-      <div className="mx-auto grid w-full max-w-[1440px] items-center gap-4 px-6 py-4 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-center gap-4 px-6 py-4 sm:justify-between sm:px-10">
         <a
           href={buildLocalizedHref('/', { lang: locale })}
           aria-label={commonCopy.homeAriaLabel}
@@ -94,90 +92,33 @@ export default function SiteHeader({ activeSection, locale, liveFeedSource }: Si
           </span>
         </a>
 
-        <nav aria-label={commonCopy.primaryNavAriaLabel} className="flex min-w-0 items-center justify-center gap-1">
-          {STATS_NAV_ITEMS.map((item) => {
-            const active = item.key === activeSection;
-            const label = copy.primaryNav[item.key];
-            const labelTypography =
-              locale === 'zh' ? 'tracking-normal' : 'tracking-[0.04em]';
-            return (
-              <a
-                key={item.key}
-                href={buildLocalizedHref(item.href, { lang: locale })}
-                aria-current={active ? 'page' : undefined}
-                className={`group relative inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-                  active
-                    ? 'text-[color:var(--color-accent-bright)]'
-                    : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-base)]'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`font-display-italic text-[0.7rem] tracking-[0.18em] transition ${
-                    active
-                      ? 'text-[color:var(--color-accent)]'
-                      : 'text-[color:var(--color-text-faint)] group-hover:text-[color:var(--color-text-muted)]'
-                  }`}
-                >
-                  {item.numeral}
-                </span>
-                <span className={labelTypography}>{label}</span>
-                {active ? (
-                  <span className="pointer-events-none absolute inset-x-3 -bottom-[18px] h-[2px] rounded-full bg-[color:var(--color-accent)] shadow-[0_0_14px_rgba(232,185,74,0.55)]" />
-                ) : null}
-              </a>
-            );
-          })}
-        </nav>
-
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 text-xs text-[color:var(--color-text-muted)]">
-          {liveFeedSource ? (
-            <span className="inline-flex items-center gap-2 font-medium uppercase tracking-[0.16em]">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--color-pos)] opacity-50" />
-                <span className="relative h-2 w-2 rounded-full bg-[color:var(--color-pos)] shadow-[0_0_10px_rgba(109,191,122,0.7)]" />
-              </span>
-              <span className="text-[color:var(--color-text-base)]">{commonCopy.liveFeed}</span>
-            </span>
-          ) : null}
-
-          {liveFeedSource ? (
-            <span aria-hidden="true" className="hidden h-4 w-px bg-[color:var(--color-border-soft)] sm:block" />
-          ) : null}
-
-          <nav aria-label={commonCopy.secondaryNavAriaLabel} className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {INFO_NAV_ITEMS.map((item) => {
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[color:var(--color-text-muted)] sm:w-auto sm:flex-1 sm:justify-end">
+          <nav
+            aria-label={commonCopy.primaryNavAriaLabel}
+            className="flex flex-wrap items-center gap-1 rounded-full border border-[color:var(--color-border-soft)] bg-[rgba(255,245,220,0.025)] p-1"
+          >
+            {HEADER_NAV_ITEMS.map((item) => {
               const active = item.key === activeSection;
-              const label = copy.secondaryNav[item.key];
+              const label =
+                item.labelSource === 'primary'
+                  ? copy.primaryNav[item.key]
+                  : copy.secondaryNav[item.key];
               const labelTypography =
                 locale === 'zh'
                   ? 'text-[0.84rem] tracking-normal'
-                  : 'text-[0.78rem] tracking-[0.08em]';
+                  : 'text-[0.76rem] tracking-[0.06em]';
               return (
                 <a
                   key={item.key}
                   href={buildLocalizedHref(item.href, { lang: locale })}
                   aria-current={active ? 'page' : undefined}
-                  className={`group relative inline-flex items-center gap-1.5 font-medium transition ${labelTypography} ${
+                  className={`inline-flex min-h-8 items-center rounded-full px-3 py-1.5 font-medium transition ${labelTypography} ${
                     active
-                      ? 'text-[color:var(--color-accent-bright)]'
-                      : 'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-base)]'
+                      ? 'bg-[rgba(232,185,74,0.16)] text-[color:var(--color-accent-bright)] shadow-[0_0_18px_rgba(232,185,74,0.12)]'
+                      : 'text-[color:var(--color-text-muted)] hover:bg-[rgba(255,245,220,0.04)] hover:text-[color:var(--color-text-base)]'
                   }`}
                 >
-                  <span
-                    aria-hidden="true"
-                    className={`text-[0.85em] transition ${
-                      active
-                        ? 'text-[color:var(--color-accent)]'
-                        : 'text-[color:var(--color-text-faint)] group-hover:text-[color:var(--color-text-muted)]'
-                    }`}
-                  >
-                    {item.glyph}
-                  </span>
                   <span>{label}</span>
-                  {active ? (
-                    <span className="pointer-events-none absolute inset-x-0 -bottom-1.5 h-[2px] rounded-full bg-[color:var(--color-accent)] shadow-[0_0_8px_rgba(232,185,74,0.5)]" />
-                  ) : null}
                 </a>
               );
             })}

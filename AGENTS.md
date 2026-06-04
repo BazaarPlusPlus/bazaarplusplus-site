@@ -22,10 +22,9 @@
 
 - This is a Vite + React + TypeScript SPA deployed as Cloudflare Workers static assets.
 - Routes are resolved client-side in `src/app/router.ts`; Cloudflare uses SPA fallback.
-- Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, `/heroes`, `/cards`, and `/builds`; `/supporters` canonicalizes to `/support`.
+- Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, `/download/preview`, `/heroes`, and `/release/preview`; `/supporters` canonicalizes to `/support`. The two preview routes are deep-link only (not in the header nav).
 - React Query owns runtime data fetching and caching.
 - Metrics payloads come from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
-- Card dictionary data comes from `VITE_CARD_DICTIONARY_URL` or `https://bpp-static.bazaarplusplus.com/card_dict_with_url.json`.
 - Build/preview can proxy `/metrics/*` through the Vite plugin in `vite.config.ts`.
 
 ## i18n Contract
@@ -34,4 +33,3 @@
 - Locale is selected from the `lang` query parameter. Default `zh` omits `lang`; English uses `?lang=en`.
 - `App.tsx` sets `document.documentElement.lang` and page title from localized copy.
 - Add new copy to `src/content/site-copy.ts` first, then pass it into components through existing locale props.
-- Card names are localized from the card dictionary in `src/shared/lib/metrics.ts`.

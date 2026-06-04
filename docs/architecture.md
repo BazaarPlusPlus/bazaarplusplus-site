@@ -1,18 +1,18 @@
 # BazaarPlusPlus Site Architecture
 
-Last updated: 2026-05-04
+Last updated: 2026-06-04
 
 ## Purpose
 
-This site renders the BazaarPlusPlus public website, including support, downloads, tutorials, and stats dashboards for heroes, cards, and final builds. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
+This site renders the BazaarPlusPlus public website, including support, downloads (with a preview build variant), tutorials, a preview release-notes page, and the hero stats dashboard. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
 
 ## Runtime Flow
 
 1. `src/main.tsx` mounts the React app inside `Providers`.
 2. `src/app/App.tsx` creates the runtime metrics client, reads the browser path and query string, resolves the SPA route, parses locale, and sets document title/lang.
-3. `src/app/route-pages.tsx` uses React Query to load route data. Cards and builds share a manifest/card dictionary route frame, while hero overview uses a bounded-concurrency page-data loader.
+3. `src/app/route-pages.tsx` uses React Query to load route data. Hero overview uses a bounded-concurrency page-data loader in `src/app/page-data.ts`.
 4. Feature dashboards transform raw payloads into view rows and render shared shells, filters, and tables.
-5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, stats dashboards, tutorial, download, support, loading, error, and not-found states.
+5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, the hero stats dashboard, tutorial, download, preview release notes, support, loading, error, and not-found states.
 
 ## Routes
 
@@ -21,9 +21,9 @@ This site renders the BazaarPlusPlus public website, including support, download
 - `/supporters` -> canonicalized to `/support`
 - `/tutorial` -> mod tutorial, install guide, and hotkeys
 - `/download` -> installer downloads
+- `/download/preview` -> installer downloads, preview build variant (deep-link only)
 - `/heroes` -> hero overview dashboard
-- `/cards` -> card analysis dashboard
-- `/builds` -> final builds dashboard
+- `/release/preview` -> preview release-notes page (deep-link only, no inbound nav link)
 
 Unknown paths render the localized not-found screen.
 
@@ -34,21 +34,14 @@ Runtime metrics are fetched through `src/shared/lib/metrics-client.ts`.
 - `manifest.json`
 - `hero_overview/<window>/<tier>.json`
 - `hero_winrate_daily/<tier>.json`
-- `item_winrate/<window>/<tier>.json`
-- `item_uplift/<window>/<tier>.json`
-- `item_inclusion/<window>/<tier>.json`
-- `final_builds/<window>/<tier>.json`
-- card dictionary JSON
 
-The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`. The default card dictionary URL is `https://bpp-static.bazaarplusplus.com/card_dict_with_url.json`.
+The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`.
 
 ## Environment Variables
 
-- `VITE_METRICS_BASE`: browser runtime metrics base URL.
-- `VITE_CARD_DICTIONARY_URL`: browser runtime card dictionary URL.
+- `VITE_METRICS_BASE`: browser runtime metrics base URL (`src/shared/lib/metrics-client.ts`).
 - `BPP_REMOTE_METRICS_BASE`: Vite dev/preview proxy upstream for `/metrics/*`.
-- `PUBLIC_METRICS_BASE`: fallback upstream used by the Vite proxy and node-side repository helper.
-- `PUBLIC_CARD_DICTIONARY_URL`: node-side repository helper fallback for the card dictionary.
+- `PUBLIC_METRICS_BASE`: fallback upstream used by the Vite proxy.
 
 `PUBLIC_SITE_URL` exists in `.env.example`, but the current app code does not read it.
 
@@ -65,10 +58,8 @@ Date and integer formatting live in `src/shared/lib/dashboard.ts`. Percent forma
 
 ## Performance Notes
 
-- React Query caches queries for five minutes and avoids refetch-on-focus.
-- Cards and builds pages share manifest/card dictionary queries, then lazily load only the selected metrics payload.
+- React Query marks queries stale after five minutes (`staleTime`) and retains cached data for 30 minutes (`gcTime`), with refetch-on-focus disabled and retry capped at 1 (`src/shared/lib/query-client.ts`).
 - Hero overview uses `loadHeroOverviewPageData` and fetches multiple hero overview/daily payloads with bounded concurrency.
-- `VirtualizedMetricTable` is used for large card/build tables.
 
 ## Verification
 

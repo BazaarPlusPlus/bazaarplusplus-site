@@ -1,9 +1,7 @@
-import type { CardMetric, Locale, RatingTier } from '../shared/lib/metrics';
+import type { Locale, RatingTier } from '../shared/lib/metrics';
 
 type PrimaryNavCopy = {
   heroes: string;
-  cards: string;
-  builds: string;
 };
 
 type SecondaryNavCopy = {
@@ -27,7 +25,6 @@ type ScopeCopy = {
   hero: string;
   allHero: string;
   tierLabels: Record<RatingTier, string>;
-  fullTierLabels: Record<RatingTier, string>;
 };
 
 type CommonCopy = {
@@ -104,56 +101,8 @@ type HeroStatsCopy = {
   };
 };
 
-type CardStatsCopy = {
-  eyebrowLead: string;
-  eyebrowLedgerSuffix: string;
-  title: string;
-  metricTabs: Record<CardMetric, { label: string; ariaLabel?: string }>;
-  cardsInView: string;
-  scopeAriaLabel: string;
-  loading: string;
-  unavailable: string;
-  updating: string;
-  data: string;
-  tableHeaders: {
-    card: string;
-    hero: string;
-    name: string;
-    uplift: string;
-    ciLower: string;
-    ciUpper: string;
-    runsWith: string;
-    runsWithout: string;
-    inclusion: string;
-    hero10wTotal: string;
-    winRate: string;
-    appearances: string;
-    wins: string;
-  };
-};
-
-type BuildStatsCopy = {
-  eyebrow: string;
-  title: string;
-  scopeAriaLabel: string;
-  tableAriaLabel: string;
-  loading: string;
-  unavailable: string;
-  noContributor: string;
-  tableHeaders: {
-    hero: string;
-    build: string;
-    runs: string;
-    goldScore: string;
-    rank: string;
-    contributor: string;
-  };
-};
-
 type StatsCopy = {
   heroes: HeroStatsCopy;
-  cards: CardStatsCopy;
-  builds: BuildStatsCopy;
 };
 
 export type DownloadPageCopy = {
@@ -364,18 +313,10 @@ const zh: LocalizedSiteCopy = {
         mid: '中',
         high: '高',
       },
-      fullTierLabels: {
-        all: '全部玩家',
-        low: '低分段',
-        mid: '中分段',
-        high: '高分段',
-      },
     },
   },
   primaryNav: {
     heroes: '英雄统计',
-    cards: '卡牌统计',
-    builds: '终局构筑',
   },
   secondaryNav: {
     tutorial: '教程',
@@ -384,8 +325,6 @@ const zh: LocalizedSiteCopy = {
   },
   pageTitles: {
     heroes: '英雄统计',
-    cards: '卡牌统计',
-    builds: '终局构筑',
     tutorial: '教程',
     download: '下载',
     'download-preview': '预览下载',
@@ -422,54 +361,6 @@ const zh: LocalizedSiteCopy = {
         gold: '黄金',
         silver: '白银',
         bronze: '青铜',
-      },
-    },
-    cards: {
-      eyebrowLead: 'BazaarPlusPlus 数据 · ',
-      eyebrowLedgerSuffix: '榜单',
-      title: '卡牌分析',
-      metricTabs: {
-        winrate: { label: '胜率' },
-        uplift: { label: '提升' },
-        inclusion: { label: '登场', ariaLabel: '卡牌登场' },
-      },
-      cardsInView: '张卡牌符合筛选',
-      scopeAriaLabel: '卡牌范围筛选',
-      loading: '正在加载卡牌数据',
-      unavailable: '卡牌数据暂不可用',
-      updating: '正在更新',
-      data: '数据',
-      tableHeaders: {
-        card: '卡牌',
-        hero: '英雄',
-        name: '名称',
-        uplift: '提升',
-        ciLower: '置信下限',
-        ciUpper: '置信上限',
-        runsWith: '携带局数',
-        runsWithout: '未携带局数',
-        inclusion: '登场',
-        hero10wTotal: '英雄10胜总数',
-        winRate: '胜率',
-        appearances: '出现次数',
-        wins: '胜场',
-      },
-    },
-    builds: {
-      eyebrow: 'BazaarPlusPlus 数据 · 终局构筑',
-      title: '终局构筑',
-      scopeAriaLabel: '构筑范围筛选',
-      tableAriaLabel: '终局构筑',
-      loading: '正在加载构筑数据',
-      unavailable: '构筑数据暂不可用',
-      noContributor: '未显示贡献者',
-      tableHeaders: {
-        hero: '英雄',
-        build: '构筑',
-        runs: '局数',
-        goldScore: '评分',
-        rank: '排名',
-        contributor: '贡献者',
       },
     },
   },
@@ -786,18 +677,10 @@ const en: LocalizedSiteCopy = {
         mid: 'Mid',
         high: 'High',
       },
-      fullTierLabels: {
-        all: 'All players',
-        low: 'Low rank',
-        mid: 'Mid rank',
-        high: 'High rank',
-      },
     },
   },
   primaryNav: {
     heroes: 'Hero Stats',
-    cards: 'Card Stats',
-    builds: 'Final Builds',
   },
   secondaryNav: {
     tutorial: 'Tutorial',
@@ -806,8 +689,6 @@ const en: LocalizedSiteCopy = {
   },
   pageTitles: {
     heroes: 'Hero Stats',
-    cards: 'Card Stats',
-    builds: 'Final Builds',
     tutorial: 'Tutorial',
     download: 'Download',
     'download-preview': 'Preview Download',
@@ -844,54 +725,6 @@ const en: LocalizedSiteCopy = {
         gold: 'Gold',
         silver: 'Silver',
         bronze: 'Bronze',
-      },
-    },
-    cards: {
-      eyebrowLead: 'Bazaar Almanac · ',
-      eyebrowLedgerSuffix: ' ledger',
-      title: 'Card analysis',
-      metricTabs: {
-        winrate: { label: 'Win rate' },
-        uplift: { label: 'Uplift' },
-        inclusion: { label: 'Inclusion', ariaLabel: 'Card inclusion' },
-      },
-      cardsInView: 'cards in view',
-      scopeAriaLabel: 'Card scope filters',
-      loading: 'Loading card data',
-      unavailable: 'Card data unavailable',
-      updating: 'Updating',
-      data: 'data',
-      tableHeaders: {
-        card: 'Card',
-        hero: 'Hero',
-        name: 'Name',
-        uplift: 'Uplift',
-        ciLower: 'CI lower',
-        ciUpper: 'CI upper',
-        runsWith: 'Runs with',
-        runsWithout: 'Runs without',
-        inclusion: 'Inclusion',
-        hero10wTotal: 'Hero 10W total',
-        winRate: 'Win rate',
-        appearances: 'Appearances',
-        wins: 'Wins',
-      },
-    },
-    builds: {
-      eyebrow: 'Bazaar Almanac · Winning blueprints',
-      title: 'Final builds',
-      scopeAriaLabel: 'Build scope filters',
-      tableAriaLabel: 'Final builds',
-      loading: 'Loading build data',
-      unavailable: 'Build data unavailable',
-      noContributor: 'No contributor',
-      tableHeaders: {
-        hero: 'Hero',
-        build: 'Build',
-        runs: 'Runs',
-        goldScore: 'Gold score',
-        rank: 'Rank',
-        contributor: 'Contributor',
       },
     },
   },

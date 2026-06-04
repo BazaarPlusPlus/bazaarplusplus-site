@@ -4,22 +4,18 @@ import { getSiteCopy } from '../../content/site-copy';
 
 type SiteHeaderActiveSection =
   | 'heroes'
-  | 'cards'
-  | 'builds'
   | 'tutorial'
   | 'download'
   | 'support';
 
 type StatsNavItem = {
-  key: 'heroes' | 'cards' | 'builds';
+  key: 'heroes';
   numeral: string;
   href: string;
 };
 
 const STATS_NAV_ITEMS: StatsNavItem[] = [
   { key: 'heroes', numeral: 'I', href: '/heroes' },
-  { key: 'cards', numeral: 'II', href: '/cards' },
-  { key: 'builds', numeral: 'III', href: '/builds' },
 ];
 
 type InfoNavItem = {

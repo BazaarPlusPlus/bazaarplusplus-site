@@ -6,7 +6,7 @@ import { formatDateTime } from '../lib/dashboard';
 import FooterCredit from './FooterCredit';
 import SiteHeader from './SiteHeader';
 
-type Section = 'heroes' | 'cards' | 'builds';
+type Section = 'heroes';
 
 type StatsPageShellProps = {
   activeSection: Section;

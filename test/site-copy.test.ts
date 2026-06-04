@@ -21,8 +21,6 @@ function collectStrings(value: unknown): string[] {
 describe('site copy', () => {
   test('builds localized browser tab titles for routed pages', () => {
     expect(getPageTitle('heroes', 'en')).toBe('Hero Stats | BazaarPlusPlus');
-    expect(getPageTitle('cards', 'zh')).toBe('卡牌统计 | BazaarPlusPlus');
-    expect(getPageTitle('builds', 'zh')).toBe('终局构筑 | BazaarPlusPlus');
     expect(getPageTitle('tutorial', 'en')).toBe('Tutorial | BazaarPlusPlus');
     expect(getPageTitle('download', 'en')).toBe('Download | BazaarPlusPlus');
     expect(getPageTitle('download-preview', 'zh')).toBe('预览下载 | BazaarPlusPlus');
@@ -49,8 +47,6 @@ describe('site copy', () => {
     expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
     expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
-    expect(zhCopy.stats.cards.metricTabs.uplift.label).toBe('提升');
-    expect(zhCopy.stats.builds.tableHeaders.contributor).toBe('贡献者');
     expect(zhCopy.secondaryNav.tutorial).toBe('教程');
     expect(zhCopy.tutorial.installation.steps[0]?.title).toBe('下载最新安装器');
     expect(zhCopy.tutorial.installation.steps[3]?.description).toBe(

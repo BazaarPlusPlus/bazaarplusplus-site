@@ -48,10 +48,10 @@ describe('page shell footer', () => {
   test('renders the author credit link in stats pages', () => {
     render(
       <StatsPageShell
-        activeSection="cards"
+        activeSection="heroes"
         locale="en"
         eyebrow="Analytics"
-        title="Card winrate"
+        title="Hero winrate"
         source="remote"
         generatedAt="2026-04-18T18:57:46Z"
         filters={<div>Filters</div>}

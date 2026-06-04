@@ -5,8 +5,6 @@ import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/app/ro
 describe('spa router', () => {
   test('resolves top-level stats routes', () => {
     expect(resolveSpaRoute('/heroes')).toEqual({ page: 'heroes' });
-    expect(resolveSpaRoute('/cards')).toEqual({ page: 'cards' });
-    expect(resolveSpaRoute('/builds')).toEqual({ page: 'builds' });
   });
 
   test('resolves info pages', () => {
@@ -41,12 +39,18 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/archetypes')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });
     expect(isSpaRoutePath('/heroes')).toBe(true);
-    expect(isSpaRoutePath('/cards')).toBe(true);
     expect(isSpaRoutePath('/tutorial')).toBe(true);
     expect(isSpaRoutePath('/download')).toBe(true);
     expect(isSpaRoutePath('/download/preview')).toBe(true);
     expect(isSpaRoutePath('/support')).toBe(true);
     expect(isSpaRoutePath('/archetypes')).toBe(false);
     expect(isSpaRoutePath('/unknown')).toBe(false);
+  });
+
+  test('treats removed card and build routes as not found', () => {
+    expect(resolveSpaRoute('/cards')).toEqual({ page: 'not-found' });
+    expect(resolveSpaRoute('/builds')).toEqual({ page: 'not-found' });
+    expect(isSpaRoutePath('/cards')).toBe(false);
+    expect(isSpaRoutePath('/builds')).toBe(false);
   });
 });

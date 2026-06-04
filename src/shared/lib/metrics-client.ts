@@ -1,11 +1,6 @@
 import type {
-  CardDictionary,
-  CardWinratePayload,
-  FinalBuildsPayload,
   HeroOverviewPayload,
   HeroWinrateDailyPayload,
-  ItemInclusionPayload,
-  ItemUpliftPayload,
   ManifestPayload,
   MetricsSource,
   MetricWindow,
@@ -14,7 +9,6 @@ import type {
 
 type RuntimeMetricsClientOptions = {
   metricsBaseUrl?: string;
-  cardDictionaryUrl?: string;
   fetchImpl?: typeof fetch;
   requestTimeoutMs?: number;
   requestRetries?: number;
@@ -30,9 +24,6 @@ export type MetricsRequestOptions = {
 
 const DEFAULT_METRICS_BASE_URL =
   import.meta.env.VITE_METRICS_BASE ?? 'https://bpp-metrics.bazaarplusplus.com';
-const DEFAULT_CARD_DICTIONARY_URL =
-  import.meta.env.VITE_CARD_DICTIONARY_URL ??
-  'https://bpp-static.bazaarplusplus.com/card_dict_with_url.json';
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
 const DEFAULT_REQUEST_RETRIES = 2;
 const DEFAULT_REQUEST_RETRY_DELAY_MS = 250;
@@ -128,7 +119,6 @@ function createRequestSignal(
 
 export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions = {}) {
   const metricsBaseUrl = normalizeBaseUrl(options.metricsBaseUrl ?? DEFAULT_METRICS_BASE_URL);
-  const cardDictionaryUrl = options.cardDictionaryUrl ?? DEFAULT_CARD_DICTIONARY_URL;
   const fetchImpl = options.fetchImpl ?? fetch;
   const defaultTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const defaultRetries = options.requestRetries ?? DEFAULT_REQUEST_RETRIES;
@@ -194,20 +184,10 @@ export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions 
 
   return {
     getSource: resolveSource,
-    getCardDictionary: (requestOptions?: MetricsRequestOptions) =>
-      loadJson<CardDictionary>(cardDictionaryUrl, requestOptions),
     getManifest: (requestOptions?: MetricsRequestOptions) =>
       loadMetric<ManifestPayload>('manifest.json', requestOptions),
     getHeroOverview: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
       loadMetric<HeroOverviewPayload>(`hero_overview/${window}/${tier}.json`, requestOptions),
-    getCardWinrate: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<CardWinratePayload>(`item_winrate/${window}/${tier}.json`, requestOptions),
-    getItemUplift: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<ItemUpliftPayload>(`item_uplift/${window}/${tier}.json`, requestOptions),
-    getItemInclusion: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<ItemInclusionPayload>(`item_inclusion/${window}/${tier}.json`, requestOptions),
-    getFinalBuilds: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<FinalBuildsPayload>(`final_builds/${window}/${tier}.json`, requestOptions),
     getHeroWinrateDaily: (tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
       loadMetric<HeroWinrateDailyPayload>(`hero_winrate_daily/${tier}.json`, requestOptions),
   };

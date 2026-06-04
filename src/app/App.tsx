@@ -7,7 +7,7 @@ import TutorialPage from '../features/tutorial/TutorialPage';
 import { getPageTitle } from '../content/site-copy';
 import { parseLocale, type Locale } from '../shared/lib/metrics';
 import { createRuntimeMetricsClient } from '../shared/lib/metrics-client';
-import { BuildsPage, CardsPage, HeroOverviewPage } from './route-pages';
+import { HeroOverviewPage } from './route-pages';
 import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from './router';
 import { NotFoundScreen } from './screens';
 
@@ -82,14 +82,6 @@ export default function App() {
 
   if (route.page === 'heroes') {
     return <HeroOverviewPage client={client} locale={locale} search={location.search} />;
-  }
-
-  if (route.page === 'cards') {
-    return <CardsPage client={client} locale={locale} search={location.search} />;
-  }
-
-  if (route.page === 'builds') {
-    return <BuildsPage client={client} locale={locale} search={location.search} />;
   }
 
   if (route.page === 'tutorial') {

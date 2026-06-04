@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import FinalBuildDashboard from '../features/builds/FinalBuildDashboard';
-import CardAnalysisDashboard from '../features/cards/CardAnalysisDashboard';
 import HeroOverviewDashboard from '../features/heroes/HeroOverviewDashboard';
 import {
-  type CardDictionary,
-  getAvailableTiers,
   getAvailableWindows,
-  getCardMetricPayloadMetric,
-  parseCardMetric,
   parseMetricWindow,
   parseRatingTier,
-  type CardMetric,
   type Locale,
   type ManifestPayload,
   type MetricWindow,
@@ -30,12 +23,6 @@ type RoutePageProps = {
   client: RuntimeMetricsClient;
   locale: Locale;
   search: string;
-};
-
-type ManifestDictionaryPageData = {
-  manifest: ManifestPayload;
-  source: ReturnType<RuntimeMetricsClient['getSource']>;
-  cardDictionary: CardDictionary;
 };
 
 function getInitialWindow(manifest: ManifestPayload, search: string): MetricWindow {
@@ -59,54 +46,6 @@ function usePageQuery<T>(
     queryKey,
     queryFn: ({ signal }) => queryFn(signal),
   });
-}
-
-export function getManifestDictionaryProgress(
-  manifestLoaded: boolean,
-  dictionaryLoaded: boolean
-): PageLoadProgress {
-  const completed = Number(manifestLoaded) + Number(dictionaryLoaded);
-  const label = !manifestLoaded
-    ? 'Loading manifest'
-    : !dictionaryLoaded
-      ? 'Loading card dictionary'
-      : 'Loaded card dictionary';
-
-  return { completed, total: 2, label };
-}
-
-function useManifestDictionaryPageData(client: RuntimeMetricsClient): {
-  data: ManifestDictionaryPageData | undefined;
-  error: unknown;
-  isLoading: boolean;
-  progress: PageLoadProgress;
-} {
-  const manifestQuery = usePageQuery(
-    ['metrics-manifest'],
-    (signal) => client.getManifest({ signal })
-  );
-  const dictionaryQuery = usePageQuery(
-    ['card-dictionary'],
-    (signal) => client.getCardDictionary({ signal })
-  );
-  const progress = getManifestDictionaryProgress(
-    Boolean(manifestQuery.data),
-    Boolean(dictionaryQuery.data)
-  );
-  const data = manifestQuery.data && dictionaryQuery.data
-    ? {
-        manifest: manifestQuery.data,
-        source: client.getSource(),
-        cardDictionary: dictionaryQuery.data,
-      }
-    : undefined;
-
-  return {
-    data,
-    error: manifestQuery.error ?? dictionaryQuery.error,
-    isLoading: manifestQuery.isLoading || dictionaryQuery.isLoading,
-    progress,
-  };
 }
 
 export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
@@ -149,112 +88,6 @@ function HeroOverviewRouteContent({
       initialSelectedTier={initialSelectedTier}
       dailyByTier={data.dailyByTier}
       overviewByWindow={data.overviewByWindow}
-    />
-  );
-}
-
-export function CardsPage({ client, locale, search }: RoutePageProps) {
-  const { data, error, isLoading, progress } = useManifestDictionaryPageData(client);
-
-  if (isLoading) {
-    return <LoadingScreen locale={locale} progress={progress} />;
-  }
-
-  if (!data) {
-    return <ErrorScreen locale={locale} error={error} />;
-  }
-
-  return (
-    <CardsDashboard
-      data={data}
-      client={client}
-      locale={locale}
-      search={search}
-    />
-  );
-}
-
-function CardsDashboard({
-  data,
-  client,
-  locale,
-  search,
-}: {
-  data: ManifestDictionaryPageData;
-  client: RuntimeMetricsClient;
-  locale: Locale;
-  search: string;
-}) {
-  const params = new URLSearchParams(search);
-  const requestedMetric = parseCardMetric(params.get('m'));
-  const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialMetricKey = getCardMetricPayloadMetric(requestedMetric);
-  const initialTierOptions = getAvailableTiers(
-    data.manifest,
-    initialSelectedWindow,
-    initialMetricKey
-  );
-  const initialSelectedTier = getInitialTier(initialTierOptions, search);
-
-  return (
-    <CardAnalysisDashboard
-      locale={locale}
-      manifest={data.manifest}
-      initialSelectedMetric={requestedMetric}
-      initialSelectedWindow={initialSelectedWindow}
-      initialSelectedTier={initialSelectedTier}
-      source={data.source}
-      client={client}
-      cardDictionary={data.cardDictionary}
-    />
-  );
-}
-
-export function BuildsPage({ client, locale, search }: RoutePageProps) {
-  const { data, error, isLoading, progress } = useManifestDictionaryPageData(client);
-
-  if (isLoading) {
-    return <LoadingScreen locale={locale} progress={progress} />;
-  }
-
-  if (!data) {
-    return <ErrorScreen locale={locale} error={error} />;
-  }
-
-  return (
-    <BuildsDashboard
-      data={data}
-      client={client}
-      locale={locale}
-      search={search}
-    />
-  );
-}
-
-function BuildsDashboard({
-  data,
-  client,
-  locale,
-  search,
-}: {
-  data: ManifestDictionaryPageData;
-  client: RuntimeMetricsClient;
-  locale: Locale;
-  search: string;
-}) {
-  const initialSelectedWindow = getInitialWindow(data.manifest, search);
-  const initialTierOptions = getAvailableTiers(data.manifest, initialSelectedWindow, 'final_builds');
-  const initialSelectedTier = getInitialTier(initialTierOptions, search);
-
-  return (
-    <FinalBuildDashboard
-      locale={locale}
-      manifest={data.manifest}
-      initialSelectedWindow={initialSelectedWindow}
-      initialSelectedTier={initialSelectedTier}
-      source={data.source}
-      client={client}
-      cardDictionary={data.cardDictionary}
     />
   );
 }

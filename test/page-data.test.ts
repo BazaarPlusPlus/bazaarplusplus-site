@@ -63,11 +63,6 @@ describe('SPA data loading progress', () => {
       getManifest: vi.fn(async () => manifest),
       getHeroWinrateDaily: vi.fn(async () => daily),
       getHeroOverview: vi.fn(async () => overview),
-      getCardDictionary: vi.fn(),
-      getCardWinrate: vi.fn(),
-      getItemUplift: vi.fn(),
-      getItemInclusion: vi.fn(),
-      getFinalBuilds: vi.fn(),
     } satisfies RuntimeMetricsClient;
     const progress: PageLoadProgress[] = [];
 
@@ -139,11 +134,6 @@ describe('SPA data loading progress', () => {
           return overview;
         }
       ),
-      getCardDictionary: vi.fn(),
-      getCardWinrate: vi.fn(),
-      getItemUplift: vi.fn(),
-      getItemInclusion: vi.fn(),
-      getFinalBuilds: vi.fn(),
     } satisfies RuntimeMetricsClient;
 
     await loadHeroOverviewPageData(client, { signal: abortController.signal });

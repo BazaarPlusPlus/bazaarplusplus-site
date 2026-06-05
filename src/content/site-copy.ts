@@ -845,5 +845,5 @@ export function getPageTitle(page: PageTitleKey, locale: Locale): string {
 }
 
 export const KOFI_URL = 'https://ko-fi.com/cauyxy';
-export const BAZAARDB_META_URL = 'https://bazaardb.gg/run/meta';
+export const BAZAARDB_META_URL = 'https://bazaardb.gg/run/meta?utm_source=bazaarplusplus';
 export const BAZAARDB_ICON_PATH = '/bazaardb-icon.ico';

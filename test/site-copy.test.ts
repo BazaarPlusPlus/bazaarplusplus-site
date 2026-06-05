@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { getPageTitle, getSiteCopy } from '../src/content/site-copy';
+import { BAZAARDB_META_URL, getPageTitle, getSiteCopy } from '../src/content/site-copy';
 
 function collectStrings(value: unknown): string[] {
   if (typeof value === 'string') {
@@ -126,6 +126,10 @@ describe('site copy', () => {
     const stringsWithAsciiCommas = strings.filter((value) => value.includes(','));
 
     expect(stringsWithAsciiCommas).toEqual([]);
+  });
+
+  test('marks BazaarDB outbound links with BazaarPlusPlus UTM source', () => {
+    expect(BAZAARDB_META_URL).toBe('https://bazaardb.gg/run/meta?utm_source=bazaarplusplus');
   });
 
   test('keeps WeChat localized and Ko-fi global in Chinese support copy', () => {

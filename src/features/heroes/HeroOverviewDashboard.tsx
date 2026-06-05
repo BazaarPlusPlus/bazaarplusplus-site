@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
-import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
   DEFAULT_LOCALE,
   type HeroOverviewPayload,
@@ -509,26 +509,43 @@ export default function HeroOverviewDashboard({
       title={heroCopy.title}
       generatedAt={generatedAt}
       actions={
-        <a
-          href={BAZAARDB_META_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--color-border-bright)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)] hover:text-[color:var(--color-text-base)]"
-        >
-          <span
-            aria-hidden="true"
-            className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[rgba(255,245,220,0.06)]"
+        <>
+          <a
+            href={BAZAARDB_META_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--color-border-bright)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)] hover:text-[color:var(--color-text-base)]"
           >
-            <img
-              src={BAZAARDB_ICON_PATH}
-              alt=""
-              className="h-full w-full object-contain"
-              decoding="async"
-            />
-          </span>
-          <span>{heroCopy.detailLinkLabel}</span>
-          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
-        </a>
+            <span
+              aria-hidden="true"
+              className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[rgba(255,245,220,0.06)]"
+            >
+              <img
+                src={BAZAARDB_ICON_PATH}
+                alt=""
+                className="h-full w-full object-contain"
+                decoding="async"
+              />
+            </span>
+            <span>{heroCopy.detailLinkLabel}</span>
+            <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+          </a>
+          <a
+            href={BAZAARDB_INTEGRATION_DOC_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={heroCopy.detailLinkHelpLabel}
+            className="group relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border-soft)] text-sm font-semibold text-[color:var(--color-text-muted)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent-bright)]"
+          >
+            <span aria-hidden="true">?</span>
+            <span
+              role="tooltip"
+              className="pointer-events-none invisible absolute bottom-full right-0 z-10 mb-2 whitespace-nowrap rounded-md border border-[color:var(--color-border-bright)] bg-[color:rgba(15,12,8,0.96)] px-3 py-1.5 text-xs font-medium leading-5 text-[color:var(--color-accent-bright)] opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100"
+            >
+              {heroCopy.detailLinkHelpTooltip}
+            </span>
+          </a>
+        </>
       }
       filters={null}
     >

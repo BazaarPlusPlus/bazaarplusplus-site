@@ -72,6 +72,8 @@ type HeroStatsCopy = {
   eyebrow: string;
   title: string;
   detailLinkLabel: string;
+  detailLinkHelpLabel: string;
+  detailLinkHelpTooltip: string;
   trend: {
     winrateTrend: string;
     titleLead: string;
@@ -300,6 +302,8 @@ const zh: LocalizedSiteCopy = {
       eyebrow: 'BazaarPlusPlus 数据 · 英雄趋势',
       title: '英雄概览',
       detailLinkLabel: '在 BazaarDB 查看详细统计',
+      detailLinkHelpLabel: '了解数据如何同步到 BazaarDB',
+      detailLinkHelpTooltip: '了解数据如何同步到 BazaarDB',
       trend: {
         winrateTrend: '胜率趋势',
         titleLead: '英雄',
@@ -602,6 +606,8 @@ const en: LocalizedSiteCopy = {
       eyebrow: 'Bazaar Almanac · Hero Currents',
       title: 'Hero overview',
       detailLinkLabel: 'View detailed stats on BazaarDB',
+      detailLinkHelpLabel: 'Learn how data syncs to BazaarDB',
+      detailLinkHelpTooltip: 'Learn how data syncs to BazaarDB',
       trend: {
         winrateTrend: 'winrate trend',
         titleLead: 'Hero',
@@ -847,3 +853,5 @@ export function getPageTitle(page: PageTitleKey, locale: Locale): string {
 export const KOFI_URL = 'https://ko-fi.com/cauyxy';
 export const BAZAARDB_META_URL = 'https://bazaardb.gg/run/meta?utm_source=bazaarplusplus';
 export const BAZAARDB_ICON_PATH = '/bazaardb-icon.ico';
+export const BAZAARDB_INTEGRATION_DOC_URL =
+  'https://bpp-static.bazaarplusplus.com/bazaardb-snapshot-integration.pdf';

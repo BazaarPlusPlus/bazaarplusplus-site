@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import HeroOverviewDashboard from '../src/features/heroes/HeroOverviewDashboard';
-import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL } from '../src/content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL } from '../src/content/site-copy';
 import { formatShortDate } from '../src/shared/lib/dashboard';
 import type {
   HeroOverviewPayload,
@@ -276,6 +276,11 @@ describe('HeroOverviewDashboard', () => {
     expect(detailDataLink).toHaveAttribute('target', '_blank');
     expect(detailDataLink).toHaveAttribute('rel', 'noreferrer');
     expect(detailDataLink.querySelector('img')).toHaveAttribute('src', BAZAARDB_ICON_PATH);
+    const detailHelpLink = screen.getByRole('link', { name: 'Learn how data syncs to BazaarDB' });
+    expect(detailHelpLink).toHaveAttribute('href', BAZAARDB_INTEGRATION_DOC_URL);
+    expect(detailHelpLink).toHaveAttribute('target', '_blank');
+    expect(detailHelpLink).toHaveAttribute('rel', 'noreferrer');
+    expect(within(detailHelpLink).getByRole('tooltip')).toHaveTextContent('Learn how data syncs to BazaarDB');
     expect(screen.getByText(formatShortDate('2026-04-10T16:00:00Z'))).toBeInTheDocument();
     expect(screen.queryByText('Hero filters')).not.toBeInTheDocument();
     expect(screen.queryByText('Focused hero')).not.toBeInTheDocument();

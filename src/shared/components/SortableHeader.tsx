@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import type { SortDirection } from '../lib/table-sorting';
 
 type SortableHeaderProps = {
@@ -5,6 +7,8 @@ type SortableHeaderProps = {
   activeDirection?: SortDirection;
   onToggle: () => void;
   className?: string;
+  // Rendered after the sort button as a separate focus target (never nested inside it).
+  info?: ReactNode;
 };
 
 export default function SortableHeader({
@@ -12,6 +16,7 @@ export default function SortableHeader({
   activeDirection,
   onToggle,
   className = '',
+  info,
 }: SortableHeaderProps) {
   const isAsc = activeDirection === 'asc';
   const isDesc = activeDirection === 'desc';
@@ -23,6 +28,7 @@ export default function SortableHeader({
       aria-sort={isAsc ? 'ascending' : isDesc ? 'descending' : 'none'}
       className={className}
     >
+      <span className="inline-flex min-w-max items-center gap-1.5">
       <button
         type="button"
         onClick={onToggle}
@@ -55,6 +61,8 @@ export default function SortableHeader({
           </span>
         </span>
       </button>
+      {info}
+      </span>
     </th>
   );
 }

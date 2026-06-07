@@ -1,6 +1,6 @@
 # BazaarPlusPlus Site Architecture
 
-Last updated: 2026-06-04
+Last updated: 2026-06-07
 
 ## Purpose
 
@@ -29,13 +29,17 @@ Unknown paths render the localized not-found screen.
 
 ## Data Sources
 
-Runtime metrics are fetched through `src/shared/lib/metrics-client.ts`.
+Runtime metrics are fetched through `src/shared/lib/metrics-client.ts` from the analyzer-v4
+namespace.
 
-- `manifest.json`
-- `hero_overview/<window>/<tier>.json`
-- `hero_winrate_daily/<tier>.json`
+- `analyzer-v4/manifest.json` — manifest with `latest_complete_day`, `web.days[]` (day + path +
+  rowCount), and data-quality counters
+- `analyzer-v4/web/<day>.json` — per-day `web_hero_daily` payloads with raw additive counts at
+  grain day + rating tier + hero; the day paths come verbatim from `web.days[].path`
 
-The default remote metrics base is `https://bpp-metrics.bazaarplusplus.com`.
+The analyzer emits raw counts only; rates, Wilson bounds, windowing, and matchup sorting are
+derived client-side in `src/shared/lib/web-daily.ts`. The default remote metrics base is
+`https://bpp-metrics.bazaarplusplus.com`.
 
 ## Environment Variables
 
@@ -59,7 +63,7 @@ Date and integer formatting live in `src/shared/lib/dashboard.ts`. Percent forma
 ## Performance Notes
 
 - React Query marks queries stale after five minutes (`staleTime`) and retains cached data for 30 minutes (`gcTime`), with refetch-on-focus disabled and retry capped at 1 (`src/shared/lib/query-client.ts`).
-- Hero overview uses `loadHeroOverviewPageData` and fetches multiple hero overview/daily payloads with bounded concurrency.
+- Hero overview uses `loadHeroOverviewPageData` and fetches one manifest plus at most seven daily payloads with bounded concurrency; failed daily files degrade coverage per-file instead of failing the page.
 
 ## Verification
 

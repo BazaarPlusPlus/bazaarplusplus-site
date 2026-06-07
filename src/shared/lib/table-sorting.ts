@@ -12,18 +12,6 @@ type SortAccessorMap<Row, Key extends string> = Record<Key, SortAccessor<Row>> &
   Record<string, SortAccessor<Row> | undefined>;
 
 function compareValues(left: SortPrimitive, right: SortPrimitive): number {
-  if (left == null && right == null) {
-    return 0;
-  }
-
-  if (left == null) {
-    return 1;
-  }
-
-  if (right == null) {
-    return -1;
-  }
-
   if (typeof left === 'number' && typeof right === 'number') {
     return left - right;
   }
@@ -55,7 +43,20 @@ export function sortRows<Row, Key extends string>(
   accessors: SortAccessorMap<Row, Key>
 ): Row[] {
   return [...rows].sort((left, right) => {
-    const result = compareValues(accessors[sort.key](left), accessors[sort.key](right));
+    const leftValue = accessors[sort.key](left);
+    const rightValue = accessors[sort.key](right);
+
+    // Nulls sink to the bottom in both sort directions; never let the
+    // direction flip float a zero-denominator row to the top.
+    if (leftValue == null || rightValue == null) {
+      if (leftValue == null && rightValue == null) {
+        return 0;
+      }
+
+      return leftValue == null ? 1 : -1;
+    }
+
+    const result = compareValues(leftValue, rightValue);
     return sort.direction === 'asc' ? result : -result;
   });
 }

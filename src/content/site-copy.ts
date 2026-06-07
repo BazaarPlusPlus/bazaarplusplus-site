@@ -66,7 +66,10 @@ type CommonCopy = {
     backToHeroes: string;
   };
   scope: ScopeCopy;
+  noValueLabel: string;
 };
+
+type VictoryTierKey = 'perfect' | 'gold' | 'silver' | 'bronze' | 'misfortune';
 
 type HeroStatsCopy = {
   eyebrow: string;
@@ -99,6 +102,124 @@ type HeroStatsCopy = {
     gold: string;
     silver: string;
     bronze: string;
+    wilsonLower: string;
+    runShare: string;
+    avgDays: string;
+    p75Days: string;
+    overallBattle: string;
+    finalBattle: string;
+  };
+  dossier: {
+    label: string;
+  };
+  battle: {
+    title: string;
+    overallWinRate: string;
+    finalBattleWinRate: string;
+    gap: string;
+    wilsonLower: string;
+  };
+  stage: {
+    title: string;
+    viewFocused: string;
+    viewAll: string;
+    day_1_3: string;
+    day_4_7: string;
+    day_8_plus: string;
+  };
+  victoryProgress: {
+    title: string;
+    wins_0_3: string;
+    wins_4_6: string;
+    wins_7_9: string;
+    wins_10_plus: string;
+  };
+  matchups: {
+    title: string;
+    favorable: string;
+    unfavorable: string;
+    mirror: string;
+    lowSampleTag: string;
+    lowSampleDisclosure: string;
+    sample: string;
+    empty: string;
+    minSampleNote: string;
+  };
+  outcome: {
+    title: string;
+    histogramTitle: string;
+    perfect: string;
+    gold: string;
+    silver: string;
+    bronze: string;
+    misfortune: string;
+  };
+  heroClass: {
+    nonCanonicalTag: string;
+    nonCanonicalTooltip: string;
+    chartExcludedFootnote: string;
+  };
+  coverage: {
+    windowSuffix: string;
+    daysLoadedPrefix: string;
+    daysLoadedSeparator: string;
+    partialNote: string;
+    syncedPrefix: string;
+    qualityOk: string;
+    qualityDegraded: string;
+    failRatePrefix: string;
+    someDaysUnavailable: string;
+    noTrendValue: string;
+  };
+  dataQuality: {
+    bundleFailBanner: string;
+    decodeFailBanner: string;
+    dismiss: string;
+  };
+  unavailable: {
+    title: string;
+    body: string;
+  };
+  comingSoon: {
+    title: string;
+    body: string;
+  };
+  tierEmpty: {
+    title: string;
+    body: string;
+  };
+  methodology: {
+    triggerLabel: string;
+    triggerAriaLabel: string;
+    sheetEyebrow: string;
+    sheetTitle: string;
+    closeLabel: string;
+    intro: string;
+    rankedByCaption: string;
+    formula: {
+      wilson: string;
+      winRate: string;
+      runShare: string;
+      tenWinRate: string;
+      runDays: string;
+    };
+    tips: {
+      hero: string;
+      winRate: string;
+      runs: string;
+      share: string;
+      wins10w: string;
+      perfect: string;
+      gold: string;
+      silver: string;
+      bronze: string;
+    };
+    tierLegend: Record<VictoryTierKey, { label: string; gloss: string }>;
+    sections: Record<
+      'ranking' | 'battles' | 'outcomes' | 'tiers' | 'tierVsAll' | 'window' | 'quality',
+      { title: string; body: string }
+    >;
+    glossary: Array<{ term: string; definition: string }>;
   };
 };
 
@@ -280,6 +401,7 @@ const zh: LocalizedSiteCopy = {
         high: '高',
       },
     },
+    noValueLabel: '暂无数值',
   },
   primaryNav: {
     heroes: '统计',
@@ -305,13 +427,13 @@ const zh: LocalizedSiteCopy = {
       detailLinkHelpLabel: '了解数据如何同步到 BazaarDB',
       detailLinkHelpTooltip: '了解数据如何同步到 BazaarDB',
       trend: {
-        winrateTrend: '胜率趋势',
+        winrateTrend: '10胜率趋势',
         titleLead: '英雄',
         titleAccent: '走势',
         inFocus: '当前焦点',
-        latest: '最新胜率',
-        startedAt: '起始胜率',
-        chartAriaLabel: '英雄胜率趋势图',
+        latest: '最新10胜率',
+        startedAt: '起始10胜率',
+        chartAriaLabel: '英雄10胜率趋势图',
       },
       snapshot: {
         label: '当前快照',
@@ -321,14 +443,171 @@ const zh: LocalizedSiteCopy = {
       },
       tableHeaders: {
         hero: '英雄',
-        winRate: '胜率',
-        runs: '局数',
+        winRate: '10胜率',
+        runs: '完成局数',
         share: '占比',
         wins10w: '10胜',
         perfect: '完美',
         gold: '黄金',
         silver: '白银',
         bronze: '青铜',
+        wilsonLower: 'Wilson 下界',
+        runShare: '局数占比',
+        avgDays: '平均天数',
+        p75Days: 'P75 天数',
+        overallBattle: '对战胜率',
+        finalBattle: '终局胜率',
+      },
+      dossier: {
+        label: '英雄档案',
+      },
+      battle: {
+        title: '对战表现',
+        overallWinRate: '总体对战胜率',
+        finalBattleWinRate: '终局对战胜率',
+        gap: '差距',
+        wilsonLower: 'Wilson 下界',
+      },
+      stage: {
+        title: '游戏阶段胜率',
+        viewFocused: '当前英雄',
+        viewAll: '全部英雄',
+        day_1_3: '第 1-3 天',
+        day_4_7: '第 4-7 天',
+        day_8_plus: '第 8 天起',
+      },
+      victoryProgress: {
+        title: '胜场区间胜率',
+        wins_0_3: '0-3 胜',
+        wins_4_6: '4-6 胜',
+        wins_7_9: '7-9 胜',
+        wins_10_plus: '10 胜以上',
+      },
+      matchups: {
+        title: '对位克制',
+        favorable: '优势对位',
+        unfavorable: '劣势对位',
+        mirror: '镜像对局',
+        lowSampleTag: '样本不足',
+        lowSampleDisclosure: '展开样本不足的对位',
+        sample: '场',
+        empty: '暂无对位数据',
+        minSampleNote: '样本不足的对位只显示场次，不计算胜率。',
+      },
+      outcome: {
+        title: '战绩等级分布',
+        histogramTitle: '最终胜场分布',
+        perfect: '完美',
+        gold: '黄金',
+        silver: '白银',
+        bronze: '青铜',
+        misfortune: '厄运',
+      },
+      heroClass: {
+        nonCanonicalTag: '非标准',
+        nonCanonicalTooltip: '非标准英雄数据，可能来自特殊对局。',
+        chartExcludedFootnote: '非标准英雄不在趋势图中显示。',
+      },
+      coverage: {
+        windowSuffix: ' 窗口',
+        daysLoadedPrefix: '已加载 ',
+        daysLoadedSeparator: ' / ',
+        partialNote: '覆盖不完整',
+        syncedPrefix: '同步于 ',
+        qualityOk: '数据正常',
+        qualityDegraded: '数据质量下降',
+        failRatePrefix: '数据包下载失败率 ',
+        someDaysUnavailable: '部分日期暂不可用，当前结果只包含已加载日期。',
+        noTrendValue: '部分日期没有可计算的趋势点。',
+      },
+      dataQuality: {
+        bundleFailBanner: '数据包下载失败率偏高，部分对局未纳入统计。',
+        decodeFailBanner: '数据解码失败率偏高，部分对局未纳入统计。',
+        dismiss: '关闭提醒',
+      },
+      unavailable: {
+        title: '快照暂不可用',
+        body: '所选窗口内的快照文件加载失败，请稍后刷新重试。',
+      },
+      comingSoon: {
+        title: '数据即将上线',
+        body: '统计数据还在准备中，请稍后再来看看。',
+      },
+      tierEmpty: {
+        title: '该分段暂无数据',
+        body: '当前窗口内此分段没有记录，试试其他分段。',
+      },
+      methodology: {
+        triggerLabel: '我们如何统计',
+        triggerAriaLabel: '查看统计方法说明',
+        sheetEyebrow: '方法说明',
+        sheetTitle: '我们如何统计',
+        closeLabel: '关闭',
+        intro: '这里的每个数字都来自真实上传的对局，下面说明每项如何计算。',
+        rankedByCaption: '按 Wilson 95% 置信下界排名',
+        formula: {
+          wilson: 'Wilson 95% 下界(胜场 ÷ 有效对战)',
+          winRate: '胜场 ÷ 有效对战',
+          runShare: '该英雄局数 ÷ 窗口内全部局数',
+          tenWinRate: '10胜局数 ÷ 完成局数',
+          runDays: '达成10胜天数 · 平均 / 75分位',
+        },
+        tips: {
+          hero: '按 Wilson 95% 置信下界胜率排名。',
+          winRate: '胜场 ÷ 有效对战（不计平局）。',
+          runs: '该英雄在此窗口记录到的局数。',
+          share: '该英雄占窗口内全部局数的比例。',
+          wins10w: '达成 10 胜的局数。',
+          perfect: '10 天内拿到 10 胜，占完成局数的比例。',
+          gold: '拿到 10 胜，但用了超过 10 天。',
+          silver: '7-9 胜。',
+          bronze: '4-6 胜。',
+        },
+        tierLegend: {
+          perfect: { label: '完美', gloss: '10 天内 10 胜' },
+          gold: { label: '黄金', gloss: '10 胜，超过 10 天' },
+          silver: { label: '白银', gloss: '7-9 胜' },
+          bronze: { label: '青铜', gloss: '4-6 胜' },
+          misfortune: { label: '厄运', gloss: '0-3 胜' },
+        },
+        sections: {
+          ranking: {
+            title: '置信度修正排名',
+            body: '英雄按胜率的 Wilson 95% 置信下界排名，而不是原始胜率。样本不足时会被往下拉，直到有足够对战支撑，所以靠 3 场幸运胜利的英雄无法登顶。',
+          },
+          battles: {
+            title: '有效对战与终局对战',
+            body: '有效对战指分出胜负的一场战斗，平局和未结束的不计，因此胜场 + 负场始终等于有效对战。终局对战是一局中决定结束的最后一战。',
+          },
+          outcomes: {
+            title: '对局结果',
+            body: '10胜率是完成局数中打到 10 胜的比例；局数占比是该英雄在窗口内的份额；达成10胜天数展示 10 胜局用了多久，给出平均值与 75 分位（p75，即每 4 局有 3 局在该天数内完成）。',
+          },
+          tiers: {
+            title: '战绩等级',
+            body: '每个完成的对局按最终胜场归入一档：完美（10 天内 10 胜）、黄金（10 胜但超过 10 天）、白银（7-9）、青铜（4-6）、厄运（0-3）。五档合起来覆盖全部完成局。',
+          },
+          tierVsAll: {
+            title: '“全部”是独立测量，不是相加',
+            body: '“全部”是单独统计的人群，不等于低 + 中 + 高相加。分段未知的对局只计入“全部”，把各档相加会少算。请直接看“全部”这一行。',
+          },
+          window: {
+            title: '时间窗口与缺失的天',
+            body: '1 / 3 / 7 天窗口是把每天的计数相加。没有上传的那天是未知，而不是 0，所以 7 天窗口可能只覆盖不到 7 个真实日期。我们不会用 0 填补缺失的天。',
+          },
+          quality: {
+            title: '新鲜度与覆盖',
+            body: '“同步”是这份快照的生成时间；覆盖显示窗口实际加载了多少天；上传失败率反映有多少对局数据包未能下载用于分析，超过 5% 会标记为数据质量下降。',
+          },
+        },
+        glossary: [
+          { term: '有效对战', definition: '分出胜负的对战，不含平局。' },
+          { term: '终局对战', definition: '一局中决定结束的最后一战。' },
+          { term: 'Wilson 置信下界', definition: '对比率做置信度修正后的下限；样本越小分数越低。' },
+          { term: '10胜局', definition: '打到 10 胜的对局。' },
+          { term: '局数占比', definition: '该英雄占窗口内全部局数的比例。' },
+          { term: 'p75 达成天数', definition: '每 4 局 10 胜局有 3 局在此天数内完成。' },
+        ],
       },
     },
   },
@@ -584,6 +863,7 @@ const en: LocalizedSiteCopy = {
         high: 'High',
       },
     },
+    noValueLabel: 'No value',
   },
   primaryNav: {
     heroes: 'Stats',
@@ -609,13 +889,13 @@ const en: LocalizedSiteCopy = {
       detailLinkHelpLabel: 'Learn how data syncs to BazaarDB',
       detailLinkHelpTooltip: 'Learn how data syncs to BazaarDB',
       trend: {
-        winrateTrend: 'winrate trend',
+        winrateTrend: '10W rate trend',
         titleLead: 'Hero',
         titleAccent: 'currents',
         inFocus: 'In focus',
         latest: 'Latest',
         startedAt: 'Started at',
-        chartAriaLabel: 'Hero winrate chart',
+        chartAriaLabel: 'Hero 10-win rate chart',
       },
       snapshot: {
         label: 'Snapshot',
@@ -625,7 +905,7 @@ const en: LocalizedSiteCopy = {
       },
       tableHeaders: {
         hero: 'Hero',
-        winRate: 'Win rate',
+        winRate: '10W rate',
         runs: 'Runs',
         share: 'Share',
         wins10w: '10W wins',
@@ -633,6 +913,169 @@ const en: LocalizedSiteCopy = {
         gold: 'Gold',
         silver: 'Silver',
         bronze: 'Bronze',
+        wilsonLower: 'Wilson LB',
+        runShare: 'Run share',
+        avgDays: 'Avg days',
+        p75Days: 'P75 days',
+        overallBattle: 'Battle WR',
+        finalBattle: 'Final WR',
+      },
+      dossier: {
+        label: 'Hero dossier',
+      },
+      battle: {
+        title: 'Battle performance',
+        overallWinRate: 'Overall battle WR',
+        finalBattleWinRate: 'Final battle WR',
+        gap: 'Gap',
+        wilsonLower: 'Wilson LB',
+      },
+      stage: {
+        title: 'Win rate by game stage',
+        viewFocused: 'Focused hero',
+        viewAll: 'All heroes',
+        day_1_3: 'Day 1-3',
+        day_4_7: 'Day 4-7',
+        day_8_plus: 'Day 8+',
+      },
+      victoryProgress: {
+        title: 'Win rate by victory bucket',
+        wins_0_3: '0-3 wins',
+        wins_4_6: '4-6 wins',
+        wins_7_9: '7-9 wins',
+        wins_10_plus: '10+ wins',
+      },
+      matchups: {
+        title: 'Matchups',
+        favorable: 'Favorable',
+        unfavorable: 'Unfavorable',
+        mirror: 'Mirror',
+        lowSampleTag: 'low sample',
+        lowSampleDisclosure: 'Show low-sample matchups',
+        sample: 'battles',
+        empty: 'No matchup data yet',
+        minSampleNote: 'Low-sample matchups show encounters only, without a rate.',
+      },
+      outcome: {
+        title: 'Victory tier distribution',
+        histogramTitle: 'Final wins distribution',
+        perfect: 'Perfect',
+        gold: 'Gold',
+        silver: 'Silver',
+        bronze: 'Bronze',
+        misfortune: 'Misfortune',
+      },
+      heroClass: {
+        nonCanonicalTag: 'Non-standard',
+        nonCanonicalTooltip: 'Non-standard hero data, possibly from special runs.',
+        chartExcludedFootnote: 'Non-standard heroes are excluded from the trend chart.',
+      },
+      coverage: {
+        windowSuffix: ' window',
+        daysLoadedPrefix: '',
+        daysLoadedSeparator: ' of ',
+        partialNote: 'partial coverage',
+        syncedPrefix: 'synced ',
+        qualityOk: 'data healthy',
+        qualityDegraded: 'data degraded',
+        failRatePrefix: 'bundle download failures ',
+        someDaysUnavailable: 'Some days are unavailable; this view includes loaded days only.',
+        noTrendValue: 'Some days have no calculable trend point.',
+      },
+      dataQuality: {
+        bundleFailBanner: 'Bundle download failures are elevated; some runs are missing from these stats.',
+        decodeFailBanner: 'Decode failures are elevated; some runs are missing from these stats.',
+        dismiss: 'Dismiss',
+      },
+      unavailable: {
+        title: 'Snapshot unavailable',
+        body: 'The snapshot files for this window failed to load. Refresh to try again.',
+      },
+      comingSoon: {
+        title: 'Data coming soon',
+        body: 'The stats are still being gathered — check back soon.',
+      },
+      tierEmpty: {
+        title: 'No data in this tier',
+        body: 'No runs recorded for this tier in the window. Try another tier.',
+      },
+      methodology: {
+        triggerLabel: 'How we measure this',
+        triggerAriaLabel: 'How we measure this',
+        sheetEyebrow: 'Methodology',
+        sheetTitle: 'How we measure this',
+        closeLabel: 'Close',
+        intro: 'Every number here comes from real uploaded runs. Here is how each one is calculated.',
+        rankedByCaption: 'Ranked by Wilson 95% lower bound',
+        formula: {
+          wilson: 'Wilson 95% lower bound(wins ÷ decided)',
+          winRate: 'wins ÷ decided battles',
+          runShare: 'hero runs ÷ all runs in window',
+          tenWinRate: '10-win runs ÷ completed runs',
+          runDays: 'days to 10 wins · avg / p75',
+        },
+        tips: {
+          hero: 'Ranked by Wilson 95% lower-bound win rate.',
+          winRate: 'Wins ÷ decided battles (draws excluded).',
+          runs: 'Runs recorded for this hero in the window.',
+          share: "This hero's share of all runs in the window.",
+          wins10w: 'Runs that reached 10 wins.',
+          perfect: '10 wins within 10 days — share of completed runs.',
+          gold: '10 wins, but it took more than 10 days.',
+          silver: '7-9 wins.',
+          bronze: '4-6 wins.',
+        },
+        tierLegend: {
+          perfect: { label: 'Perfect', gloss: '10 wins in 10 days' },
+          gold: { label: 'Gold', gloss: '10 wins, over 10 days' },
+          silver: { label: 'Silver', gloss: '7-9 wins' },
+          bronze: { label: 'Bronze', gloss: '4-6 wins' },
+          misfortune: { label: 'Misfortune', gloss: '0-3 wins' },
+        },
+        sections: {
+          ranking: {
+            title: 'Confidence-adjusted ranking',
+            body: 'Heroes are ranked by the Wilson 95% lower bound of their win rate, not the raw rate. Small samples get pulled down until enough battles confirm the result, so a hero with three lucky wins cannot top the board.',
+          },
+          battles: {
+            title: 'Decided & final battles',
+            body: 'A decided battle is one fight with a clear winner — draws and unfinished fights are left out, so wins + losses always equals decided battles. A final battle is the run’s last decisive fight, the one that ends the run.',
+          },
+          outcomes: {
+            title: 'Run outcomes',
+            body: '10-win rate is the share of completed runs that reached 10 wins. Run share is a hero’s slice of all runs in the window. Days-to-10W shows how fast 10-win runs got there — the average and the 75th percentile (p75 = 3 of 4 such runs finished within that many days).',
+          },
+          tiers: {
+            title: 'Victory tiers',
+            body: 'Each completed run lands in one tier by its final wins: Perfect (10 wins within 10 days), Gold (10 wins, but more than 10 days), Silver (7-9), Bronze (4-6), Misfortune (0-3). The five tiers together cover every completed run.',
+          },
+          tierVsAll: {
+            title: 'All is measured, not summed',
+            body: '“All” is its own measured population, not Low + Mid + High added up. Runs with an unknown rating count only toward All, so summing the tiers would undercount. Read the All row directly.',
+          },
+          window: {
+            title: 'Windows & missing days',
+            body: 'A 1/3/7-day window adds up each day’s counts. Days with no upload are unknown, not zero — so a 7-day window can cover fewer than 7 actual days. We never fill missing days with zeros.',
+          },
+          quality: {
+            title: 'Freshness & coverage',
+            body: '“Synced” is when this snapshot was built. Coverage shows how many days the window actually loaded. The upload-failure rate flags how many run bundles failed to download for analysis; above 5% we mark the data degraded.',
+          },
+        },
+        glossary: [
+          { term: 'Decided battle', definition: 'A fight with a clear winner; draws excluded.' },
+          { term: 'Final battle', definition: 'The run’s last decisive fight.' },
+          {
+            term: 'Wilson lower bound',
+            definition: 'A confidence-adjusted floor of a rate; smaller samples score lower.',
+          },
+          { term: '10-win run', definition: 'A run that reached 10 wins.' },
+          { term: 'Run share', definition: 'A hero’s portion of all runs in the window.' },
+          {
+            term: 'p75 days-to-10W',
+            definition: '3 of 4 ten-win runs finished within this many days.',
+          },
+        ],
       },
     },
   },

@@ -1,11 +1,4 @@
-import type {
-  HeroOverviewPayload,
-  HeroWinrateDailyPayload,
-  ManifestPayload,
-  MetricsSource,
-  MetricWindow,
-  RatingTier,
-} from './metrics';
+import type { AnalyzerV4Manifest, MetricsSource, WebHeroDailyPayload } from './metrics';
 
 type RuntimeMetricsClientOptions = {
   metricsBaseUrl?: string;
@@ -50,6 +43,19 @@ function isAbortError(error: unknown): boolean {
 
 function isRetryableStatus(status: number): boolean {
   return status === 408 || status === 429 || status >= 500;
+}
+
+const NON_RETRYABLE = Symbol('nonRetryableMetricsError');
+
+type FlaggedError = Error & { [NON_RETRYABLE]?: boolean };
+
+function markNonRetryable(error: Error): Error {
+  (error as FlaggedError)[NON_RETRYABLE] = true;
+  return error;
+}
+
+function isNonRetryable(error: unknown): boolean {
+  return error instanceof Error && (error as FlaggedError)[NON_RETRYABLE] === true;
 }
 
 function waitForRetry(ms: number, signal?: AbortSignal): Promise<void> {
@@ -148,13 +154,18 @@ export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions 
             continue;
           }
 
-          throw statusError;
+          // Non-retryable statuses (e.g. 404) must escape the retry loop below.
+          throw isRetryableStatus(response.status) ? statusError : markNonRetryable(statusError);
         }
 
         return (await response.json()) as T;
       } catch (error) {
         if (requestOptions.signal?.aborted) {
           throw isAbortError(error) ? error : getAbortError(requestOptions.signal);
+        }
+
+        if (isNonRetryable(error)) {
+          throw error;
         }
 
         lastError = requestSignal.didTimeout()
@@ -185,11 +196,11 @@ export function createRuntimeMetricsClient(options: RuntimeMetricsClientOptions 
   return {
     getSource: resolveSource,
     getManifest: (requestOptions?: MetricsRequestOptions) =>
-      loadMetric<ManifestPayload>('manifest.json', requestOptions),
-    getHeroOverview: (window: MetricWindow, tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<HeroOverviewPayload>(`hero_overview/${window}/${tier}.json`, requestOptions),
-    getHeroWinrateDaily: (tier: RatingTier, requestOptions?: MetricsRequestOptions) =>
-      loadMetric<HeroWinrateDailyPayload>(`hero_winrate_daily/${tier}.json`, requestOptions),
+      loadMetric<AnalyzerV4Manifest>('analyzer-v4/manifest.json', requestOptions),
+    // `path` comes verbatim from manifest web.days[].path and already carries the
+    // `analyzer-v4/web/` prefix — do not re-prepend `analyzer-v4/`.
+    getWebDaily: (path: string, requestOptions?: MetricsRequestOptions) =>
+      loadMetric<WebHeroDailyPayload>(path, requestOptions),
   };
 }
 

@@ -5,76 +5,73 @@ export type Locale = 'en' | 'zh';
 
 export const DEFAULT_LOCALE: Locale = 'zh';
 
-type ManifestWindowInfo = {
-  start: string;
-  end: string;
-  patch_transition: boolean;
-};
+export const METRIC_WINDOW_ORDER: MetricWindow[] = ['1d', '3d', '7d'];
+export const RATING_TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
 
-type ManifestFile = {
+export type WebDayRef = {
+  day: string;
   path: string;
-  metric: string;
-  window?: string;
-  rating_tier?: string;
   rowCount: number;
-  patch_transition?: boolean;
 };
 
-export type ManifestPayload = {
+export type AnalyzerV4Manifest = {
+  schema_version: '1';
+  namespace: 'analyzer-v4';
   generatedAt: string;
-  current_patch_id: string | null;
-  windows: Partial<Record<MetricWindow, ManifestWindowInfo>>;
-  files: ManifestFile[];
+  latest_complete_day: string;
+  web: {
+    schema_version: '1';
+    days: WebDayRef[];
+  };
+  dq?: {
+    days?: number;
+    downloaded?: number;
+    download_failed?: number;
+    decode_failed?: number;
+    battle_count_mismatch?: number;
+    decode_fail_rate?: number;
+    bundle_download_fail_rate?: number;
+  };
+  sli_path?: string;
 };
 
-type HeroOverviewRow = {
+export type BattleBucketCounts = { count: number; wins: number; losses: number };
+
+export type GameDayBucket = 'day_1_3' | 'day_4_7' | 'day_8_plus';
+export type VictoryBucket = 'wins_0_3' | 'wins_4_6' | 'wins_7_9' | 'wins_10_plus';
+
+export type WebHeroMatchupRow = {
+  opponent_hero: string;
+  battle_decided_count: number;
+  wins: number;
+  losses: number;
+};
+
+export type WebHeroDailyRow = {
   hero: string;
+  rating_tier: RatingTier;
   runs_total: number;
   runs_completed: number;
-  runs_10w: number;
-  win_rate: number;
-  win_rate_wilson_lower: number;
-  avg_run_days_for_10w: number | null;
-  p75_run_days_for_10w: number | null;
-  victory_tier_counts: Record<string, number>;
-  top_archetypes: Array<{
-    archetype_id: string;
-    defining_cards: string[];
-    share: number;
-    win_rate: number;
-  }>;
-  top_final_builds: Array<{
-    sig: string;
-    run_count: number;
-    p75_run_days: number | null;
-  }>;
+  final_wins_counts: Record<string, number>;
+  run_days_10w_counts: Record<string, number>;
+  battle_decided_count: number;
+  battle_wins: number;
+  battle_losses: number;
+  final_battle_decided_count: number;
+  final_battle_wins: number;
+  final_battle_losses: number;
+  game_day_battle_counts: Partial<Record<GameDayBucket, BattleBucketCounts>>;
+  victory_bucket_battle_counts: Partial<Record<VictoryBucket, BattleBucketCounts>>;
+  matchups: WebHeroMatchupRow[];
 };
 
-export type HeroOverviewPayload = {
-  metric: 'hero_overview';
-  generatedAt: string;
-  rowCount: number;
-  rows: HeroOverviewRow[];
-};
-
-type HeroWinrateDailyRow = {
-  hero: string;
+export type WebHeroDailyPayload = {
+  schema_version: '1';
+  kind: 'web_hero_daily';
   day: string;
-  completed_runs: number;
-  wins_10w: number;
-  win_rate: number;
-  win_rate_wilson_lower: number;
-};
-
-export type HeroWinrateDailyPayload = {
-  metric: 'hero_winrate_daily';
   generatedAt: string;
-  rowCount: number;
-  rows: HeroWinrateDailyRow[];
+  rows: WebHeroDailyRow[];
 };
-
-const METRIC_WINDOW_ORDER: MetricWindow[] = ['1d', '3d', '7d'];
-const RATING_TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -100,57 +97,34 @@ export function parseLocale(value: string | null): Locale {
   return isLocale(value) ? value : DEFAULT_LOCALE;
 }
 
-function sortRatingTiers(tiers: Iterable<RatingTier>): RatingTier[] {
-  return Array.from(tiers).sort(
-    (a, b) => RATING_TIER_ORDER.indexOf(a) - RATING_TIER_ORDER.indexOf(b)
+export function isAnalyzerV4Manifest(value: unknown): value is AnalyzerV4Manifest {
+  if (value == null || typeof value !== 'object') {
+    return false;
+  }
+
+  const manifest = value as Partial<AnalyzerV4Manifest>;
+  return (
+    manifest.namespace === 'analyzer-v4' &&
+    manifest.web != null &&
+    typeof manifest.web === 'object' &&
+    manifest.web.schema_version === '1' &&
+    Array.isArray(manifest.web.days)
   );
 }
 
-export function getAvailableTiers(
-  manifest: ManifestPayload,
-  window: MetricWindow,
-  metric = 'hero_overview'
-): RatingTier[] {
-  const tiers = new Set<RatingTier>();
-
-  for (const file of manifest.files) {
-    if (file.metric !== metric || file.window !== window) {
-      continue;
-    }
-
-    const tier = file.rating_tier ?? null;
-    if (isRatingTier(tier)) {
-      tiers.add(tier);
-    }
+export function validateWebDailyPayload(
+  value: unknown,
+  expectedDay: string
+): value is WebHeroDailyPayload {
+  if (value == null || typeof value !== 'object') {
+    return false;
   }
 
-  return sortRatingTiers(tiers);
-}
-
-export function getAvailableTiersForWindowlessMetric(
-  manifest: ManifestPayload,
-  metric: string
-): RatingTier[] {
-  const tiers = new Set<RatingTier>();
-
-  for (const file of manifest.files) {
-    if (file.metric !== metric) {
-      continue;
-    }
-
-    const tier = file.rating_tier ?? null;
-    if (isRatingTier(tier)) {
-      tiers.add(tier);
-    }
-  }
-
-  return sortRatingTiers(tiers);
-}
-
-export function getAvailableWindows(manifest: ManifestPayload): MetricWindow[] {
-  const windows = Object.keys(manifest.windows).filter((window): window is MetricWindow =>
-    isMetricWindow(window)
+  const payload = value as Partial<WebHeroDailyPayload>;
+  return (
+    payload.schema_version === '1' &&
+    payload.kind === 'web_hero_daily' &&
+    payload.day === expectedDay &&
+    Array.isArray(payload.rows)
   );
-
-  return windows.length > 0 ? windows : [...METRIC_WINDOW_ORDER];
 }

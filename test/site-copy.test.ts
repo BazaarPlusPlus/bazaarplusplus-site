@@ -81,7 +81,12 @@ describe('site copy', () => {
     expect(enCopy.common.scope.tierLabels.high).toBe('High');
     expect(zhCopy.stats.heroes.detailLinkLabel).toBe('在 BazaarDB 查看详细统计');
     expect(enCopy.stats.heroes.detailLinkLabel).toBe('View detailed stats on BazaarDB');
-    expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('Win rate');
+    expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('10W rate');
+    expect(zhCopy.stats.heroes.methodology.tierLegend.misfortune.label).toBe('厄运');
+    expect(enCopy.stats.heroes.methodology.rankedByCaption).toBe(
+      'Ranked by Wilson 95% lower bound'
+    );
+    expect(zhCopy.stats.heroes.coverage.qualityDegraded).toBe('数据质量下降');
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
     expect(enCopy.tutorial.installation.steps[3]?.description).toBe(
       'On the main menu, a BazaarPlusPlus dock appears above the Settings button, and the game version text below shows BPP version.'

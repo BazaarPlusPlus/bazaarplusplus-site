@@ -3,11 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import HeroOverviewDashboard from '../features/heroes/HeroOverviewDashboard';
 import {
-  getAvailableWindows,
   parseMetricWindow,
   parseRatingTier,
   type Locale,
-  type ManifestPayload,
   type MetricWindow,
   type RatingTier,
 } from '../shared/lib/metrics';
@@ -25,9 +23,8 @@ type RoutePageProps = {
   search: string;
 };
 
-function getInitialWindow(manifest: ManifestPayload, search: string): MetricWindow {
+function getInitialWindow(availableWindows: MetricWindow[], search: string): MetricWindow {
   const requestedWindow = parseMetricWindow(new URLSearchParams(search).get('w'));
-  const availableWindows = getAvailableWindows(manifest);
   return availableWindows.includes(requestedWindow)
     ? requestedWindow
     : availableWindows[0] ?? '1d';
@@ -75,18 +72,20 @@ function HeroOverviewRouteContent({
   locale: Locale;
   search: string;
 }) {
-  const initialSelectedWindow = getInitialWindow(data.manifest, search);
+  const initialSelectedWindow = getInitialWindow(data.availableWindows, search);
   const initialSelectedTier = getInitialTier(data.availableTiers, search);
 
   return (
     <HeroOverviewDashboard
       locale={locale}
+      manifest={data.manifest}
+      days={data.days}
+      latestCompleteDay={data.latestCompleteDay}
       availableWindows={data.availableWindows}
       availableTiers={data.availableTiers}
+      coverage={data.coverage}
       initialSelectedWindow={initialSelectedWindow}
       initialSelectedTier={initialSelectedTier}
-      dailyByTier={data.dailyByTier}
-      overviewByWindow={data.overviewByWindow}
     />
   );
 }

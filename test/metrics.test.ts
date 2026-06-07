@@ -3,13 +3,13 @@
 import { describe, expect, test } from 'vitest';
 
 import {
-  getAvailableTiers,
-  getAvailableTiersForWindowlessMetric,
-  getAvailableWindows,
+  isAnalyzerV4Manifest,
   parseLocale,
   parseMetricWindow,
   parseRatingTier,
-  type ManifestPayload,
+  validateWebDailyPayload,
+  type AnalyzerV4Manifest,
+  type WebHeroDailyPayload,
 } from '../src/shared/lib/metrics';
 
 describe('metrics query-string parsers', () => {
@@ -35,36 +35,60 @@ describe('metrics query-string parsers', () => {
   });
 });
 
-describe('manifest availability helpers', () => {
-  const manifest: ManifestPayload = {
-    generatedAt: '2026-04-25T14:37:44Z',
-    current_patch_id: null,
-    windows: {
-      '1d': { start: '2026-04-24T00:00:00Z', end: '2026-04-25T00:00:00Z', patch_transition: false },
-      '7d': { start: '2026-04-18T00:00:00Z', end: '2026-04-25T00:00:00Z', patch_transition: false },
+describe('analyzer-v4 schema guards', () => {
+  const manifest: AnalyzerV4Manifest = {
+    schema_version: '1',
+    namespace: 'analyzer-v4',
+    generatedAt: '2026-06-07T09:04:17Z',
+    latest_complete_day: '2026-06-06',
+    web: {
+      schema_version: '1',
+      days: [{ day: '2026-06-06', path: 'analyzer-v4/web/2026-06-06.json', rowCount: 27 }],
     },
-    files: [
-      { path: 'hero_overview/1d/all.json', metric: 'hero_overview', window: '1d', rating_tier: 'all', rowCount: 1 },
-      { path: 'hero_overview/1d/high.json', metric: 'hero_overview', window: '1d', rating_tier: 'high', rowCount: 1 },
-      { path: 'hero_winrate_daily/all.json', metric: 'hero_winrate_daily', rating_tier: 'all', rowCount: 1 },
-      { path: 'hero_winrate_daily/low.json', metric: 'hero_winrate_daily', rating_tier: 'low', rowCount: 1 },
-    ],
+    dq: {
+      days: 2,
+      bundle_download_fail_rate: 0.126,
+      decode_fail_rate: 0,
+    },
+    sli_path: 'analyzer-v4/_sli.json',
   };
 
-  test('getAvailableWindows reads the declared windows', () => {
-    expect(getAvailableWindows(manifest)).toEqual(['1d', '7d']);
+  test('isAnalyzerV4Manifest accepts the live manifest shape', () => {
+    expect(isAnalyzerV4Manifest(manifest)).toBe(true);
   });
 
-  test('getAvailableWindows falls back to the full window set when none declared', () => {
-    expect(getAvailableWindows({ ...manifest, windows: {} })).toEqual(['1d', '3d', '7d']);
+  test('isAnalyzerV4Manifest rejects namespace and web schema mismatches', () => {
+    expect(isAnalyzerV4Manifest(null)).toBe(false);
+    expect(isAnalyzerV4Manifest({})).toBe(false);
+    expect(isAnalyzerV4Manifest({ ...manifest, namespace: 'analyzer-v3' })).toBe(false);
+    expect(
+      isAnalyzerV4Manifest({ ...manifest, web: { ...manifest.web, schema_version: '2' } })
+    ).toBe(false);
+    expect(isAnalyzerV4Manifest({ ...manifest, web: undefined })).toBe(false);
+    expect(
+      isAnalyzerV4Manifest({ ...manifest, web: { schema_version: '1', days: 'nope' } })
+    ).toBe(false);
   });
 
-  test('getAvailableTiers filters by metric and window in canonical order', () => {
-    expect(getAvailableTiers(manifest, '1d', 'hero_overview')).toEqual(['all', 'high']);
-    expect(getAvailableTiers(manifest, '7d', 'hero_overview')).toEqual([]);
+  const payload: WebHeroDailyPayload = {
+    schema_version: '1',
+    kind: 'web_hero_daily',
+    day: '2026-06-06',
+    generatedAt: '2026-06-07T09:04:17Z',
+    rows: [],
+  };
+
+  test('validateWebDailyPayload accepts a payload matching the expected day', () => {
+    expect(validateWebDailyPayload(payload, '2026-06-06')).toBe(true);
   });
 
-  test('getAvailableTiersForWindowlessMetric collects tiers across files', () => {
-    expect(getAvailableTiersForWindowlessMetric(manifest, 'hero_winrate_daily')).toEqual(['all', 'low']);
+  test('validateWebDailyPayload rejects schema/kind/day mismatches', () => {
+    expect(validateWebDailyPayload(null, '2026-06-06')).toBe(false);
+    expect(validateWebDailyPayload({ ...payload, schema_version: '2' }, '2026-06-06')).toBe(false);
+    expect(validateWebDailyPayload({ ...payload, kind: 'web_hero_weekly' }, '2026-06-06')).toBe(
+      false
+    );
+    expect(validateWebDailyPayload(payload, '2026-06-05')).toBe(false);
+    expect(validateWebDailyPayload({ ...payload, rows: undefined }, '2026-06-06')).toBe(false);
   });
 });

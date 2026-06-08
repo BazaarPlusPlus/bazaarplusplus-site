@@ -152,6 +152,9 @@ export function deriveAvailableTiers(days: WebHeroDailyPayload[]): RatingTier[] 
   const tiers = new Set<RatingTier>();
   for (const payload of days) {
     for (const row of payload.rows) {
+      if (!isCanonicalHero(row.hero)) {
+        continue;
+      }
       tiers.add(row.rating_tier);
     }
   }
@@ -168,7 +171,9 @@ export function collectTierRows(
   const wantedDays = new Set(selectedDays.map((ref) => ref.day));
   return payloads
     .filter((payload) => wantedDays.has(payload.day))
-    .flatMap((payload) => payload.rows.filter((row) => row.rating_tier === tier));
+    .flatMap((payload) =>
+      payload.rows.filter((row) => row.rating_tier === tier && isCanonicalHero(row.hero))
+    );
 }
 
 function addHistogram(target: Record<string, number>, source: Record<string, number>) {
@@ -199,6 +204,10 @@ export function mergeRows(rows: WebHeroDailyRow[]): Map<string, MergedHeroRow> {
   const merged = new Map<string, MergedHeroRow>();
 
   for (const row of rows) {
+    if (!isCanonicalHero(row.hero)) {
+      continue;
+    }
+
     let entry = merged.get(row.hero);
     if (!entry) {
       entry = {
@@ -234,6 +243,10 @@ export function mergeRows(rows: WebHeroDailyRow[]): Map<string, MergedHeroRow> {
     addBucketCounts(entry.victoryBucketBattleCounts, row.victory_bucket_battle_counts);
 
     for (const matchup of row.matchups) {
+      if (!isCanonicalHero(matchup.opponent_hero)) {
+        continue;
+      }
+
       const existing = entry.matchups.get(matchup.opponent_hero);
       if (existing) {
         existing.battleDecidedCount += matchup.battle_decided_count;
@@ -398,21 +411,22 @@ export function segmentTrendPoints(
   return segments;
 }
 
-function compareMatchups(
-  byWilson: (row: MatchupRow) => number | null
-): (a: MatchupRow, b: MatchupRow) => number {
-  return (a, b) =>
-    (byWilson(b) ?? -Infinity) - (byWilson(a) ?? -Infinity) ||
+function compareOrderedMatchups(a: MatchupRow, b: MatchupRow): number {
+  if (a.isLowSample !== b.isLowSample) {
+    return a.isLowSample ? 1 : -1;
+  }
+
+  return (
+    (b.winRate ?? -Infinity) - (a.winRate ?? -Infinity) ||
     b.battleDecidedCount - a.battleDecidedCount ||
-    a.opponentHero.localeCompare(b.opponentHero);
+    a.opponentHero.localeCompare(b.opponentHero)
+  );
 }
 
-// Mirror (opponent === hero) is split out: shown + labeled by the caller, excluded from
-// best/worst highlights (~50% by construction). Low-sample rows are tagged, not dropped.
 export function deriveMatchups(
   merged: MergedHeroRow,
   minSample: number
-): { favorable: MatchupRow[]; unfavorable: MatchupRow[]; mirror: MatchupRow | null } {
+): { rows: MatchupRow[] } {
   const rows: MatchupRow[] = Array.from(merged.matchups.entries()).map(
     ([opponentHero, counts]) => ({
       opponentHero,
@@ -432,14 +446,5 @@ export function deriveMatchups(
     })
   );
 
-  const mirror = rows.find((row) => row.opponentHero === merged.hero) ?? null;
-  const nonMirror = rows.filter((row) => row.opponentHero !== merged.hero);
-  const favorable = nonMirror
-    .filter((row) => row.winRate != null && row.winRate >= 0.5)
-    .sort(compareMatchups((row) => row.winWilsonLower));
-  const unfavorable = nonMirror
-    .filter((row) => row.winRate == null || row.winRate < 0.5)
-    .sort(compareMatchups((row) => row.lossWilsonLower));
-
-  return { favorable, unfavorable, mirror };
+  return { rows: rows.sort(compareOrderedMatchups) };
 }

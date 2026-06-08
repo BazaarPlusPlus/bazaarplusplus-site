@@ -146,6 +146,7 @@ describe('deriveAvailableWindows / deriveAvailableTiers', () => {
       makePayload('2026-06-05', [
         makeRow({ hero: 'Vanessa', rating_tier: 'high' }),
         makeRow({ hero: 'Vanessa', rating_tier: 'all' }),
+        makeRow({ hero: 'Common', rating_tier: 'low' }),
       ]),
       makePayload('2026-06-06', [makeRow({ hero: 'Mak', rating_tier: 'mid' })]),
     ];
@@ -178,6 +179,7 @@ describe('mergeRows', () => {
     matchups: [
       { opponent_hero: 'Mak', battle_decided_count: 40, wins: 25, losses: 15 },
       { opponent_hero: 'Vanessa', battle_decided_count: 30, wins: 15, losses: 15 },
+      { opponent_hero: 'Common', battle_decided_count: 999, wins: 999, losses: 0 },
     ],
   });
   const dayTwo = makeRow({
@@ -207,7 +209,13 @@ describe('mergeRows', () => {
   });
 
   test('merging two days equals the direct combined aggregate', () => {
-    const merged = mergeRows([dayOne, dayTwo]).get('Vanessa')!;
+    const rows = [
+      dayOne,
+      dayTwo,
+      makeRow({ hero: 'Common', runs_completed: 999, final_wins_counts: { '10': 999 } }),
+    ];
+    const mergedRows = mergeRows(rows);
+    const merged = mergedRows.get('Vanessa')!;
 
     expect(merged.runsTotal).toBe(150);
     expect(merged.runsCompleted).toBe(120);
@@ -234,6 +242,8 @@ describe('mergeRows', () => {
       losses: 15,
     });
     expect(merged.matchups.get('Jules')).toEqual({ battleDecidedCount: 10, wins: 8, losses: 2 });
+    expect(merged.matchups.has('Common')).toBe(false);
+    expect(mergedRows.has('Common')).toBe(false);
   });
 
   test('does not mutate its inputs when merging bucket maps', () => {
@@ -241,9 +251,35 @@ describe('mergeRows', () => {
     expect(dayOne.game_day_battle_counts.day_1_3).toEqual({ count: 100, wins: 70, losses: 30 });
   });
 
+  test('preserves future detailed game-day buckets when merging', () => {
+    const mergedRows = mergeRows([
+      makeRow({
+        hero: 'Vanessa',
+        game_day_battle_counts: {
+          day_1: { count: 10, wins: 6, losses: 4 },
+          day_13_plus: { count: 5, wins: 2, losses: 3 },
+        },
+      }),
+      makeRow({
+        hero: 'Vanessa',
+        game_day_battle_counts: {
+          day_1: { count: 20, wins: 14, losses: 6 },
+          day_12: { count: 8, wins: 5, losses: 3 },
+        },
+      }),
+    ]);
+
+    expect(mergedRows.get('Vanessa')?.gameDayBattleCounts).toEqual({
+      day_1: { count: 30, wins: 20, losses: 10 },
+      day_12: { count: 8, wins: 5, losses: 3 },
+      day_13_plus: { count: 5, wins: 2, losses: 3 },
+    });
+  });
+
   test('the all tier stays a measured row, never low+mid+high summed', () => {
     const payload = makePayload('2026-06-06', [
       makeRow({ hero: 'Vanessa', rating_tier: 'all', runs_completed: 100 }),
+      makeRow({ hero: 'Common', rating_tier: 'all', runs_completed: 999 }),
       makeRow({ hero: 'Vanessa', rating_tier: 'low', runs_completed: 20 }),
       makeRow({ hero: 'Vanessa', rating_tier: 'mid', runs_completed: 30 }),
       makeRow({ hero: 'Vanessa', rating_tier: 'high', runs_completed: 10 }),
@@ -308,31 +344,34 @@ describe('deriveHeroMetrics', () => {
     expect(vanessa.isCanonical).toBe(true);
   });
 
-  test('gold falls back to zero ten-win runs without NaN and zero denominators go null', () => {
+  test('filters non-canonical rows and handles zero denominators without NaN', () => {
     const merged = mergeRows([
-      makeRow({ hero: 'Common', runs_total: 1, runs_completed: 1, final_wins_counts: { '9': 1 } }),
-      makeRow({ hero: 'Stelle' }),
+      makeRow({ hero: 'Common', runs_total: 1, runs_completed: 1, final_wins_counts: { '10': 1 } }),
+      makeRow({ hero: 'Stelle', runs_total: 1, runs_completed: 1, final_wins_counts: { '9': 1 } }),
+      makeRow({ hero: 'Mak' }),
     ]);
 
     const rows = deriveHeroMetrics(merged);
-    const common = rows.find((row) => row.hero === 'Common')!;
     const stelle = rows.find((row) => row.hero === 'Stelle')!;
+    const mak = rows.find((row) => row.hero === 'Mak')!;
 
-    expect(common.isCanonical).toBe(false);
-    expect(common.tenWinCount).toBe(0);
-    expect(common.goldRate).toBe(0);
-    expect(common.silverRate).toBe(1);
-    expect(common.avgRunDays10w).toBeNull();
-    expect(common.p75RunDays10w).toBeNull();
-    expect(common.battleWinRate).toBeNull();
-    expect(common.battleWinRateWilsonLower).toBeNull();
-    expect(common.finalBattleWinRate).toBeNull();
+    expect(rows.some((row) => row.hero === 'Common')).toBe(false);
+    expect(stelle.isCanonical).toBe(true);
+    expect(stelle.tenWinCount).toBe(0);
+    expect(stelle.goldRate).toBe(0);
+    expect(stelle.silverRate).toBe(1);
+    expect(stelle.avgRunDays10w).toBeNull();
+    expect(stelle.p75RunDays10w).toBeNull();
+    expect(stelle.battleWinRate).toBeNull();
+    expect(stelle.battleWinRateWilsonLower).toBeNull();
+    expect(stelle.finalBattleWinRate).toBeNull();
+    expect(stelle.runShare).toBe(1);
 
-    expect(stelle.scoredRuns).toBe(0);
-    expect(stelle.tenWinRate).toBeNull();
-    expect(stelle.tenWinRateWilsonLower).toBeNull();
-    expect(stelle.perfectRate).toBeNull();
-    expect(stelle.runShare).toBe(0);
+    expect(mak.scoredRuns).toBe(0);
+    expect(mak.tenWinRate).toBeNull();
+    expect(mak.tenWinRateWilsonLower).toBeNull();
+    expect(mak.perfectRate).toBeNull();
+    expect(mak.runShare).toBe(0);
   });
 
   test('runShare is null when the scope has no completed runs', () => {
@@ -422,7 +461,7 @@ describe('deriveTrendSeries', () => {
 });
 
 describe('deriveMatchups', () => {
-  test('splits mirror, sorts favorable/unfavorable by wilson, tags low samples', () => {
+  test('sorts matchups by win rate and tags low samples', () => {
     const merged = mergeRows([
       makeRow({
         hero: 'Vanessa',
@@ -436,16 +475,26 @@ describe('deriveMatchups', () => {
       }),
     ]).get('Vanessa')!;
 
-    const { favorable, unfavorable, mirror } = deriveMatchups(merged, 20);
+    const { rows } = deriveMatchups(merged, 20);
 
-    expect(mirror).toMatchObject({ opponentHero: 'Vanessa', battleDecidedCount: 100 });
-    expect(favorable.map((row) => row.opponentHero)).toEqual(['Mak', 'Jules', 'Karnok']);
-    expect(unfavorable.map((row) => row.opponentHero)).toEqual(['Dooley']);
-    expect(favorable.find((row) => row.opponentHero === 'Karnok')!.isLowSample).toBe(true);
-    expect(favorable.find((row) => row.opponentHero === 'Mak')!.isLowSample).toBe(false);
-    expect(favorable[0]!.winWilsonLower).toBeCloseTo(0.5980574093302989, 12);
-    expect(unfavorable[0]!.lossWilsonLower).toBeCloseTo(0.5980574093302989, 12);
-    expect(unfavorable[0]!.winWilsonLower).toBeCloseTo(0.14186967895549518, 12);
+    expect(rows.map((row) => row.opponentHero)).toEqual([
+      'Mak',
+      'Jules',
+      'Vanessa',
+      'Dooley',
+      'Karnok',
+    ]);
+    expect(rows.find((row) => row.opponentHero === 'Karnok')!.isLowSample).toBe(true);
+    expect(rows.find((row) => row.opponentHero === 'Mak')!.isLowSample).toBe(false);
+    expect(rows[0]!.winWilsonLower).toBeCloseTo(0.5980574093302989, 12);
+    expect(rows.find((row) => row.opponentHero === 'Dooley')!.lossWilsonLower).toBeCloseTo(
+      0.5980574093302989,
+      12
+    );
+    expect(rows.find((row) => row.opponentHero === 'Dooley')!.winWilsonLower).toBeCloseTo(
+      0.14186967895549518,
+      12
+    );
   });
 
   test('merged matchups across days feed a single per-opponent row', () => {
@@ -460,15 +509,15 @@ describe('deriveMatchups', () => {
       }),
     ]).get('Vanessa')!;
 
-    const { favorable } = deriveMatchups(merged, 20);
-    expect(favorable).toHaveLength(1);
-    expect(favorable[0]).toMatchObject({
+    const { rows } = deriveMatchups(merged, 20);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
       opponentHero: 'Mak',
       battleDecidedCount: 40,
       wins: 30,
       losses: 10,
       isLowSample: false,
     });
-    expect(favorable[0]!.winRate).toBeCloseTo(0.75, 12);
+    expect(rows[0]!.winRate).toBeCloseTo(0.75, 12);
   });
 });

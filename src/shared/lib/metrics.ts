@@ -37,7 +37,22 @@ export type AnalyzerV4Manifest = {
 
 export type BattleBucketCounts = { count: number; wins: number; losses: number };
 
-export type GameDayBucket = 'day_1_3' | 'day_4_7' | 'day_8_plus';
+export type CoarseGameDayBucket = 'day_1_3' | 'day_4_7' | 'day_8_plus';
+export type DetailedGameDayBucket =
+  | 'day_1'
+  | 'day_2'
+  | 'day_3'
+  | 'day_4'
+  | 'day_5'
+  | 'day_6'
+  | 'day_7'
+  | 'day_8'
+  | 'day_9'
+  | 'day_10'
+  | 'day_11'
+  | 'day_12'
+  | 'day_13_plus';
+export type GameDayBucket = CoarseGameDayBucket | DetailedGameDayBucket;
 export type VictoryBucket = 'wins_0_3' | 'wins_4_6' | 'wins_7_9' | 'wins_10_plus';
 
 export type WebHeroMatchupRow = {

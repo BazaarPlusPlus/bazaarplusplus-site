@@ -42,6 +42,15 @@ function makeDayRows(dayIndex: number): WebHeroDailyRow[] {
       runs_completed: 100,
       final_wins_counts: { '10': 40 + dayIndex },
       run_days_10w_counts: { '11': 40 + dayIndex },
+      game_day_battle_counts: {
+        day_1_3: { count: 10, wins: 2, losses: 8 },
+        day_4_7: { count: 10, wins: 9, losses: 1 },
+        day_8_plus: { count: 10, wins: 6, losses: 4 },
+      },
+      matchups: [
+        { opponent_hero: 'Mak', battle_decided_count: 20, wins: 15, losses: 5 },
+        { opponent_hero: 'Jules', battle_decided_count: 10, wins: 4, losses: 6 },
+      ],
     }),
     makeRow({
       hero: 'Jules',
@@ -77,10 +86,15 @@ function makeDayRows(dayIndex: number): WebHeroDailyRow[] {
       runs_total: 90,
       runs_completed: dayIndex === 1 ? 0 : 80,
       final_wins_counts: dayIndex === 1 ? {} : { '10': 20 },
+      game_day_battle_counts: {
+        day_1_3: { count: 10, wins: 8, losses: 2 },
+        day_4_7: { count: 10, wins: 4, losses: 6 },
+        day_8_plus: { count: 10, wins: 7, losses: 3 },
+      },
     }),
     // Karnok never has a denominator → null rates must sink in the ranking.
     makeRow({ hero: 'Karnok', runs_total: 5 }),
-    // Non-canonical hero with the highest Wilson lower bound.
+    // Payload noise: only the seven canonical heroes should be shown.
     makeRow({
       hero: 'Common',
       runs_total: 10,
@@ -135,14 +149,17 @@ function makeManifest(bundleFailRate: number): AnalyzerV4Manifest {
 function renderDashboard(options?: {
   bundleFailRate?: number;
   excludeDays?: string[];
+  payloads?: WebHeroDailyPayload[];
   url?: string;
 }) {
   const bundleFailRate = options?.bundleFailRate ?? 0.01;
   const excludeDays = options?.excludeDays ?? [];
   window.history.replaceState({}, '', options?.url ?? '/?w=3d');
 
-  const loadedDays = DAYS.filter((day) => !excludeDays.includes(day));
-  const days = loadedDays.map((day) => makePayload(day, DAYS.indexOf(day)));
+  const loadedDays = options?.payloads
+    ? options.payloads.map((payload) => payload.day)
+    : DAYS.filter((day) => !excludeDays.includes(day));
+  const days = options?.payloads ?? loadedDays.map((day) => makePayload(day, DAYS.indexOf(day)));
   const coverage: HeroOverviewCoverage = {
     requested: DAYS,
     loaded: loadedDays,
@@ -164,6 +181,15 @@ function renderDashboard(options?: {
   );
 }
 
+function getRankingTable() {
+  const table = screen
+    .getAllByRole('table')
+    .find((candidate) => candidate.querySelectorAll('col').length === 10);
+
+  expect(table).toBeDefined();
+  return table!;
+}
+
 describe('HeroOverviewDashboard', () => {
   test('hydrates scope from the URL and keeps BazaarDB links', () => {
     renderDashboard({ url: '/?w=3d&t=high' });
@@ -183,7 +209,7 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.queryByRole('button', { name: 'Low' })).not.toBeInTheDocument();
 
     // High tier holds only Dooley.
-    const table = screen.getByRole('table');
+    const table = getRankingTable();
     expect(within(table).getByText('Dooley')).toBeInTheDocument();
     expect(within(table).queryByText('Jules')).not.toBeInTheDocument();
   });
@@ -202,7 +228,7 @@ describe('HeroOverviewDashboard', () => {
     expect(window.location.search).toContain('t=mid');
 
     // Ranking switches to mid-tier rows.
-    const table = screen.getByRole('table');
+    const table = getRankingTable();
     expect(within(table).getByText('Mak')).toBeInTheDocument();
     expect(within(table).queryByText('Jules')).not.toBeInTheDocument();
 
@@ -219,18 +245,28 @@ describe('HeroOverviewDashboard', () => {
     ).not.toBeNull();
   });
 
-  test('ranks by Wilson lower bound with nulls sinking and no NaN output', () => {
+  test('ranks by 10-win rate with nulls sinking and no NaN output', () => {
     const { container } = renderDashboard();
 
-    const table = screen.getByRole('table');
-    expect(table.querySelectorAll('col')).toHaveLength(14);
+    const table = getRankingTable();
+    const trendSection = screen.getByTestId('daily-winrate-chart').closest('section')!;
+    const rankingSection = table.closest('section')!;
+    expect(
+      trendSection.compareDocumentPosition(rankingSection) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(table.querySelectorAll('col')).toHaveLength(10);
     expect(table.className).toContain('table-fixed');
+    expect(within(table).queryByRole('button', { name: 'Wilson LB' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'P75 days' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Battle WR' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Final WR' })).not.toBeInTheDocument();
 
     const heroOrder = Array.from(table.querySelectorAll('tbody [data-hero-badge]')).map((badge) =>
       badge.getAttribute('data-hero-badge')
     );
-    // Non-canonical Common has the best Wilson lower; zero-denominator Karnok sinks last.
-    expect(heroOrder).toEqual(['Common', 'Jules', 'Stelle', 'Vanessa', 'Karnok']);
+    // Payload noise is filtered; zero-denominator Karnok sinks last.
+    expect(heroOrder).toEqual(['Jules', 'Stelle', 'Vanessa', 'Karnok']);
+    expect(within(table).queryByText('Common')).not.toBeInTheDocument();
 
     // Aggregates across the 3-day window.
     expect(within(table).getByRole('cell', { name: /50\.0%/ })).toBeInTheDocument();
@@ -241,8 +277,8 @@ describe('HeroOverviewDashboard', () => {
     const karnokRow = within(table).getByText('Karnok').closest('tr')!;
     expect(karnokRow.textContent).toContain('—');
 
-    // Non-canonical marker shows in the table.
-    expect(within(table).getByText('Non-standard')).toBeInTheDocument();
+    // Non-canonical rows are data noise, not a visible table state.
+    expect(within(table).queryByText('Non-standard')).not.toBeInTheDocument();
 
     // Sortable headers stay interactive.
     expect(within(table).getByRole('button', { name: '10W rate' })).toBeInTheDocument();
@@ -250,18 +286,18 @@ describe('HeroOverviewDashboard', () => {
     const ascOrder = Array.from(table.querySelectorAll('tbody [data-hero-badge]')).map((badge) =>
       badge.getAttribute('data-hero-badge')
     );
-    expect(ascOrder).toEqual(['Common', 'Jules', 'Karnok', 'Stelle', 'Vanessa']);
+    expect(ascOrder).toEqual(['Jules', 'Karnok', 'Stelle', 'Vanessa']);
   });
 
   test('window pills re-slice the aggregate and write w= to the URL', () => {
     renderDashboard();
 
-    const table = screen.getByRole('table');
+    const table = getRankingTable();
     expect(within(table).getByRole('cell', { name: /41\.0%/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '1D' }));
     expect(window.location.search).not.toContain('w=');
-    expect(within(screen.getByRole('table')).getByRole('cell', { name: /42\.0%/ })).toBeInTheDocument();
+    expect(within(getRankingTable()).getByRole('cell', { name: /42\.0%/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '7D' }));
     expect(window.location.search).toContain('w=7d');
@@ -295,7 +331,7 @@ describe('HeroOverviewDashboard', () => {
     ).not.toBeInTheDocument();
 
     // The focused hero with omitted points surfaces the no-value note when focused.
-    const table = screen.getByRole('table');
+    const table = getRankingTable();
     fireEvent.click(within(table).getByRole('button', { name: 'Vanessa' }));
     expect(
       screen.getByText('Some days have no calculable trend point.')
@@ -307,69 +343,135 @@ describe('HeroOverviewDashboard', () => {
     fireEvent.mouseLeave(vanessaCircles[0]!);
   });
 
-  test('dossier shows battle, stage, bucket panels with present keys only', () => {
+  test('dossier shows stage, bucket, and matchup panels with present keys only', () => {
     renderDashboard();
 
-    // Default focus skips the non-canonical table leader and lands on Jules.
+    // The section header stays contextual without repeating the focused hero badge.
     const dossier = screen.getByTestId('hero-dossier');
-    expect(dossier.querySelector('[data-hero-badge="Jules"]')).not.toBeNull();
-
-    const battle = screen.getByTestId('battle-panel');
-    expect(battle.textContent).toContain('60.0%'); // overall 360/600
-    expect(battle.textContent).toContain('30.0%'); // final 36/120
-    expect(battle.textContent).toContain('−30.0%'); // gap
+    const dossierHeader = dossier.querySelector(':scope > div')!;
+    expect(dossierHeader.querySelector('[data-hero-badge]')).toBeNull();
+    expect(within(dossierHeader as HTMLElement).getByText('3D window · All')).toBeInTheDocument();
+    expect(screen.queryByTestId('battle-panel')).not.toBeInTheDocument();
 
     const stage = screen.getByTestId('stage-panel');
     expect(within(stage).getByText('Day 1-3')).toBeInTheDocument();
     expect(within(stage).getByText('Day 4-7')).toBeInTheDocument();
-    // day_8_plus bucket absent from the data → no fixed-key rendering.
-    expect(within(stage).queryByText('Day 8+')).not.toBeInTheDocument();
-
-    // Stage panel can switch to the all-heroes mini table.
-    fireEvent.click(within(stage).getByRole('button', { name: 'All heroes' }));
+    expect(within(stage).getByText('Day 8+')).toBeInTheDocument();
+    expect(within(stage).queryByRole('button', { name: 'Focused hero' })).not.toBeInTheDocument();
+    expect(within(stage).queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
     expect(stage.querySelectorAll('[data-hero-badge]').length).toBeGreaterThan(1);
+    const stageHeroOrder = () =>
+      Array.from(stage.querySelectorAll('tbody [data-hero-badge]')).map((badge) =>
+        badge.getAttribute('data-hero-badge')
+      );
 
-    const buckets = screen.getByTestId('victory-bucket-panel');
-    expect(within(buckets).getAllByText(/70\.0%/).length).toBeGreaterThan(0); // wins_7_9: 84/120
-    expect(within(buckets).queryByText('10+ wins')).not.toBeInTheDocument();
+    fireEvent.click(within(stage).getByRole('button', { name: 'Day 8+' }));
+    expect(stageHeroOrder()).toEqual(['Vanessa', 'Stelle', 'Jules', 'Karnok']);
+    expect(within(stage).getByRole('columnheader', { name: 'Day 8+' })).toHaveAttribute(
+      'aria-sort',
+      'descending'
+    );
+
+    fireEvent.click(within(stage).getByRole('button', { name: 'Day 8+' }));
+    expect(stageHeroOrder()).toEqual(['Stelle', 'Vanessa', 'Jules', 'Karnok']);
+    expect(within(stage).getByRole('columnheader', { name: 'Day 8+' })).toHaveAttribute(
+      'aria-sort',
+      'ascending'
+    );
+
+    expect(screen.queryByTestId('victory-bucket-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('outcome-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('final-wins-histogram')).not.toBeInTheDocument();
   });
 
-  test('matchups split favorable/unfavorable, tag low samples behind a disclosure, and label the mirror', () => {
+  test('stage panel switches to detailed day columns when payloads provide them', () => {
+    renderDashboard({
+      payloads: [
+        {
+          ...makePayload(DAYS.at(-1)!, 0),
+          rows: [
+            makeRow({
+              hero: 'Stelle',
+              runs_total: 20,
+              runs_completed: 10,
+              final_wins_counts: { '10': 5 },
+              game_day_battle_counts: {
+                day_1: { count: 10, wins: 6, losses: 4 },
+                day_10: { count: 10, wins: 7, losses: 3 },
+                day_13_plus: { count: 10, wins: 3, losses: 7 },
+              },
+            }),
+            makeRow({
+              hero: 'Jules',
+              runs_total: 20,
+              runs_completed: 10,
+              final_wins_counts: { '10': 7 },
+              game_day_battle_counts: {
+                day_1: { count: 10, wins: 4, losses: 6 },
+                day_10: { count: 10, wins: 5, losses: 5 },
+                day_13_plus: { count: 10, wins: 9, losses: 1 },
+              },
+            }),
+          ],
+        },
+      ],
+      url: '/?w=1d',
+    });
+
+    const stage = screen.getByTestId('stage-panel');
+    expect(within(stage).queryByText('Day 1-3')).not.toBeInTheDocument();
+    expect(within(stage).getByText('Day 1')).toBeInTheDocument();
+    expect(within(stage).getByText('Day 10')).toBeInTheDocument();
+    expect(within(stage).getByText('Day 13+')).toBeInTheDocument();
+
+    fireEvent.click(within(stage).getByRole('button', { name: 'Day 13+' }));
+    const stageHeroOrder = Array.from(stage.querySelectorAll('tbody [data-hero-badge]')).map((badge) =>
+      badge.getAttribute('data-hero-badge')
+    );
+    expect(stageHeroOrder).toEqual(['Jules', 'Stelle']);
+  });
+
+  test('matchups render as one ordered list and tag low samples', () => {
     renderDashboard();
 
     const panel = screen.getByTestId('matchup-panel');
-    // Confident matchups visible with rates.
-    expect(panel.querySelector('[data-hero-badge="Stelle"]')).not.toBeNull();
+    const selector = screen.getByTestId('matchup-hero-selector');
+    expect(within(selector).getAllByRole('button')).toHaveLength(4);
+
+    const list = screen.getByTestId('matchup-list');
+    const heroOrder = Array.from(list.querySelectorAll('[data-hero-badge]')).map((badge) =>
+      badge.getAttribute('data-hero-badge')
+    );
+    expect(heroOrder).toEqual(['Stelle', 'Jules', 'Vanessa', 'Dooley']);
+    expect(within(panel).queryByText('Favorable')).not.toBeInTheDocument();
+    expect(within(panel).queryByText('Unfavorable')).not.toBeInTheDocument();
+    expect(within(panel).queryByText('Mirror')).not.toBeInTheDocument();
+
     expect(within(panel).getByText('70.0%')).toBeInTheDocument();
+    expect(within(panel).getByText('50.0%')).toBeInTheDocument();
     expect(within(panel).getByText('33.3%')).toBeInTheDocument();
 
-    // Low-sample matchup collapsed until disclosed; rate stays hidden, count stays visible.
-    expect(panel.querySelector('[data-hero-badge="Dooley"]')).toBeNull();
-    fireEvent.click(within(panel).getByRole('button', { name: /Show low-sample matchups/ }));
-    expect(panel.querySelector('[data-hero-badge="Dooley"]')).not.toBeNull();
+    expect(list.querySelector('[data-hero-badge="Dooley"]')).not.toBeNull();
     expect(within(panel).getByText('low sample')).toBeInTheDocument();
     expect(within(panel).getByText(/15 battles/)).toBeInTheDocument();
 
-    // Mirror is shown and labeled, outside the favorable/unfavorable highlights.
-    const mirror = screen.getByTestId('mirror-matchup');
-    expect(within(mirror).getByText('Mirror')).toBeInTheDocument();
-    expect(within(mirror).getByText('50.0%')).toBeInTheDocument();
+    fireEvent.click(within(selector).getByRole('button', { name: 'Stelle' }));
+    const updatedOrder = Array.from(screen.getByTestId('matchup-list').querySelectorAll('[data-hero-badge]')).map(
+      (badge) => badge.getAttribute('data-hero-badge')
+    );
+    expect(updatedOrder).toEqual(['Mak', 'Jules']);
+    expect(within(panel).getByText('75.0%')).toBeInTheDocument();
+    expect(within(panel).getByText('40.0%')).toBeInTheDocument();
   });
 
-  test('DQ banner appears only past the threshold and is dismissible', () => {
-    const { unmount } = renderDashboard({ bundleFailRate: 0.126 });
+  test('DQ failure-rate metadata is not shown in the dashboard chrome', () => {
+    renderDashboard({ bundleFailRate: 0.126 });
 
-    const banner = screen.getByTestId('dq-banner');
-    expect(banner.textContent).toContain('Bundle download failures are elevated');
-    expect(banner.textContent).toContain('12.6%');
-    fireEvent.click(within(banner).getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByTestId('dq-banner')).not.toBeInTheDocument();
-    // Data stays visible behind the warning.
-    expect(screen.getByRole('table')).toBeInTheDocument();
-    unmount();
-
-    renderDashboard({ bundleFailRate: 0.01 });
-    expect(screen.queryByTestId('dq-banner')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bundle download failures/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('coverage-strip').textContent).not.toContain('12.6%');
+    // Data stays visible with the warning metadata hidden.
+    expect(getRankingTable()).toBeInTheDocument();
   });
 
   test('failed days degrade coverage with a caveat instead of hiding the page', () => {
@@ -380,7 +482,7 @@ describe('HeroOverviewDashboard', () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId('coverage-strip').textContent).toContain('2 of 3');
     expect(screen.getByTestId('coverage-strip').textContent).toContain('partial coverage');
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(getRankingTable()).toBeInTheDocument();
   });
 
   test('methodology sheet opens as a large scrollable dialog with ⓘ header tips', () => {
@@ -388,15 +490,16 @@ describe('HeroOverviewDashboard', () => {
 
     // ⓘ tooltip buttons are separate focus targets on metric headers.
     expect(
-      screen.getAllByRole('button', { name: 'Ranked by Wilson 95% lower-bound win rate.' }).length
+      screen.getAllByRole('button', { name: 'Ranked by 10-win rate.' }).length
     ).toBeGreaterThan(0);
-    expect(screen.getByText('Ranked by Wilson 95% lower bound')).toBeInTheDocument();
+    expect(screen.getByText('Ranked by 10-win rate')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'How we measure this' }));
     const dialog = screen.getByRole('dialog', { name: 'How we measure this' });
     expect(dialog.className).toContain('overflow-y-auto');
+    expect(within(dialog).queryByText(/Wilson/)).not.toBeInTheDocument();
     expect(dialog.className).toContain('max-w-3xl');
-    expect(within(dialog).getByText('Confidence-adjusted ranking')).toBeInTheDocument();
+    expect(within(dialog).getByText('Ranking')).toBeInTheDocument();
     expect(within(dialog).getByText('Decided battle')).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Escape' });

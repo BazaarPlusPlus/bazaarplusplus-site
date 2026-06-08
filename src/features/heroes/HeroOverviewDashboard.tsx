@@ -8,12 +8,9 @@ import {
   type Locale,
   type MetricWindow,
   type RatingTier,
-  type VictoryBucket,
   type WebHeroDailyPayload,
 } from '../../shared/lib/metrics';
 import {
-  DQ_BUNDLE_FAIL_WARN,
-  DQ_DECODE_FAIL_WARN,
   MATCHUP_MIN_SAMPLE,
   WEB_DAILY_NOMINAL,
   WINDOW_LABELS,
@@ -61,18 +58,16 @@ type HeroOverviewDashboardProps = {
 type RankingSortKey =
   | 'hero'
   | 'tenWinRate'
-  | 'tenWinRateWilsonLower'
   | 'runsCompleted'
   | 'runShare'
   | 'tenWinCount'
   | 'avgRunDays10w'
-  | 'p75RunDays10w'
   | 'perfectRate'
   | 'goldRate'
   | 'silverRate'
-  | 'bronzeRate'
-  | 'battleWinRate'
-  | 'finalBattleWinRate';
+  | 'bronzeRate';
+
+type StageSortKey = 'hero' | GameDayBucket;
 
 type ChartPoint = {
   day: string;
@@ -86,8 +81,6 @@ type HoveredTrendPoint = ChartPoint & {
   color: string;
 };
 
-type StageView = 'focused' | 'all';
-
 const CHART_WIDTH = 960;
 const CHART_HEIGHT = 360;
 const CHART_PADDING = { top: 28, right: 28, bottom: 48, left: 56 };
@@ -96,24 +89,34 @@ const POINT_TOOLTIP_HEIGHT = 56;
 const POINT_TOOLTIP_OFFSET = 18;
 const GRIDLINE_COUNT = 4;
 const RANKING_COLUMN_WIDTHS = [
-  '14%',
+  '18%',
+  '11%',
+  '10%',
+  '10%',
   '9%',
+  '10%',
   '8%',
-  '7%',
-  '7%',
-  '6%',
-  '6%',
-  '6%',
-  '6%',
-  '6%',
-  '6%',
-  '6%',
-  '7%',
-  '6%',
+  '8%',
+  '8%',
+  '8%',
 ];
 
-const STAGE_KEYS: GameDayBucket[] = ['day_1_3', 'day_4_7', 'day_8_plus'];
-const VICTORY_BUCKET_KEYS: VictoryBucket[] = ['wins_0_3', 'wins_4_6', 'wins_7_9', 'wins_10_plus'];
+const COARSE_STAGE_KEYS: GameDayBucket[] = ['day_1_3', 'day_4_7', 'day_8_plus'];
+const DETAILED_STAGE_KEYS: GameDayBucket[] = [
+  'day_1',
+  'day_2',
+  'day_3',
+  'day_4',
+  'day_5',
+  'day_6',
+  'day_7',
+  'day_8',
+  'day_9',
+  'day_10',
+  'day_11',
+  'day_12',
+  'day_13_plus',
+];
 const VICTORY_TIER_KEYS = ['perfect', 'gold', 'silver', 'bronze', 'misfortune'] as const;
 
 type VictoryTierKey = (typeof VICTORY_TIER_KEYS)[number];
@@ -258,15 +261,12 @@ export default function HeroOverviewDashboard({
   const [selectedTier, setSelectedTier] = useState<RatingTier>(initialSelection.tier);
   const [focusedHero, setFocusedHero] = useState<string | null>(null);
   const [sortState, setSortState] = useState<SortState<RankingSortKey>>({
-    key: 'tenWinRateWilsonLower',
+    key: 'tenWinRate',
     direction: 'desc',
   });
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
   const [methodologyOpen, setMethodologyOpen] = useState(false);
-  const [dqDismissed, setDqDismissed] = useState(false);
-  const [stageView, setStageView] = useState<StageView>('focused');
-  const [showLowSampleFavorable, setShowLowSampleFavorable] = useState(false);
-  const [showLowSampleUnfavorable, setShowLowSampleUnfavorable] = useState(false);
+  const [selectedMatchupHero, setSelectedMatchupHero] = useState<string | null>(null);
 
   // --- window / tier scope ---------------------------------------------------
   const windowDayRefs = useMemo(
@@ -315,18 +315,14 @@ export default function HeroOverviewDashboard({
       sortRows(heroMetrics, sortState, {
         hero: (row) => row.hero,
         tenWinRate: (row) => row.tenWinRate,
-        tenWinRateWilsonLower: (row) => row.tenWinRateWilsonLower,
         runsCompleted: (row) => row.runsCompleted,
         runShare: (row) => row.runShare,
         tenWinCount: (row) => row.tenWinCount,
         avgRunDays10w: (row) => row.avgRunDays10w,
-        p75RunDays10w: (row) => row.p75RunDays10w,
         perfectRate: (row) => row.perfectRate,
         goldRate: (row) => row.goldRate,
         silverRate: (row) => row.silverRate,
         bronzeRate: (row) => row.bronzeRate,
-        battleWinRate: (row) => row.battleWinRate,
-        finalBattleWinRate: (row) => row.finalBattleWinRate,
       }),
     [heroMetrics, sortState]
   );
@@ -360,6 +356,24 @@ export default function HeroOverviewDashboard({
   const focusedMerged: MergedHeroRow | undefined = focusedHero
     ? merged.get(focusedHero)
     : undefined;
+  const matchupHeroOptions = useMemo(() => sortedRows.map((row) => row.hero), [sortedRows]);
+
+  useEffect(() => {
+    if (matchupHeroOptions.length === 0) {
+      if (selectedMatchupHero != null) {
+        setSelectedMatchupHero(null);
+      }
+      return;
+    }
+
+    if (selectedMatchupHero == null || !matchupHeroOptions.includes(selectedMatchupHero)) {
+      setSelectedMatchupHero(
+        focusedHero != null && matchupHeroOptions.includes(focusedHero)
+          ? focusedHero
+          : matchupHeroOptions[0]!
+      );
+    }
+  }, [focusedHero, matchupHeroOptions, selectedMatchupHero]);
 
   // --- URL writes -------------------------------------------------------------
   useEffect(() => {
@@ -431,14 +445,9 @@ export default function HeroOverviewDashboard({
     y: getChartY(point.winRate, yMin, yMax),
   });
 
-  // --- coverage / quality ------------------------------------------------------
+  // --- coverage ---------------------------------------------------------------
   const nominalDays = WEB_DAILY_NOMINAL[selectedWindow];
   const partialCoverage = loadedWindowDays.length < nominalDays;
-  const bundleFailRate = manifest.dq?.bundle_download_fail_rate ?? null;
-  const decodeFailRate = manifest.dq?.decode_fail_rate ?? null;
-  const bundleDegraded = bundleFailRate != null && bundleFailRate > DQ_BUNDLE_FAIL_WARN;
-  const decodeDegraded = decodeFailRate != null && decodeFailRate > DQ_DECODE_FAIL_WARN;
-  const qualityDegraded = bundleDegraded || decodeDegraded;
 
   const focusedDelta =
     focusedTrendSeries?.latestWinRate != null && focusedTrendSeries.firstWinRate != null
@@ -449,9 +458,10 @@ export default function HeroOverviewDashboard({
     0
   );
 
+  const selectedMatchupMerged = selectedMatchupHero ? merged.get(selectedMatchupHero) : undefined;
   const matchups = useMemo(
-    () => (focusedMerged ? deriveMatchups(focusedMerged, MATCHUP_MIN_SAMPLE) : null),
-    [focusedMerged]
+    () => (selectedMatchupMerged ? deriveMatchups(selectedMatchupMerged, MATCHUP_MIN_SAMPLE) : null),
+    [selectedMatchupMerged]
   );
 
   const hasAnyData = days.length > 0;
@@ -566,13 +576,10 @@ export default function HeroOverviewDashboard({
               </div>
               <div className="min-w-0 flex-1 self-end">
                 <CoverageStrip
-                  locale={locale}
                   loadedCount={loadedWindowDays.length}
                   nominalCount={nominalDays}
                   windowLabel={WINDOW_LABELS[selectedWindow]}
                   partial={partialCoverage}
-                  qualityDegraded={qualityDegraded}
-                  bundleFailRate={bundleFailRate}
                   coverageCopy={coverageCopy}
                 />
               </div>
@@ -581,210 +588,8 @@ export default function HeroOverviewDashboard({
         ) : null
       }
     >
-      {qualityDegraded && !dqDismissed && hasAnyData ? (
-        <section
-          data-testid="dq-banner"
-          className="surface-flat flex flex-wrap items-center justify-between gap-3 border-[color:rgba(208,90,74,0.4)] px-5 py-3"
-        >
-          <p className="text-sm leading-6 text-[color:var(--color-text-muted)]">
-            <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full bg-[color:var(--color-neg)]" />
-            {bundleDegraded ? heroCopy.dataQuality.bundleFailBanner : heroCopy.dataQuality.decodeFailBanner}
-            {bundleDegraded && bundleFailRate != null ? (
-              <span className="tnum ml-2 text-[color:var(--color-text-faint)]">
-                {coverageCopy.failRatePrefix}
-                {formatPercent(bundleFailRate)}
-              </span>
-            ) : null}
-          </p>
-          <button
-            type="button"
-            onClick={() => setDqDismissed(true)}
-            className="shrink-0 rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-medium text-[color:var(--color-text-muted)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent-bright)]"
-          >
-            {heroCopy.dataQuality.dismiss}
-          </button>
-        </section>
-      ) : null}
-
       {emptyState ?? (
         <section className="grid gap-6">
-          {/* === HERO RANKING (primary) ==================================== */}
-          <section className="surface overflow-hidden">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5">
-              <div>
-                <p className="eyebrow eyebrow-rule">
-                  {heroCopy.snapshot.label} · {loadedWindowDays.length > 0
-                    ? `${coverageCopy.daysLoadedPrefix}${loadedWindowDays.length}${coverageCopy.daysLoadedSeparator}${nominalDays}`
-                    : heroCopy.snapshot.noData}
-                </p>
-                <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.snapshot.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
-                </h2>
-                <p className="mt-2 flex flex-wrap items-center gap-2 text-[0.74rem] text-[color:var(--color-text-muted)]">
-                  <span>{methodologyCopy.rankedByCaption}</span>
-                  <span className="tnum rounded-full border border-[color:var(--color-border-soft)] px-2 py-0.5 text-[0.66rem] text-[color:var(--color-text-faint)]">
-                    {methodologyCopy.formula.wilson}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={methodologyCopy.triggerAriaLabel}
-                    onClick={() => setMethodologyOpen(true)}
-                    className="rounded-full border border-[color:var(--color-border-bright)] px-3 py-0.5 text-[0.7rem] font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)]"
-                  >
-                    {methodologyCopy.triggerLabel}
-                  </button>
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5" data-testid="tier-legend">
-                {VICTORY_TIER_KEYS.map((tier) => (
-                  <span
-                    key={tier}
-                    title={methodologyCopy.tierLegend[tier].gloss}
-                    className="inline-flex items-center gap-1.5 text-[0.7rem] text-[color:var(--color-text-muted)]"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: VICTORY_TIER_COLORS[tier] }}
-                    />
-                    {methodologyCopy.tierLegend[tier].label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {failedWindowDays.length > 0 && rankingHasRows ? (
-              <p className="border-b border-[color:var(--color-border-soft)] px-6 py-2.5 text-[0.74rem] text-[color:var(--color-text-muted)]">
-                {coverageCopy.someDaysUnavailable}{' '}
-                <span className="tnum text-[color:var(--color-text-faint)]">
-                  {loadedWindowDays.length > 0
-                    ? `${formatShortDate(loadedWindowDays[0]!.day, locale)} – ${formatShortDate(
-                        loadedWindowDays.at(-1)!.day,
-                        locale
-                      )}`
-                    : ''}
-                </span>
-              </p>
-            ) : null}
-
-            {rankingHasRows ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1140px] table-fixed border-collapse">
-                  <colgroup>
-                    {RANKING_COLUMN_WIDTHS.map((width, index) => (
-                      <col key={`${index}:${width}`} style={{ width }} />
-                    ))}
-                  </colgroup>
-                  <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
-                    <tr>
-                      <SortableHeader label={heroCopy.tableHeaders.hero} className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} info={headerInfo(methodologyCopy.tips.hero)} />
-                      <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} info={headerInfo(methodologyCopy.formula.tenWinRate)} />
-                      <SortableHeader label={heroCopy.tableHeaders.wilsonLower} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinRateWilsonLower' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRateWilsonLower', 'desc'))} info={headerInfo(methodologyCopy.formula.wilson)} />
-                      <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} info={headerInfo(methodologyCopy.tips.runs)} />
-                      <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} info={headerInfo(methodologyCopy.tips.share)} />
-                      <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinCount' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinCount', 'desc'))} info={headerInfo(methodologyCopy.tips.wins10w)} />
-                      <SortableHeader label={heroCopy.tableHeaders.avgDays} className="px-3 py-3.5" activeDirection={sortState.key === 'avgRunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'avgRunDays10w', 'asc'))} info={headerInfo(methodologyCopy.formula.runDays)} />
-                      <SortableHeader label={heroCopy.tableHeaders.p75Days} className="px-3 py-3.5" activeDirection={sortState.key === 'p75RunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'p75RunDays10w', 'asc'))} info={headerInfo(methodologyCopy.formula.runDays)} />
-                      <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-3 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} info={headerInfo(methodologyCopy.tips.perfect)} />
-                      <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} info={headerInfo(methodologyCopy.tips.gold)} />
-                      <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} info={headerInfo(methodologyCopy.tips.silver)} />
-                      <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} info={headerInfo(methodologyCopy.tips.bronze)} />
-                      <SortableHeader label={heroCopy.tableHeaders.overallBattle} className="px-3 py-3.5" activeDirection={sortState.key === 'battleWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'battleWinRate', 'desc'))} info={headerInfo(methodologyCopy.tips.winRate)} />
-                      <SortableHeader label={heroCopy.tableHeaders.finalBattle} className="px-3 py-3.5" activeDirection={sortState.key === 'finalBattleWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'finalBattleWinRate', 'desc'))} info={headerInfo(methodologyCopy.formula.winRate)} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedRows.map((row, index) => {
-                      const heroColor = getHeroColor(row.hero);
-                      const isSelected = row.hero === focusedHero;
-                      const rateRatio =
-                        row.tenWinRate != null && maxTenWinRate > 0
-                          ? row.tenWinRate / maxTenWinRate
-                          : 0;
-                      return (
-                        <tr
-                          key={row.hero}
-                          className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
-                          style={{ '--hero-color': heroColor } as React.CSSProperties}
-                        >
-                          <td className="relative px-5 py-4">
-                            <button
-                              type="button"
-                              data-selected={isSelected ? 'true' : 'false'}
-                              onClick={() => setFocusedHero(row.hero)}
-                              className="inline-flex items-center gap-3 bg-transparent p-0 text-left transition"
-                            >
-                              <span
-                                className="font-display-italic tnum text-[0.78rem] text-[color:var(--color-text-faint)]"
-                                aria-hidden="true"
-                              >
-                                {String(index + 1).padStart(2, '0')}
-                              </span>
-                              <HeroBadge hero={row.hero} selected={isSelected} size="sm" />
-                              {!row.isCanonical ? (
-                                <span
-                                  title={heroCopy.heroClass.nonCanonicalTooltip}
-                                  className="rounded-sm border border-[color:var(--color-border-soft)] px-1.5 py-0.5 text-[0.6rem] uppercase tracking-[0.12em] text-[color:var(--color-text-faint)]"
-                                >
-                                  {heroCopy.heroClass.nonCanonicalTag}
-                                </span>
-                              ) : null}
-                            </button>
-                          </td>
-                          <td
-                            className="databar relative px-5 py-4 tnum text-[color:var(--color-accent-bright)]"
-                            style={{ '--bar-width': `${rateRatio * 100}%` } as React.CSSProperties}
-                          >
-                            {renderRateCell(row.tenWinRate)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
-                            {renderRateCell(row.tenWinRateWilsonLower)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
-                            {formatInteger(row.runsCompleted, locale)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
-                            {renderRateCell(row.runShare)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-base)]">
-                            {formatInteger(row.tenWinCount, locale)}
-                          </td>
-                          <td
-                            className="px-3 py-4 tnum text-[color:var(--color-text-muted)]"
-                            aria-label={row.avgRunDays10w == null ? noValueLabel : undefined}
-                          >
-                            {formatDays(row.avgRunDays10w)}
-                          </td>
-                          <td
-                            className="px-3 py-4 tnum text-[color:var(--color-text-muted)]"
-                            aria-label={row.p75RunDays10w == null ? noValueLabel : undefined}
-                          >
-                            {row.p75RunDays10w == null ? '—' : formatInteger(row.p75RunDays10w, locale)}
-                          </td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.perfectRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.goldRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.silverRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.bronzeRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.battleWinRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.finalBattleWinRate)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="px-6 py-12 text-center">
-                <h3 className="font-display text-xl font-semibold text-[color:var(--color-text-base)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.title : heroCopy.tierEmpty.title}
-                </h3>
-                <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.body : heroCopy.tierEmpty.body}
-                </p>
-              </div>
-            )}
-          </section>
-
           {/* === TREND ===================================================== */}
           <section className="surface relative overflow-hidden p-5 sm:p-6">
             <div
@@ -862,9 +667,7 @@ export default function HeroOverviewDashboard({
                   </div>
                 ) : focusedHero != null ? (
                   <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 text-[0.78rem] leading-5 text-[color:var(--color-text-muted)] lg:flex-1">
-                    {focusedMetrics?.isCanonical === false
-                      ? heroCopy.heroClass.chartExcludedFootnote
-                      : coverageCopy.noTrendValue}
+                    {coverageCopy.noTrendValue}
                   </div>
                 ) : null}
               </div>
@@ -1122,10 +925,6 @@ export default function HeroOverviewDashboard({
                 )}
               </div>
 
-              <p className="text-[0.72rem] leading-5 text-[color:var(--color-text-faint)]">
-                {heroCopy.heroClass.chartExcludedFootnote}
-              </p>
-
               <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
                 {trendSeries.map((heroSeries) => {
                   const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
@@ -1172,75 +971,191 @@ export default function HeroOverviewDashboard({
             </div>
           </section>
 
+          {/* === HERO RANKING =============================================== */}
+          <section className="surface overflow-hidden">
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5">
+              <div>
+                <p className="eyebrow eyebrow-rule">
+                  {heroCopy.snapshot.label} · {loadedWindowDays.length > 0
+                    ? `${coverageCopy.daysLoadedPrefix}${loadedWindowDays.length}${coverageCopy.daysLoadedSeparator}${nominalDays}`
+                    : heroCopy.snapshot.noData}
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+                  {heroCopy.snapshot.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
+                </h2>
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-[0.74rem] text-[color:var(--color-text-muted)]">
+                  <span>{methodologyCopy.rankedByCaption}</span>
+                  <span className="tnum rounded-full border border-[color:var(--color-border-soft)] px-2 py-0.5 text-[0.66rem] text-[color:var(--color-text-faint)]">
+                    {methodologyCopy.formula.tenWinRate}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={methodologyCopy.triggerAriaLabel}
+                    onClick={() => setMethodologyOpen(true)}
+                    className="rounded-full border border-[color:var(--color-border-bright)] px-3 py-0.5 text-[0.7rem] font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)]"
+                  >
+                    {methodologyCopy.triggerLabel}
+                  </button>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5" data-testid="tier-legend">
+                {VICTORY_TIER_KEYS.map((tier) => (
+                  <span
+                    key={tier}
+                    title={methodologyCopy.tierLegend[tier].gloss}
+                    className="inline-flex items-center gap-1.5 text-[0.7rem] text-[color:var(--color-text-muted)]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: VICTORY_TIER_COLORS[tier] }}
+                    />
+                    {methodologyCopy.tierLegend[tier].label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {failedWindowDays.length > 0 && rankingHasRows ? (
+              <p className="border-b border-[color:var(--color-border-soft)] px-6 py-2.5 text-[0.74rem] text-[color:var(--color-text-muted)]">
+                {coverageCopy.someDaysUnavailable}{' '}
+                <span className="tnum text-[color:var(--color-text-faint)]">
+                  {loadedWindowDays.length > 0
+                    ? `${formatShortDate(loadedWindowDays[0]!.day, locale)} – ${formatShortDate(
+                        loadedWindowDays.at(-1)!.day,
+                        locale
+                      )}`
+                    : ''}
+                </span>
+              </p>
+            ) : null}
+
+            {rankingHasRows ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[840px] table-fixed border-collapse">
+                  <colgroup>
+                    {RANKING_COLUMN_WIDTHS.map((width, index) => (
+                      <col key={`${index}:${width}`} style={{ width }} />
+                    ))}
+                  </colgroup>
+                  <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
+                    <tr>
+                      <SortableHeader label={heroCopy.tableHeaders.hero} className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} info={headerInfo(methodologyCopy.tips.hero)} />
+                      <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} info={headerInfo(methodologyCopy.formula.tenWinRate)} />
+                      <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} info={headerInfo(methodologyCopy.tips.runs)} />
+                      <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} info={headerInfo(methodologyCopy.tips.share)} />
+                      <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinCount' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinCount', 'desc'))} info={headerInfo(methodologyCopy.tips.wins10w)} />
+                      <SortableHeader label={heroCopy.tableHeaders.avgDays} className="px-3 py-3.5" activeDirection={sortState.key === 'avgRunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'avgRunDays10w', 'asc'))} info={headerInfo(methodologyCopy.formula.runDays)} />
+                      <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-3 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} info={headerInfo(methodologyCopy.tips.perfect)} />
+                      <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} info={headerInfo(methodologyCopy.tips.gold)} />
+                      <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} info={headerInfo(methodologyCopy.tips.silver)} />
+                      <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} info={headerInfo(methodologyCopy.tips.bronze)} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedRows.map((row, index) => {
+                      const heroColor = getHeroColor(row.hero);
+                      const isSelected = row.hero === focusedHero;
+                      const rateRatio =
+                        row.tenWinRate != null && maxTenWinRate > 0
+                          ? row.tenWinRate / maxTenWinRate
+                          : 0;
+                      return (
+                        <tr
+                          key={row.hero}
+                          className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
+                          style={{ '--hero-color': heroColor } as React.CSSProperties}
+                        >
+                          <td className="relative px-5 py-4">
+                            <button
+                              type="button"
+                              data-selected={isSelected ? 'true' : 'false'}
+                              onClick={() => setFocusedHero(row.hero)}
+                              className="inline-flex items-center gap-3 bg-transparent p-0 text-left transition"
+                            >
+                              <span
+                                className="font-display-italic tnum text-[0.78rem] text-[color:var(--color-text-faint)]"
+                                aria-hidden="true"
+                              >
+                                {String(index + 1).padStart(2, '0')}
+                              </span>
+                              <HeroBadge hero={row.hero} selected={isSelected} size="sm" />
+                            </button>
+                          </td>
+                          <td
+                            className="databar relative px-5 py-4 tnum text-[color:var(--color-accent-bright)]"
+                            style={{ '--bar-width': `${rateRatio * 100}%` } as React.CSSProperties}
+                          >
+                            {renderRateCell(row.tenWinRate)}
+                          </td>
+                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
+                            {formatInteger(row.runsCompleted, locale)}
+                          </td>
+                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
+                            {renderRateCell(row.runShare)}
+                          </td>
+                          <td className="px-3 py-4 tnum text-[color:var(--color-text-base)]">
+                            {formatInteger(row.tenWinCount, locale)}
+                          </td>
+                          <td
+                            className="px-3 py-4 tnum text-[color:var(--color-text-muted)]"
+                            aria-label={row.avgRunDays10w == null ? noValueLabel : undefined}
+                          >
+                            {formatDays(row.avgRunDays10w)}
+                          </td>
+                          <td className="px-3 py-4 tnum">{renderRateCell(row.perfectRate)}</td>
+                          <td className="px-3 py-4 tnum">{renderRateCell(row.goldRate)}</td>
+                          <td className="px-3 py-4 tnum">{renderRateCell(row.silverRate)}</td>
+                          <td className="px-3 py-4 tnum">{renderRateCell(row.bronzeRate)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center">
+                <h3 className="font-display text-xl font-semibold text-[color:var(--color-text-base)]">
+                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.title : heroCopy.tierEmpty.title}
+                </h3>
+                <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.body : heroCopy.tierEmpty.body}
+                </p>
+              </div>
+            )}
+          </section>
+
           {/* === PER-HERO DOSSIER ========================================== */}
           {rankingHasRows && focusedHero != null && focusedMetrics != null ? (
             <section data-testid="hero-dossier" className="grid gap-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <p className="eyebrow eyebrow-rule">{heroCopy.dossier.label}</p>
-                  <HeroBadge hero={focusedHero} selected size="md" />
-                  {!focusedMetrics.isCanonical ? (
-                    <span
-                      title={heroCopy.heroClass.nonCanonicalTooltip}
-                      className="rounded-sm border border-[color:var(--color-border-soft)] px-1.5 py-0.5 text-[0.6rem] uppercase tracking-[0.12em] text-[color:var(--color-text-faint)]"
-                    >
-                      {heroCopy.heroClass.nonCanonicalTag}
-                    </span>
-                  ) : null}
-                </div>
+                <p className="eyebrow eyebrow-rule">{heroCopy.dossier.label}</p>
                 <span className="tnum text-[0.72rem] uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
                   {dossierContextLabel}
                 </span>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <BattlePanel
-                  metrics={focusedMetrics}
-                  merged={focusedMerged}
-                  locale={locale}
-                  battleCopy={heroCopy.battle}
-                  noDataLabel={heroCopy.snapshot.noData}
-                  noValueLabel={noValueLabel}
-                />
                 <StagePanel
-                  stageView={stageView}
-                  onStageViewChange={setStageView}
                   focusedHero={focusedHero}
                   merged={merged}
                   rows={sortedRows}
                   locale={locale}
+                  heroLabel={heroCopy.tableHeaders.hero}
                   stageCopy={heroCopy.stage}
                   noDataLabel={heroCopy.snapshot.noData}
                   noValueLabel={noValueLabel}
                 />
-                <VictoryBucketPanel
-                  merged={focusedMerged}
-                  heroColor={getHeroColor(focusedHero)}
-                  locale={locale}
-                  bucketCopy={heroCopy.victoryProgress}
-                  noDataLabel={heroCopy.snapshot.noData}
-                />
                 <MatchupPanel
+                  heroOptions={matchupHeroOptions}
+                  selectedHero={selectedMatchupHero}
+                  onHeroChange={setSelectedMatchupHero}
                   matchups={matchups}
                   matchupCopy={heroCopy.matchups}
                   locale={locale}
                   noValueLabel={noValueLabel}
-                  showLowSampleFavorable={showLowSampleFavorable}
-                  showLowSampleUnfavorable={showLowSampleUnfavorable}
-                  onToggleFavorable={() => setShowLowSampleFavorable((value) => !value)}
-                  onToggleUnfavorable={() => setShowLowSampleUnfavorable((value) => !value)}
                 />
               </div>
-
-              <OutcomePanel
-                rows={sortedRows}
-                focusedHero={focusedHero}
-                focusedMerged={focusedMerged}
-                locale={locale}
-                outcomeCopy={heroCopy.outcome}
-                tierLegend={methodologyCopy.tierLegend}
-                noDataLabel={heroCopy.snapshot.noData}
-              />
             </section>
           ) : null}
         </section>
@@ -1299,13 +1214,10 @@ export default function HeroOverviewDashboard({
 // === coverage strip ============================================================
 
 type CoverageStripProps = {
-  locale: Locale;
   loadedCount: number;
   nominalCount: number;
   windowLabel: string;
   partial: boolean;
-  qualityDegraded: boolean;
-  bundleFailRate: number | null;
   coverageCopy: ReturnType<typeof getSiteCopy>['stats']['heroes']['coverage'];
 };
 
@@ -1314,8 +1226,6 @@ function CoverageStrip({
   nominalCount,
   windowLabel,
   partial,
-  qualityDegraded,
-  bundleFailRate,
   coverageCopy,
 }: CoverageStripProps) {
   return (
@@ -1333,278 +1243,118 @@ function CoverageStrip({
       {partial ? (
         <span className="text-[color:var(--color-accent-bright)]">{coverageCopy.partialNote}</span>
       ) : null}
-      <span className="inline-flex items-center gap-1.5">
-        <span
-          aria-hidden="true"
-          className={`h-1.5 w-1.5 rounded-full ${
-            qualityDegraded ? 'bg-[color:var(--color-neg)]' : 'bg-[color:var(--color-pos)]'
-          }`}
-        />
-        {qualityDegraded ? coverageCopy.qualityDegraded : coverageCopy.qualityOk}
-      </span>
-      {qualityDegraded && bundleFailRate != null ? (
-        <span className="tnum">
-          {coverageCopy.failRatePrefix}
-          {formatPercent(bundleFailRate)}
-        </span>
-      ) : null}
     </p>
   );
 }
 
 // === dossier panels ============================================================
 
-type BattleCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['battle'];
-
-function BattlePanel({
-  metrics,
-  merged,
-  locale,
-  battleCopy,
-  noDataLabel,
-  noValueLabel,
-}: {
-  metrics: HeroMetricsRow;
-  merged: MergedHeroRow | undefined;
-  locale: Locale;
-  battleCopy: BattleCopy;
-  noDataLabel: string;
-  noValueLabel: string;
-}) {
-  const overall = metrics.battleWinRate;
-  const final = metrics.finalBattleWinRate;
-  const overallLower = metrics.battleWinRateWilsonLower;
-  const finalLower = metrics.finalBattleWinRateWilsonLower;
-  const gap = overall != null && final != null ? final - overall : null;
-
-  const width = 600;
-  const left = 16;
-  const right = 16;
-  const toX = (rate: number) => left + rate * (width - left - right);
-
-  return (
-    <section data-testid="battle-panel" className="surface p-5">
-      <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-        {battleCopy.title}
-      </h3>
-      {overall == null && final == null ? (
-        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
-      ) : (
-        <>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div>
-              <p className="eyebrow text-[0.62rem] tracking-[0.2em]">{battleCopy.overallWinRate}</p>
-              <p
-                className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-accent-bright)]"
-                aria-label={overall == null ? noValueLabel : undefined}
-              >
-                {formatNullablePercent(overall)}
-              </p>
-              <p className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                {battleCopy.wilsonLower} {formatNullablePercent(overallLower)} ·{' '}
-                {formatInteger(merged?.battleDecidedCount ?? 0, locale)}
-              </p>
-            </div>
-            <div>
-              <p className="eyebrow text-[0.62rem] tracking-[0.2em]">{battleCopy.finalBattleWinRate}</p>
-              <p
-                className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-text-base)]"
-                aria-label={final == null ? noValueLabel : undefined}
-              >
-                {formatNullablePercent(final)}
-              </p>
-              <p className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                {battleCopy.wilsonLower} {formatNullablePercent(finalLower)} ·{' '}
-                {formatInteger(merged?.finalBattleDecidedCount ?? 0, locale)}
-              </p>
-            </div>
-          </div>
-
-          {overall != null && final != null ? (
-            <svg
-              viewBox={`0 0 ${width} 84`}
-              className="mt-4 block w-full"
-              role="img"
-              aria-label={`${battleCopy.overallWinRate} ${formatPercent(overall)} · ${battleCopy.finalBattleWinRate} ${formatPercent(final)}`}
-            >
-              {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
-                <g key={tick}>
-                  <line
-                    x1={toX(tick)}
-                    y1={14}
-                    x2={toX(tick)}
-                    y2={54}
-                    stroke="rgba(148, 131, 95, 0.14)"
-                    strokeWidth="1"
-                    strokeDasharray="2 4"
-                  />
-                  <text
-                    x={toX(tick)}
-                    y={74}
-                    fill="rgba(148, 131, 95, 0.78)"
-                    fontSize="10"
-                    fontFamily="JetBrains Mono, monospace"
-                    textAnchor="middle"
-                  >
-                    {formatPercent(tick)}
-                  </text>
-                </g>
-              ))}
-              {/* gap segment */}
-              <line
-                x1={toX(overall)}
-                y1={34}
-                x2={toX(final)}
-                y2={34}
-                stroke={gap != null && gap >= 0 ? 'var(--color-pos)' : 'var(--color-neg)'}
-                strokeWidth="4"
-                strokeLinecap="round"
-                opacity="0.7"
-              />
-              {/* wilson whiskers */}
-              {overallLower != null ? (
-                <line
-                  x1={toX(overallLower)}
-                  y1={24}
-                  x2={toX(overall)}
-                  y2={24}
-                  stroke="rgba(232,185,74,0.5)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              ) : null}
-              {finalLower != null ? (
-                <line
-                  x1={toX(finalLower)}
-                  y1={44}
-                  x2={toX(final)}
-                  y2={44}
-                  stroke="rgba(168,176,187,0.5)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              ) : null}
-              <circle cx={toX(overall)} cy={34} r="7" fill="var(--color-accent)" stroke="rgba(12,10,7,0.95)" strokeWidth="2">
-                <title>{`${battleCopy.overallWinRate} ${formatPercent(overall)}`}</title>
-              </circle>
-              <circle cx={toX(final)} cy={34} r="7" fill="#a8b0bb" stroke="rgba(12,10,7,0.95)" strokeWidth="2">
-                <title>{`${battleCopy.finalBattleWinRate} ${formatPercent(final)}`}</title>
-              </circle>
-            </svg>
-          ) : null}
-
-          <p className="mt-2 tnum text-[0.74rem] text-[color:var(--color-text-muted)]">
-            {battleCopy.gap}{' '}
-            <span
-              className={
-                gap == null
-                  ? ''
-                  : gap >= 0
-                    ? 'text-[color:var(--color-pos)]'
-                    : 'text-[color:var(--color-neg)]'
-              }
-              aria-label={gap == null ? noValueLabel : undefined}
-            >
-              {gap == null ? '—' : `${gap >= 0 ? '+' : '−'}${formatPercent(Math.abs(gap))}`}
-            </span>
-          </p>
-        </>
-      )}
-    </section>
-  );
-}
-
 type StageCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['stage'];
 
 function StagePanel({
-  stageView,
-  onStageViewChange,
   focusedHero,
   merged,
   rows,
   locale,
+  heroLabel,
   stageCopy,
   noDataLabel,
   noValueLabel,
 }: {
-  stageView: StageView;
-  onStageViewChange: (view: StageView) => void;
-  focusedHero: string;
+  focusedHero: string | null;
   merged: Map<string, MergedHeroRow>;
   rows: HeroMetricsRow[];
   locale: Locale;
+  heroLabel: string;
   stageCopy: StageCopy;
   noDataLabel: string;
   noValueLabel: string;
 }) {
-  const focusedRow = merged.get(focusedHero);
-  const focusedStages = STAGE_KEYS.map((key) => ({
-    key,
-    counts: focusedRow?.gameDayBattleCounts[key],
-  })).filter((entry) => entry.counts != null);
+  const [stageSortState, setStageSortState] = useState<SortState<StageSortKey> | null>(null);
+
+  const visibleStageKeys = useMemo(() => {
+    const hasDetailedStageData = rows.some((row) => {
+      const counts = merged.get(row.hero)?.gameDayBattleCounts;
+      return DETAILED_STAGE_KEYS.some((key) => {
+        const bucket = counts?.[key];
+        return bucket != null && bucket.count > 0;
+      });
+    });
+
+    return hasDetailedStageData ? DETAILED_STAGE_KEYS : COARSE_STAGE_KEYS;
+  }, [merged, rows]);
+
+  const hasAnyStageData = rows.some((row) => {
+    const counts = merged.get(row.hero)?.gameDayBattleCounts;
+    return visibleStageKeys.some((key) => {
+      const bucket = counts?.[key];
+      return bucket != null && bucket.count > 0;
+    });
+  });
+  const sortedStageRows = useMemo(() => {
+    const activeStageSortState =
+      stageSortState != null &&
+      (stageSortState.key === 'hero' || visibleStageKeys.includes(stageSortState.key))
+        ? stageSortState
+        : null;
+
+    if (activeStageSortState == null) {
+      return rows;
+    }
+
+    const sortAccessors = {
+      hero: (row) => row.hero,
+    } as Record<StageSortKey, (row: HeroMetricsRow) => string | number | null | undefined> &
+      Record<string, ((row: HeroMetricsRow) => string | number | null | undefined) | undefined>;
+
+    for (const key of visibleStageKeys) {
+      sortAccessors[key] = (row) => bucketRate(merged.get(row.hero)?.gameDayBattleCounts[key]);
+    }
+
+    return sortRows(rows, activeStageSortState, sortAccessors);
+  }, [merged, rows, stageSortState, visibleStageKeys]);
+  const stageTableMinWidth = visibleStageKeys.length > COARSE_STAGE_KEYS.length
+    ? 120 + visibleStageKeys.length * 112
+    : 360;
+  const handleStageSort = (key: StageSortKey, initialDirection: 'asc' | 'desc') => {
+    setStageSortState((current) =>
+      current == null ? { key, direction: initialDirection } : toggleSort(current, key, initialDirection)
+    );
+  };
 
   return (
     <section data-testid="stage-panel" className="surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-          {stageCopy.title}
-        </h3>
-        <SegmentedControl>
-          <SegmentedButton active={stageView === 'focused'} onClick={() => onStageViewChange('focused')}>
-            {stageCopy.viewFocused}
-          </SegmentedButton>
-          <SegmentedButton active={stageView === 'all'} onClick={() => onStageViewChange('all')}>
-            {stageCopy.viewAll}
-          </SegmentedButton>
-        </SegmentedControl>
-      </div>
+      <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
+        {stageCopy.title}
+      </h3>
 
-      {stageView === 'focused' ? (
-        focusedStages.length > 0 ? (
-          <ul className="mt-4 grid gap-2.5">
-            {focusedStages.map(({ key, counts }) => {
-              const rate = bucketRate(counts);
-              return (
-                <li key={key} className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-3">
-                  <span className="text-[0.78rem] text-[color:var(--color-text-muted)]">
-                    {stageCopy[key]}
-                  </span>
-                  <span
-                    className="databar relative block h-6 rounded-sm"
-                    style={{ '--bar-width': `${(rate ?? 0) * 100}%` } as React.CSSProperties}
-                  >
-                    <span
-                      className="absolute inset-y-0 left-2 flex items-center tnum text-[0.78rem] text-[color:var(--color-accent-bright)]"
-                      aria-label={rate == null ? noValueLabel : undefined}
-                    >
-                      {formatNullablePercent(rate)}
-                    </span>
-                  </span>
-                  <span className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                    {formatInteger(counts!.count, locale)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
-        )
-      ) : (
+      {hasAnyStageData ? (
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[360px] table-fixed border-collapse text-[0.78rem]">
+          <table
+            className="w-full min-w-[360px] table-fixed border-collapse text-[0.78rem]"
+            style={{ minWidth: stageTableMinWidth }}
+          >
             <thead className="font-display-italic text-left text-[0.66rem] uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
               <tr>
-                <th scope="col" className="py-2 pr-2" />
-                {STAGE_KEYS.map((key) => (
-                  <th key={key} scope="col" className="px-2 py-2">
-                    {stageCopy[key]}
-                  </th>
+                <SortableHeader
+                  label={heroLabel}
+                  className="py-2 pr-2"
+                  activeDirection={stageSortState?.key === 'hero' ? stageSortState.direction : undefined}
+                  onToggle={() => handleStageSort('hero', 'asc')}
+                />
+                {visibleStageKeys.map((key) => (
+                  <SortableHeader
+                    key={key}
+                    label={stageCopy[key]}
+                    className="px-2 py-2"
+                    activeDirection={stageSortState?.key === key ? stageSortState.direction : undefined}
+                    onToggle={() => handleStageSort(key, 'desc')}
+                  />
                 ))}
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {sortedStageRows.map((row) => {
                 const counts = merged.get(row.hero)?.gameDayBattleCounts;
                 return (
                   <tr
@@ -1615,7 +1365,7 @@ function StagePanel({
                     <td className="py-2 pr-2">
                       <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
                     </td>
-                    {STAGE_KEYS.map((key) => {
+                    {visibleStageKeys.map((key) => {
                       const rate = bucketRate(counts?.[key]);
                       return (
                         <td
@@ -1634,125 +1384,8 @@ function StagePanel({
             </tbody>
           </table>
         </div>
-      )}
-    </section>
-  );
-}
-
-type VictoryProgressCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['victoryProgress'];
-
-function VictoryBucketPanel({
-  merged,
-  heroColor,
-  locale,
-  bucketCopy,
-  noDataLabel,
-}: {
-  merged: MergedHeroRow | undefined;
-  heroColor: string;
-  locale: Locale;
-  bucketCopy: VictoryProgressCopy;
-  noDataLabel: string;
-}) {
-  const buckets = VICTORY_BUCKET_KEYS.map((key, index) => ({
-    key,
-    index,
-    counts: merged?.victoryBucketBattleCounts[key],
-  })).filter((entry) => entry.counts != null && entry.counts.count > 0);
-
-  const width = 600;
-  const height = 180;
-  const padding = { top: 22, right: 28, bottom: 34, left: 48 };
-  const rates = buckets
-    .map((bucket) => bucketRate(bucket.counts))
-    .filter((rate): rate is number => rate != null);
-  const minRate = rates.length > 0 ? Math.min(...rates, 0.4) : 0;
-  const maxRate = rates.length > 0 ? Math.max(...rates, 0.6) : 1;
-  const toX = (index: number) =>
-    padding.left +
-    ((width - padding.left - padding.right) * index) / Math.max(VICTORY_BUCKET_KEYS.length - 2, 1);
-  const toY = (rate: number) =>
-    padding.top +
-    (height - padding.top - padding.bottom) * (1 - (rate - minRate) / Math.max(maxRate - minRate, 0.0001));
-
-  const points = buckets
-    .map((bucket) => {
-      const rate = bucketRate(bucket.counts);
-      return rate == null ? null : { ...bucket, rate, x: toX(bucket.index), y: toY(rate) };
-    })
-    .filter((point): point is NonNullable<typeof point> => point != null);
-
-  return (
-    <section data-testid="victory-bucket-panel" className="surface p-5">
-      <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-        {bucketCopy.title}
-      </h3>
-      {points.length === 0 ? (
-        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 block w-full" role="img" aria-label={bucketCopy.title}>
-          {[minRate, (minRate + maxRate) / 2, maxRate].map((tick) => (
-            <g key={tick.toFixed(4)}>
-              <line
-                x1={padding.left}
-                y1={toY(tick)}
-                x2={width - padding.right}
-                y2={toY(tick)}
-                stroke="rgba(148, 131, 95, 0.14)"
-                strokeWidth="1"
-                strokeDasharray="2 4"
-              />
-              <text
-                x={padding.left - 10}
-                y={toY(tick) + 4}
-                fill="rgba(148, 131, 95, 0.78)"
-                fontSize="10"
-                fontFamily="JetBrains Mono, monospace"
-                textAnchor="end"
-              >
-                {formatPercent(tick)}
-              </text>
-            </g>
-          ))}
-          {points.length > 1 ? (
-            <polyline
-              fill="none"
-              stroke={heroColor}
-              strokeWidth="3"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-            />
-          ) : null}
-          {points.map((point) => (
-            <g key={point.key}>
-              <circle cx={point.x} cy={point.y} r="5.5" fill={heroColor} stroke="rgba(12,10,7,0.95)" strokeWidth="2">
-                <title>{`${bucketCopy[point.key]} ${formatPercent(point.rate)} · ${formatInteger(point.counts!.count, locale)}`}</title>
-              </circle>
-              <text
-                x={point.x}
-                y={point.y - 12}
-                fill="rgba(241,230,205,0.96)"
-                fontSize="11"
-                fontWeight="600"
-                fontFamily="JetBrains Mono, monospace"
-                textAnchor="middle"
-              >
-                {formatPercent(point.rate)}
-              </text>
-              <text
-                x={point.x}
-                y={height - 10}
-                fill="rgba(148, 131, 95, 0.78)"
-                fontSize="10"
-                fontFamily="JetBrains Mono, monospace"
-                textAnchor="middle"
-              >
-                {bucketCopy[point.key]}
-              </text>
-            </g>
-          ))}
-        </svg>
+        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
       )}
     </section>
   );
@@ -1761,49 +1394,70 @@ function VictoryBucketPanel({
 type MatchupsCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['matchups'];
 
 function MatchupPanel({
+  heroOptions,
+  selectedHero,
+  onHeroChange,
   matchups,
   matchupCopy,
   locale,
   noValueLabel,
-  showLowSampleFavorable,
-  showLowSampleUnfavorable,
-  onToggleFavorable,
-  onToggleUnfavorable,
 }: {
-  matchups: { favorable: MatchupRow[]; unfavorable: MatchupRow[]; mirror: MatchupRow | null } | null;
+  heroOptions: string[];
+  selectedHero: string | null;
+  onHeroChange: (hero: string) => void;
+  matchups: { rows: MatchupRow[] } | null;
   matchupCopy: MatchupsCopy;
   locale: Locale;
   noValueLabel: string;
-  showLowSampleFavorable: boolean;
-  showLowSampleUnfavorable: boolean;
-  onToggleFavorable: () => void;
-  onToggleUnfavorable: () => void;
 }) {
-  const favorable = matchups?.favorable ?? [];
-  const unfavorable = matchups?.unfavorable ?? [];
-  const mirror = matchups?.mirror ?? null;
-  const isEmpty = favorable.length === 0 && unfavorable.length === 0 && mirror == null;
+  const rows = matchups?.rows ?? [];
 
-  function renderList(
-    rows: MatchupRow[],
-    positive: boolean,
-    showLowSample: boolean,
-    onToggle: () => void
-  ) {
-    const confident = rows.filter((row) => !row.isLowSample);
-    const lowSample = rows.filter((row) => row.isLowSample);
-    const visible = showLowSample ? [...confident, ...lowSample] : confident;
-
-    return (
-      <>
-        <ul className="mt-3 grid gap-2">
-          {visible.map((row) => (
+  return (
+    <section data-testid="matchup-panel" className="surface p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
+          {matchupCopy.title}
+        </h3>
+        {heroOptions.length > 0 ? (
+          <div
+            role="group"
+            aria-label={matchupCopy.heroSelectorLabel}
+            data-testid="matchup-hero-selector"
+            className="flex max-w-full flex-wrap justify-end gap-1.5"
+          >
+            {heroOptions.map((hero) => {
+              const selected = hero === selectedHero;
+              return (
+                <button
+                  key={hero}
+                  type="button"
+                  aria-pressed={selected}
+                  data-selected={selected ? 'true' : 'false'}
+                  onClick={() => onHeroChange(hero)}
+                  className={`inline-flex items-center rounded-lg border px-1.5 py-1 transition ${
+                    selected
+                      ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
+                      : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
+                  }`}
+                >
+                  <HeroBadge hero={hero} selected={selected} size="sm" />
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>
+      ) : (
+        <ul data-testid="matchup-list" className="mt-4 grid gap-2">
+          {rows.map((row) => (
             <li key={row.opponentHero} className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
               <HeroBadge hero={row.opponentHero} size="sm" />
               <span
-                className={`${positive ? 'databar databar-pos' : 'databar databar-neg'} relative block h-6 rounded-sm`}
+                className="databar databar-pos relative block h-6 rounded-sm"
                 style={{
-                  '--bar-width': `${(row.isLowSample ? 0 : (positive ? row.winRate ?? 0 : 1 - (row.winRate ?? 1))) * 100}%`,
+                  '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
                 } as React.CSSProperties}
               >
                 <span
@@ -1824,188 +1478,7 @@ function MatchupPanel({
             </li>
           ))}
         </ul>
-        {lowSample.length > 0 ? (
-          <button
-            type="button"
-            aria-expanded={showLowSample}
-            onClick={onToggle}
-            className="mt-3 text-[0.72rem] font-medium text-[color:var(--color-text-muted)] underline decoration-dotted underline-offset-4 transition hover:text-[color:var(--color-accent-bright)]"
-          >
-            {matchupCopy.lowSampleDisclosure} ({lowSample.length})
-          </button>
-        ) : null}
-      </>
-    );
-  }
-
-  return (
-    <section data-testid="matchup-panel" className="surface p-5">
-      <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-        {matchupCopy.title}
-      </h3>
-      {isEmpty ? (
-        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>
-      ) : (
-        <>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
-            <div>
-              <p className="eyebrow text-[0.62rem] tracking-[0.2em] text-[color:var(--color-pos)]">
-                {matchupCopy.favorable}
-              </p>
-              {renderList(favorable, true, showLowSampleFavorable, onToggleFavorable)}
-            </div>
-            <div>
-              <p className="eyebrow text-[0.62rem] tracking-[0.2em] text-[color:var(--color-neg)]">
-                {matchupCopy.unfavorable}
-              </p>
-              {renderList(unfavorable, false, showLowSampleUnfavorable, onToggleUnfavorable)}
-            </div>
-          </div>
-          {mirror ? (
-            <div
-              data-testid="mirror-matchup"
-              className="mt-5 flex flex-wrap items-center gap-3 border-t border-[color:var(--color-border-soft)] pt-4"
-            >
-              <span className="rounded-sm border border-[color:var(--color-border-soft)] px-1.5 py-0.5 text-[0.62rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                {matchupCopy.mirror}
-              </span>
-              <HeroBadge hero={mirror.opponentHero} size="sm" />
-              <span
-                className="tnum text-[0.78rem] text-[color:var(--color-text-base)]"
-                aria-label={mirror.isLowSample || mirror.winRate == null ? noValueLabel : undefined}
-              >
-                {mirror.isLowSample ? '—' : formatNullablePercent(mirror.winRate)}
-              </span>
-              <span className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                {formatInteger(mirror.battleDecidedCount, locale)} {matchupCopy.sample}
-              </span>
-            </div>
-          ) : null}
-          <p className="mt-4 text-[0.7rem] leading-5 text-[color:var(--color-text-faint)]">
-            {matchupCopy.minSampleNote}
-          </p>
-        </>
       )}
-    </section>
-  );
-}
-
-type OutcomeCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['outcome'];
-type TierLegendCopy = ReturnType<
-  typeof getSiteCopy
->['stats']['heroes']['methodology']['tierLegend'];
-
-function OutcomePanel({
-  rows,
-  focusedHero,
-  focusedMerged,
-  locale,
-  outcomeCopy,
-  tierLegend,
-  noDataLabel,
-}: {
-  rows: HeroMetricsRow[];
-  focusedHero: string;
-  focusedMerged: MergedHeroRow | undefined;
-  locale: Locale;
-  outcomeCopy: OutcomeCopy;
-  tierLegend: TierLegendCopy;
-  noDataLabel: string;
-}) {
-  const histogramEntries = Object.entries(focusedMerged?.finalWinsCounts ?? {})
-    .map(([key, count]) => [Number(key), count] as const)
-    .filter(([wins, count]) => Number.isFinite(wins) && count > 0)
-    .sort(([a], [b]) => a - b);
-  const histogramMax = histogramEntries.reduce((max, [, count]) => Math.max(max, count), 0);
-
-  return (
-    <section data-testid="outcome-panel" className="surface p-5">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div>
-          <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-            {outcomeCopy.title}
-          </h3>
-          <ul className="mt-4 grid gap-2">
-            {rows.map((row) => {
-              const tiers: Array<{ key: VictoryTierKey; rate: number | null }> = [
-                { key: 'perfect', rate: row.perfectRate },
-                { key: 'gold', rate: row.goldRate },
-                { key: 'silver', rate: row.silverRate },
-                { key: 'bronze', rate: row.bronzeRate },
-                { key: 'misfortune', rate: row.misfortuneRate },
-              ];
-              const hasRates = tiers.some((tier) => tier.rate != null && tier.rate > 0);
-              return (
-                <li key={row.hero} className="grid grid-cols-[auto_1fr] items-center gap-2.5">
-                  <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
-                  {hasRates ? (
-                    <span
-                      className={`flex h-5 overflow-hidden rounded-sm ${
-                        row.hero === focusedHero ? 'ring-1 ring-[color:var(--color-accent)]' : ''
-                      }`}
-                    >
-                      {tiers.map((tier) =>
-                        tier.rate != null && tier.rate > 0 ? (
-                          <span
-                            key={tier.key}
-                            title={`${tierLegend[tier.key].label} ${formatPercent(tier.rate)}`}
-                            style={{
-                              width: `${tier.rate * 100}%`,
-                              backgroundColor: VICTORY_TIER_COLORS[tier.key],
-                            }}
-                          />
-                        ) : null
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-[0.74rem] text-[color:var(--color-text-faint)]">—</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.7rem] text-[color:var(--color-text-muted)]">
-            {VICTORY_TIER_KEYS.map((tier) => (
-              <span key={tier} className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: VICTORY_TIER_COLORS[tier] }}
-                />
-                {outcomeCopy[tier]}
-              </span>
-            ))}
-          </p>
-        </div>
-
-        <div data-testid="final-wins-histogram">
-          <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-            {outcomeCopy.histogramTitle}
-          </h3>
-          {histogramEntries.length === 0 ? (
-            <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
-          ) : (
-            <div className="mt-4 flex h-36 items-end gap-1.5">
-              {histogramEntries.map(([wins, count]) => (
-                <div key={wins} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <span className="tnum text-[0.62rem] text-[color:var(--color-text-faint)]">
-                    {formatInteger(count, locale)}
-                  </span>
-                  <span
-                    title={`${wins}: ${formatInteger(count, locale)}`}
-                    className="w-full rounded-t-sm bg-[color:var(--color-accent)]"
-                    style={{
-                      height: `${histogramMax > 0 ? Math.max((count / histogramMax) * 100, 4) : 0}%`,
-                      opacity: wins === 10 ? 1 : 0.45,
-                    }}
-                  />
-                  <span className="tnum text-[0.66rem] text-[color:var(--color-text-muted)]">{wins}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </section>
   );
 }

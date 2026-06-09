@@ -14,23 +14,19 @@ import type {
 
 const DAYS = ['2026-06-04', '2026-06-05', '2026-06-06'];
 
-function makeRow(overrides: Partial<WebHeroDailyRow> & { hero: string }): WebHeroDailyRow {
+function makeRow(
+  overrides: Omit<Partial<WebHeroDailyRow>, 'hero'> & { hero: string }
+): WebHeroDailyRow {
+  const { hero, ...rest } = overrides;
   return {
+    hero: hero as WebHeroDailyRow['hero'],
     rating_tier: 'all',
-    runs_total: 0,
-    runs_completed: 0,
-    final_wins_counts: {},
-    run_days_10w_counts: {},
-    battle_decided_count: 0,
-    battle_wins: 0,
-    battle_losses: 0,
-    final_battle_decided_count: 0,
-    final_battle_wins: 0,
-    final_battle_losses: 0,
-    game_day_battle_counts: {},
-    victory_bucket_battle_counts: {},
+    runs: { completed: 0, scored: 0, ten_win: 0 },
+    outcomes: { perfect: 0, gold: 0, silver: 0, bronze: 0 },
+    ten_win_days: { known_count: 0, sum_days: 0 },
+    battle_days: {},
     matchups: [],
-    ...overrides,
+    ...rest,
   };
 }
 
@@ -38,105 +34,93 @@ function makeDayRows(dayIndex: number): WebHeroDailyRow[] {
   return [
     makeRow({
       hero: 'Stelle',
-      runs_total: 120,
-      runs_completed: 100,
-      final_wins_counts: { '10': 40 + dayIndex },
-      run_days_10w_counts: { '11': 40 + dayIndex },
-      game_day_battle_counts: {
-        day_1_3: { count: 10, wins: 2, losses: 8 },
-        day_4_7: { count: 10, wins: 9, losses: 1 },
-        day_8_plus: { count: 10, wins: 6, losses: 4 },
+      // scored equals ten_win so every scored run is gold (10W rate 41% must stay distinct
+      // from outcome rates).
+      runs: { completed: 100, scored: 40 + dayIndex, ten_win: 40 + dayIndex },
+      outcomes: { perfect: 0, gold: 40 + dayIndex, silver: 0, bronze: 0 },
+      ten_win_days: { known_count: 40 + dayIndex, sum_days: 11 * (40 + dayIndex) },
+      battle_days: {
+        day_1: { decided: 10, wins: 2, losses: 8 },
+        day_5: { decided: 10, wins: 9, losses: 1 },
+        day_10: { decided: 10, wins: 6, losses: 4 },
       },
       matchups: [
-        { opponent_hero: 'Mak', battle_decided_count: 20, wins: 15, losses: 5 },
-        { opponent_hero: 'Jules', battle_decided_count: 10, wins: 4, losses: 6 },
+        { opponent_hero: 'Mak', decided: 20, wins: 15, losses: 5 },
+        { opponent_hero: 'Jules', decided: 10, wins: 4, losses: 6 },
       ],
     }),
     makeRow({
       hero: 'Jules',
-      runs_total: 120,
-      runs_completed: 100,
-      final_wins_counts: { '0': 10, '5': 20, '8': 20, '10': 50 },
-      run_days_10w_counts: { '10': 30, '12': 15 },
-      battle_decided_count: 200,
-      battle_wins: 120,
-      battle_losses: 80,
-      final_battle_decided_count: 40,
-      final_battle_wins: 12,
-      final_battle_losses: 28,
-      game_day_battle_counts: {
-        day_1_3: { count: 100, wins: 60, losses: 40 },
-        day_4_7: { count: 80, wins: 40, losses: 40 },
-      },
-      victory_bucket_battle_counts: {
-        wins_0_3: { count: 60, wins: 36, losses: 24 },
-        wins_4_6: { count: 50, wins: 30, losses: 20 },
-        wins_7_9: { count: 40, wins: 28, losses: 12 },
+      runs: { completed: 100, scored: 100, ten_win: 50 },
+      outcomes: { perfect: 30, gold: 20, silver: 20, bronze: 20 },
+      ten_win_days: { known_count: 45, sum_days: 10 * 30 + 12 * 15 },
+      battle_days: {
+        day_1: { decided: 100, wins: 60, losses: 40 },
+        day_5: { decided: 80, wins: 40, losses: 40 },
       },
       matchups: [
-        { opponent_hero: 'Stelle', battle_decided_count: 100, wins: 70, losses: 30 },
-        { opponent_hero: 'Vanessa', battle_decided_count: 30, wins: 10, losses: 20 },
-        { opponent_hero: 'Dooley', battle_decided_count: 5, wins: 4, losses: 1 },
-        { opponent_hero: 'Jules', battle_decided_count: 50, wins: 25, losses: 25 },
+        { opponent_hero: 'Stelle', decided: 100, wins: 70, losses: 30 },
+        { opponent_hero: 'Vanessa', decided: 30, wins: 10, losses: 20 },
+        { opponent_hero: 'Dooley', decided: 5, wins: 4, losses: 1 },
+        { opponent_hero: 'Jules', decided: 50, wins: 25, losses: 25 },
       ],
     }),
     // Vanessa has no completed runs on the middle day → null trend point.
     makeRow({
       hero: 'Vanessa',
-      runs_total: 90,
-      runs_completed: dayIndex === 1 ? 0 : 80,
-      final_wins_counts: dayIndex === 1 ? {} : { '10': 20 },
-      game_day_battle_counts: {
-        day_1_3: { count: 10, wins: 8, losses: 2 },
-        day_4_7: { count: 10, wins: 4, losses: 6 },
-        day_8_plus: { count: 10, wins: 7, losses: 3 },
+      runs:
+        dayIndex === 1
+          ? { completed: 0, scored: 0, ten_win: 0 }
+          : { completed: 80, scored: 80, ten_win: 20 },
+      outcomes: dayIndex === 1 ? { perfect: 0, gold: 0, silver: 0, bronze: 0 } : { perfect: 20, gold: 0, silver: 0, bronze: 0 },
+      battle_days: {
+        day_1: { decided: 10, wins: 8, losses: 2 },
+        day_5: { decided: 10, wins: 4, losses: 6 },
+        day_10: { decided: 10, wins: 7, losses: 3 },
       },
     }),
     // Karnok never has a denominator → null rates must sink in the ranking.
-    makeRow({ hero: 'Karnok', runs_total: 5 }),
+    makeRow({ hero: 'Karnok' }),
     // Payload noise: only the seven canonical heroes should be shown.
     makeRow({
       hero: 'Common',
-      runs_total: 10,
-      runs_completed: 10,
-      final_wins_counts: { '9': 1, '10': 9 },
+      runs: { completed: 10, scored: 10, ten_win: 9 },
+      outcomes: { perfect: 0, gold: 9, silver: 1, bronze: 0 },
     }),
     makeRow({
       hero: 'Mak',
       rating_tier: 'mid',
-      runs_total: 60,
-      runs_completed: 50,
-      final_wins_counts: { '10': 20 },
+      runs: { completed: 50, scored: 50, ten_win: 20 },
+      outcomes: { perfect: 0, gold: 20, silver: 0, bronze: 0 },
     }),
     makeRow({
       hero: 'Dooley',
       rating_tier: 'high',
-      runs_total: 40,
-      runs_completed: 30,
-      final_wins_counts: { '10': 12 },
+      runs: { completed: 30, scored: 30, ten_win: 12 },
+      outcomes: { perfect: 0, gold: 12, silver: 0, bronze: 0 },
     }),
   ];
 }
 
 function makePayload(day: string, dayIndex: number): WebHeroDailyPayload {
   return {
-    schema_version: '1',
-    kind: 'web_hero_daily',
+    schema_version: '2',
+    kind: 'hero_web_daily',
     day,
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     rows: makeDayRows(dayIndex),
   };
 }
 
 function makeManifest(bundleFailRate: number): AnalyzerV4Manifest {
   return {
-    schema_version: '1',
+    schema_version: '2',
     namespace: 'analyzer-v4',
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     latest_complete_day: DAYS.at(-1)!,
     web: {
-      schema_version: '1',
-      days: DAYS.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, rowCount: 7 })),
+      schema_version: '2',
+      days: DAYS.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, row_count: 7 })),
     },
     dq: {
       days: DAYS.length,
@@ -354,9 +338,11 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.queryByTestId('battle-panel')).not.toBeInTheDocument();
 
     const stage = screen.getByTestId('stage-panel');
-    expect(within(stage).getByText('Day 1-3')).toBeInTheDocument();
-    expect(within(stage).getByText('Day 4-7')).toBeInTheDocument();
-    expect(within(stage).getByText('Day 8+')).toBeInTheDocument();
+    // v2 ships only detailed per-game-day buckets; coarse day_1_3/4_7/8_plus are gone.
+    expect(within(stage).queryByText('Day 1-3')).not.toBeInTheDocument();
+    expect(within(stage).getByText('Day 1')).toBeInTheDocument();
+    expect(within(stage).getByText('Day 5')).toBeInTheDocument();
+    expect(within(stage).getByText('Day 10')).toBeInTheDocument();
     expect(within(stage).queryByRole('button', { name: 'Focused hero' })).not.toBeInTheDocument();
     expect(within(stage).queryByRole('button', { name: 'All heroes' })).not.toBeInTheDocument();
     expect(stage.querySelectorAll('[data-hero-badge]').length).toBeGreaterThan(1);
@@ -365,16 +351,16 @@ describe('HeroOverviewDashboard', () => {
         badge.getAttribute('data-hero-badge')
       );
 
-    fireEvent.click(within(stage).getByRole('button', { name: 'Day 8+' }));
+    fireEvent.click(within(stage).getByRole('button', { name: 'Day 10' }));
     expect(stageHeroOrder()).toEqual(['Vanessa', 'Stelle', 'Jules', 'Karnok']);
-    expect(within(stage).getByRole('columnheader', { name: 'Day 8+' })).toHaveAttribute(
+    expect(within(stage).getByRole('columnheader', { name: 'Day 10' })).toHaveAttribute(
       'aria-sort',
       'descending'
     );
 
-    fireEvent.click(within(stage).getByRole('button', { name: 'Day 8+' }));
+    fireEvent.click(within(stage).getByRole('button', { name: 'Day 10' }));
     expect(stageHeroOrder()).toEqual(['Stelle', 'Vanessa', 'Jules', 'Karnok']);
-    expect(within(stage).getByRole('columnheader', { name: 'Day 8+' })).toHaveAttribute(
+    expect(within(stage).getByRole('columnheader', { name: 'Day 10' })).toHaveAttribute(
       'aria-sort',
       'ascending'
     );
@@ -382,53 +368,6 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.queryByTestId('victory-bucket-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('outcome-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('final-wins-histogram')).not.toBeInTheDocument();
-  });
-
-  test('stage panel switches to detailed day columns when payloads provide them', () => {
-    renderDashboard({
-      payloads: [
-        {
-          ...makePayload(DAYS.at(-1)!, 0),
-          rows: [
-            makeRow({
-              hero: 'Stelle',
-              runs_total: 20,
-              runs_completed: 10,
-              final_wins_counts: { '10': 5 },
-              game_day_battle_counts: {
-                day_1: { count: 10, wins: 6, losses: 4 },
-                day_10: { count: 10, wins: 7, losses: 3 },
-                day_13_plus: { count: 10, wins: 3, losses: 7 },
-              },
-            }),
-            makeRow({
-              hero: 'Jules',
-              runs_total: 20,
-              runs_completed: 10,
-              final_wins_counts: { '10': 7 },
-              game_day_battle_counts: {
-                day_1: { count: 10, wins: 4, losses: 6 },
-                day_10: { count: 10, wins: 5, losses: 5 },
-                day_13_plus: { count: 10, wins: 9, losses: 1 },
-              },
-            }),
-          ],
-        },
-      ],
-      url: '/?w=1d',
-    });
-
-    const stage = screen.getByTestId('stage-panel');
-    expect(within(stage).queryByText('Day 1-3')).not.toBeInTheDocument();
-    expect(within(stage).getByText('Day 1')).toBeInTheDocument();
-    expect(within(stage).getByText('Day 10')).toBeInTheDocument();
-    expect(within(stage).getByText('Day 13+')).toBeInTheDocument();
-
-    fireEvent.click(within(stage).getByRole('button', { name: 'Day 13+' }));
-    const stageHeroOrder = Array.from(stage.querySelectorAll('tbody [data-hero-badge]')).map((badge) =>
-      badge.getAttribute('data-hero-badge')
-    );
-    expect(stageHeroOrder).toEqual(['Jules', 'Stelle']);
   });
 
   test('matchups render as one ordered list and tag low samples', () => {

@@ -15,85 +15,39 @@ import {
   deriveMatchups,
   deriveTrendSeries,
   mergeRows,
-  percentileFromHistogram,
   segmentTrendPoints,
   selectDays,
-  wilsonLower95,
 } from '../src/shared/lib/web-daily';
 
-function makeRow(overrides: Partial<WebHeroDailyRow> & { hero: string }): WebHeroDailyRow {
+function makeRow(
+  overrides: Omit<Partial<WebHeroDailyRow>, 'hero'> & { hero: string }
+): WebHeroDailyRow {
+  const { hero, ...rest } = overrides;
   return {
+    hero: hero as WebHeroDailyRow['hero'],
     rating_tier: 'all',
-    runs_total: 0,
-    runs_completed: 0,
-    final_wins_counts: {},
-    run_days_10w_counts: {},
-    battle_decided_count: 0,
-    battle_wins: 0,
-    battle_losses: 0,
-    final_battle_decided_count: 0,
-    final_battle_wins: 0,
-    final_battle_losses: 0,
-    game_day_battle_counts: {},
-    victory_bucket_battle_counts: {},
+    runs: { completed: 0, scored: 0, ten_win: 0 },
+    outcomes: { perfect: 0, gold: 0, silver: 0, bronze: 0 },
+    ten_win_days: { known_count: 0, sum_days: 0 },
+    battle_days: {},
     matchups: [],
-    ...overrides,
+    ...rest,
   };
 }
 
 function makePayload(day: string, rows: WebHeroDailyRow[]): WebHeroDailyPayload {
   return {
-    schema_version: '1',
-    kind: 'web_hero_daily',
+    schema_version: '2',
+    kind: 'hero_web_daily',
     day,
-    generatedAt: `${day}T09:00:00Z`,
+    generated_at: `${day}T09:00:00Z`,
     rows,
   };
 }
 
 function makeDayRefs(days: string[]): WebDayRef[] {
-  return days.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, rowCount: 1 }));
+  return days.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, row_count: 1 }));
 }
-
-describe('wilsonLower95', () => {
-  test('returns null when attempts <= 0', () => {
-    expect(wilsonLower95(0, 0)).toBeNull();
-    expect(wilsonLower95(3, -1)).toBeNull();
-  });
-
-  test('returns zero for zero successes', () => {
-    expect(wilsonLower95(0, 10)).toBe(0);
-  });
-
-  test('matches the analyzer z=1.96 formula for small and large samples', () => {
-    expect(wilsonLower95(5, 10)).toBeCloseTo(0.2365895936154873, 12);
-    expect(wilsonLower95(500, 1000)).toBeCloseTo(0.4690690341793595, 12);
-  });
-
-  test('pulls small samples further below the point rate than large ones', () => {
-    const small = wilsonLower95(5, 10)!;
-    const large = wilsonLower95(500, 1000)!;
-    expect(small).toBeLessThan(large);
-    expect(large).toBeLessThan(0.5);
-  });
-});
-
-describe('percentileFromHistogram', () => {
-  test('returns null on an empty histogram', () => {
-    expect(percentileFromHistogram({}, 0.75)).toBeNull();
-    expect(percentileFromHistogram({ '10': 0 }, 0.75)).toBeNull();
-  });
-
-  test('walks the rank for p75 over numeric keys', () => {
-    // total 8, rank ceil(8*0.75)=6 → cumulative 2(10) + 3(11) = 5 < 6 → lands on 12
-    expect(percentileFromHistogram({ '10': 2, '11': 3, '12': 2, '14': 1 }, 0.75)).toBe(12);
-    expect(percentileFromHistogram({ '10': 4 }, 0.75)).toBe(10);
-  });
-
-  test('ignores non-numeric keys', () => {
-    expect(percentileFromHistogram({ bogus: 5, '11': 1 }, 0.75)).toBe(11);
-  });
-});
 
 describe('selectDays', () => {
   const days = makeDayRefs([
@@ -159,52 +113,31 @@ describe('deriveAvailableWindows / deriveAvailableTiers', () => {
 describe('mergeRows', () => {
   const dayOne = makeRow({
     hero: 'Vanessa',
-    runs_total: 100,
-    runs_completed: 80,
-    final_wins_counts: { '0': 10, '7': 20, '10': 30 },
-    run_days_10w_counts: { '10': 12, '11': 10 },
-    battle_decided_count: 500,
-    battle_wins: 300,
-    battle_losses: 200,
-    final_battle_decided_count: 60,
-    final_battle_wins: 20,
-    final_battle_losses: 40,
-    game_day_battle_counts: {
-      day_1_3: { count: 100, wins: 70, losses: 30 },
-      day_4_7: { count: 200, wins: 120, losses: 80 },
-    },
-    victory_bucket_battle_counts: {
-      wins_0_3: { count: 150, wins: 80, losses: 70 },
+    runs: { completed: 80, scored: 78, ten_win: 30 },
+    outcomes: { perfect: 12, gold: 18, silver: 20, bronze: 18 },
+    ten_win_days: { known_count: 22, sum_days: 242 },
+    battle_days: {
+      day_1: { decided: 100, wins: 70, losses: 30 },
+      day_4: { decided: 200, wins: 120, losses: 80 },
     },
     matchups: [
-      { opponent_hero: 'Mak', battle_decided_count: 40, wins: 25, losses: 15 },
-      { opponent_hero: 'Vanessa', battle_decided_count: 30, wins: 15, losses: 15 },
-      { opponent_hero: 'Common', battle_decided_count: 999, wins: 999, losses: 0 },
+      { opponent_hero: 'Mak', decided: 40, wins: 25, losses: 15 },
+      { opponent_hero: 'Vanessa', decided: 30, wins: 15, losses: 15 },
+      { opponent_hero: 'Common', decided: 999, wins: 999, losses: 0 } as never,
     ],
   });
   const dayTwo = makeRow({
     hero: 'Vanessa',
-    runs_total: 50,
-    runs_completed: 40,
-    final_wins_counts: { '0': 5, '4': 5, '10': 10 },
-    run_days_10w_counts: { '10': 4, '12': 4 },
-    battle_decided_count: 250,
-    battle_wins: 150,
-    battle_losses: 100,
-    final_battle_decided_count: 30,
-    final_battle_wins: 12,
-    final_battle_losses: 18,
-    game_day_battle_counts: {
-      day_1_3: { count: 60, wins: 40, losses: 20 },
-      day_8_plus: { count: 40, wins: 30, losses: 10 },
-    },
-    victory_bucket_battle_counts: {
-      wins_0_3: { count: 70, wins: 35, losses: 35 },
-      wins_7_9: { count: 30, wins: 20, losses: 10 },
+    runs: { completed: 40, scored: 38, ten_win: 10 },
+    outcomes: { perfect: 4, gold: 6, silver: 8, bronze: 10 },
+    ten_win_days: { known_count: 8, sum_days: 88 },
+    battle_days: {
+      day_1: { decided: 60, wins: 40, losses: 20 },
+      day_8: { decided: 40, wins: 30, losses: 10 },
     },
     matchups: [
-      { opponent_hero: 'Mak', battle_decided_count: 20, wins: 5, losses: 15 },
-      { opponent_hero: 'Jules', battle_decided_count: 10, wins: 8, losses: 2 },
+      { opponent_hero: 'Mak', decided: 20, wins: 5, losses: 15 },
+      { opponent_hero: 'Jules', decided: 10, wins: 8, losses: 2 },
     ],
   });
 
@@ -212,77 +145,92 @@ describe('mergeRows', () => {
     const rows = [
       dayOne,
       dayTwo,
-      makeRow({ hero: 'Common', runs_completed: 999, final_wins_counts: { '10': 999 } }),
+      makeRow({ hero: 'Common', runs: { completed: 999, scored: 999, ten_win: 999 } }),
     ];
     const mergedRows = mergeRows(rows);
     const merged = mergedRows.get('Vanessa')!;
 
-    expect(merged.runsTotal).toBe(150);
     expect(merged.runsCompleted).toBe(120);
-    expect(merged.finalWinsCounts).toEqual({ '0': 15, '4': 5, '7': 20, '10': 40 });
-    expect(merged.runDays10wCounts).toEqual({ '10': 16, '11': 10, '12': 4 });
-    expect(merged.battleDecidedCount).toBe(750);
-    expect(merged.battleWins).toBe(450);
-    expect(merged.battleLosses).toBe(300);
-    expect(merged.battleWins + merged.battleLosses).toBe(merged.battleDecidedCount);
-    expect(merged.finalBattleDecidedCount).toBe(90);
-    expect(merged.gameDayBattleCounts).toEqual({
-      day_1_3: { count: 160, wins: 110, losses: 50 },
-      day_4_7: { count: 200, wins: 120, losses: 80 },
-      day_8_plus: { count: 40, wins: 30, losses: 10 },
+    expect(merged.scoredRuns).toBe(116);
+    expect(merged.tenWinCount).toBe(40);
+    expect(merged.perfect).toBe(16);
+    expect(merged.gold).toBe(24);
+    expect(merged.silver).toBe(28);
+    expect(merged.bronze).toBe(28);
+    expect(merged.tenWinDaysKnownCount).toBe(30);
+    expect(merged.tenWinDaysSumDays).toBe(330);
+    expect(merged.battleDays).toEqual({
+      day_1: { decided: 160, wins: 110, losses: 50 },
+      day_4: { decided: 200, wins: 120, losses: 80 },
+      day_8: { decided: 40, wins: 30, losses: 10 },
     });
-    expect(merged.victoryBucketBattleCounts).toEqual({
-      wins_0_3: { count: 220, wins: 115, losses: 105 },
-      wins_7_9: { count: 30, wins: 20, losses: 10 },
-    });
-    expect(merged.matchups.get('Mak')).toEqual({ battleDecidedCount: 60, wins: 30, losses: 30 });
-    expect(merged.matchups.get('Vanessa')).toEqual({
-      battleDecidedCount: 30,
-      wins: 15,
-      losses: 15,
-    });
-    expect(merged.matchups.get('Jules')).toEqual({ battleDecidedCount: 10, wins: 8, losses: 2 });
+    expect(merged.matchups.get('Mak')).toEqual({ decided: 60, wins: 30, losses: 30 });
+    expect(merged.matchups.get('Vanessa')).toEqual({ decided: 30, wins: 15, losses: 15 });
+    expect(merged.matchups.get('Jules')).toEqual({ decided: 10, wins: 8, losses: 2 });
+    // Non-canonical opponent and non-canonical hero are filtered out.
     expect(merged.matchups.has('Common')).toBe(false);
     expect(mergedRows.has('Common')).toBe(false);
   });
 
-  test('does not mutate its inputs when merging bucket maps', () => {
+  test('does not mutate its inputs when merging battle_days maps', () => {
     mergeRows([dayOne, dayTwo]);
-    expect(dayOne.game_day_battle_counts.day_1_3).toEqual({ count: 100, wins: 70, losses: 30 });
+    expect(dayOne.battle_days.day_1).toEqual({ decided: 100, wins: 70, losses: 30 });
   });
 
-  test('preserves future detailed game-day buckets when merging', () => {
+  test('preserves all detailed game-day buckets when merging', () => {
     const mergedRows = mergeRows([
       makeRow({
         hero: 'Vanessa',
-        game_day_battle_counts: {
-          day_1: { count: 10, wins: 6, losses: 4 },
-          day_13_plus: { count: 5, wins: 2, losses: 3 },
+        battle_days: {
+          day_1: { decided: 10, wins: 6, losses: 4 },
+          day_13_plus: { decided: 5, wins: 2, losses: 3 },
         },
       }),
       makeRow({
         hero: 'Vanessa',
-        game_day_battle_counts: {
-          day_1: { count: 20, wins: 14, losses: 6 },
-          day_12: { count: 8, wins: 5, losses: 3 },
+        battle_days: {
+          day_1: { decided: 20, wins: 14, losses: 6 },
+          day_12: { decided: 8, wins: 5, losses: 3 },
         },
       }),
     ]);
 
-    expect(mergedRows.get('Vanessa')?.gameDayBattleCounts).toEqual({
-      day_1: { count: 30, wins: 20, losses: 10 },
-      day_12: { count: 8, wins: 5, losses: 3 },
-      day_13_plus: { count: 5, wins: 2, losses: 3 },
+    expect(mergedRows.get('Vanessa')?.battleDays).toEqual({
+      day_1: { decided: 30, wins: 20, losses: 10 },
+      day_12: { decided: 8, wins: 5, losses: 3 },
+      day_13_plus: { decided: 5, wins: 2, losses: 3 },
     });
+  });
+
+  test('drops stale coarse battle-day buckets from runtime payloads', () => {
+    const mergedRows = mergeRows([
+      makeRow({
+        hero: 'Vanessa',
+        battle_days: {
+          day_1: { decided: 10, wins: 6, losses: 4 },
+          day_1_3: { count: 100, wins: 99, losses: 1 },
+          day_4_7: { count: 100, wins: 98, losses: 2 },
+          day_8_plus: { count: 100, wins: 97, losses: 3 },
+        } as unknown as WebHeroDailyRow['battle_days'],
+      }),
+    ]);
+
+    const battleDays = mergedRows.get('Vanessa')?.battleDays;
+    expect(battleDays).toEqual({
+      day_1: { decided: 10, wins: 6, losses: 4 },
+    });
+    expect(battleDays).not.toHaveProperty('day_1_3');
+    expect(battleDays).not.toHaveProperty('day_4_7');
+    expect(battleDays).not.toHaveProperty('day_8_plus');
   });
 
   test('the all tier stays a measured row, never low+mid+high summed', () => {
     const payload = makePayload('2026-06-06', [
-      makeRow({ hero: 'Vanessa', rating_tier: 'all', runs_completed: 100 }),
-      makeRow({ hero: 'Common', rating_tier: 'all', runs_completed: 999 }),
-      makeRow({ hero: 'Vanessa', rating_tier: 'low', runs_completed: 20 }),
-      makeRow({ hero: 'Vanessa', rating_tier: 'mid', runs_completed: 30 }),
-      makeRow({ hero: 'Vanessa', rating_tier: 'high', runs_completed: 10 }),
+      makeRow({ hero: 'Vanessa', rating_tier: 'all', runs: { completed: 100, scored: 0, ten_win: 0 } }),
+      makeRow({ hero: 'Common', rating_tier: 'all', runs: { completed: 999, scored: 0, ten_win: 0 } }),
+      makeRow({ hero: 'Vanessa', rating_tier: 'low', runs: { completed: 20, scored: 0, ten_win: 0 } }),
+      makeRow({ hero: 'Vanessa', rating_tier: 'mid', runs: { completed: 30, scored: 0, ten_win: 0 } }),
+      makeRow({ hero: 'Vanessa', rating_tier: 'high', runs: { completed: 10, scored: 0, ten_win: 0 } }),
     ]);
     const selected = makeDayRefs(['2026-06-06']);
 
@@ -296,23 +244,16 @@ describe('mergeRows', () => {
 });
 
 describe('deriveHeroMetrics', () => {
-  test('derives rates and reconstructs victory tiers over scoredRuns', () => {
+  test('derives rates over scored runs and avg-days from sum/known', () => {
     const merged = mergeRows([
       makeRow({
         hero: 'Vanessa',
-        runs_total: 500,
-        runs_completed: 400,
-        // scoredRuns = 390 < runs_completed (10 completed runs have NULL final_wins)
-        final_wins_counts: { '0': 40, '2': 20, '4': 30, '6': 30, '7': 50, '9': 70, '10': 150 },
-        run_days_10w_counts: { '10': 60, '11': 50, '12': 30 },
-        battle_decided_count: 1000,
-        battle_wins: 600,
-        battle_losses: 400,
-        final_battle_decided_count: 400,
-        final_battle_wins: 150,
-        final_battle_losses: 250,
+        // scored = 390 < completed (10 completed runs are unscored / NULL final_wins)
+        runs: { completed: 400, scored: 390, ten_win: 150 },
+        outcomes: { perfect: 60, gold: 90, silver: 120, bronze: 60 },
+        ten_win_days: { known_count: 140, sum_days: 10 * 60 + 11 * 50 + 12 * 30 },
       }),
-      makeRow({ hero: 'Mak', runs_total: 100, runs_completed: 100 }),
+      makeRow({ hero: 'Mak', runs: { completed: 100, scored: 0, ten_win: 0 } }),
     ]);
 
     const rows = deriveHeroMetrics(merged);
@@ -322,8 +263,7 @@ describe('deriveHeroMetrics', () => {
     expect(vanessa.runShare).toBeCloseTo(400 / 500, 12);
     expect(vanessa.tenWinCount).toBe(150);
     expect(vanessa.tenWinRate).toBeCloseTo(150 / 400, 12);
-    expect(vanessa.tenWinRateWilsonLower).toBeCloseTo(0.3289562625433452, 12);
-    // perfect=60, gold=150-60=90, silver=120, bronze=60, misfortune=60 — sums to scoredRuns
+    // perfect=60, gold=90, silver=120, bronze=60, misfortune=390-330=60 — sums to scored
     expect(vanessa.perfectRate).toBeCloseTo(60 / 390, 12);
     expect(vanessa.goldRate).toBeCloseTo(90 / 390, 12);
     expect(vanessa.silverRate).toBeCloseTo(120 / 390, 12);
@@ -337,17 +277,21 @@ describe('deriveHeroMetrics', () => {
       vanessa.misfortuneRate!;
     expect(tierSum).toBeCloseTo(1, 12);
     expect(vanessa.avgRunDays10w).toBeCloseTo((10 * 60 + 11 * 50 + 12 * 30) / 140, 12);
-    expect(vanessa.p75RunDays10w).toBe(11);
-    expect(vanessa.battleWinRate).toBeCloseTo(0.6, 12);
-    expect(vanessa.battleWinRateWilsonLower).not.toBeNull();
-    expect(vanessa.finalBattleWinRate).toBeCloseTo(150 / 400, 12);
     expect(vanessa.isCanonical).toBe(true);
   });
 
   test('filters non-canonical rows and handles zero denominators without NaN', () => {
     const merged = mergeRows([
-      makeRow({ hero: 'Common', runs_total: 1, runs_completed: 1, final_wins_counts: { '10': 1 } }),
-      makeRow({ hero: 'Stelle', runs_total: 1, runs_completed: 1, final_wins_counts: { '9': 1 } }),
+      makeRow({
+        hero: 'Common',
+        runs: { completed: 1, scored: 1, ten_win: 1 },
+        outcomes: { perfect: 1, gold: 0, silver: 0, bronze: 0 },
+      }),
+      makeRow({
+        hero: 'Stelle',
+        runs: { completed: 1, scored: 1, ten_win: 0 },
+        outcomes: { perfect: 0, gold: 0, silver: 1, bronze: 0 },
+      }),
       makeRow({ hero: 'Mak' }),
     ]);
 
@@ -361,15 +305,10 @@ describe('deriveHeroMetrics', () => {
     expect(stelle.goldRate).toBe(0);
     expect(stelle.silverRate).toBe(1);
     expect(stelle.avgRunDays10w).toBeNull();
-    expect(stelle.p75RunDays10w).toBeNull();
-    expect(stelle.battleWinRate).toBeNull();
-    expect(stelle.battleWinRateWilsonLower).toBeNull();
-    expect(stelle.finalBattleWinRate).toBeNull();
     expect(stelle.runShare).toBe(1);
 
     expect(mak.scoredRuns).toBe(0);
     expect(mak.tenWinRate).toBeNull();
-    expect(mak.tenWinRateWilsonLower).toBeNull();
     expect(mak.perfectRate).toBeNull();
     expect(mak.runShare).toBe(0);
   });
@@ -386,25 +325,24 @@ describe('deriveTrendSeries', () => {
   const selected = makeDayRefs(['2026-06-04', '2026-06-05', '2026-06-06']);
   const payloads = [
     makePayload('2026-06-04', [
-      makeRow({ hero: 'Vanessa', runs_completed: 100, final_wins_counts: { '10': 40 } }),
-      makeRow({ hero: 'Mak', runs_completed: 50, final_wins_counts: { '10': 30 } }),
-      makeRow({ hero: 'Common', runs_completed: 10, final_wins_counts: { '10': 9 } }),
-      makeRow({ hero: 'Jules', runs_completed: 80, final_wins_counts: { '10': 8 } }),
-      makeRow({ hero: 'Stelle', runs_completed: 0 }),
+      makeRow({ hero: 'Vanessa', runs: { completed: 100, scored: 100, ten_win: 40 } }),
+      makeRow({ hero: 'Mak', runs: { completed: 50, scored: 50, ten_win: 30 } }),
+      makeRow({ hero: 'Common', runs: { completed: 10, scored: 10, ten_win: 9 } }),
+      makeRow({ hero: 'Jules', runs: { completed: 80, scored: 80, ten_win: 8 } }),
+      makeRow({ hero: 'Stelle', runs: { completed: 0, scored: 0, ten_win: 0 } }),
       makeRow({
         hero: 'Vanessa',
         rating_tier: 'high',
-        runs_completed: 10,
-        final_wins_counts: { '10': 9 },
+        runs: { completed: 10, scored: 10, ten_win: 9 },
       }),
     ]),
     makePayload('2026-06-05', [
-      makeRow({ hero: 'Vanessa', runs_completed: 0 }),
-      makeRow({ hero: 'Mak', runs_completed: 60, final_wins_counts: { '10': 33 } }),
+      makeRow({ hero: 'Vanessa', runs: { completed: 0, scored: 0, ten_win: 0 } }),
+      makeRow({ hero: 'Mak', runs: { completed: 60, scored: 60, ten_win: 33 } }),
     ]),
     makePayload('2026-06-06', [
-      makeRow({ hero: 'Vanessa', runs_completed: 120, final_wins_counts: { '10': 60 } }),
-      makeRow({ hero: 'Mak', runs_completed: 70, final_wins_counts: { '10': 28 } }),
+      makeRow({ hero: 'Vanessa', runs: { completed: 120, scored: 120, ten_win: 60 } }),
+      makeRow({ hero: 'Mak', runs: { completed: 70, scored: 70, ten_win: 28 } }),
     ]),
   ];
 
@@ -461,16 +399,16 @@ describe('deriveTrendSeries', () => {
 });
 
 describe('deriveMatchups', () => {
-  test('sorts matchups by win rate and tags low samples', () => {
+  test('sorts matchups by win rate then decided, and tags low samples', () => {
     const merged = mergeRows([
       makeRow({
         hero: 'Vanessa',
         matchups: [
-          { opponent_hero: 'Mak', battle_decided_count: 40, wins: 30, losses: 10 },
-          { opponent_hero: 'Jules', battle_decided_count: 200, wins: 130, losses: 70 },
-          { opponent_hero: 'Dooley', battle_decided_count: 40, wins: 10, losses: 30 },
-          { opponent_hero: 'Karnok', battle_decided_count: 5, wins: 5, losses: 0 },
-          { opponent_hero: 'Vanessa', battle_decided_count: 100, wins: 50, losses: 50 },
+          { opponent_hero: 'Mak', decided: 40, wins: 30, losses: 10 },
+          { opponent_hero: 'Jules', decided: 200, wins: 130, losses: 70 },
+          { opponent_hero: 'Dooley', decided: 40, wins: 10, losses: 30 },
+          { opponent_hero: 'Karnok', decided: 5, wins: 5, losses: 0 },
+          { opponent_hero: 'Vanessa', decided: 100, wins: 50, losses: 50 },
         ],
       }),
     ]).get('Vanessa')!;
@@ -486,26 +424,19 @@ describe('deriveMatchups', () => {
     ]);
     expect(rows.find((row) => row.opponentHero === 'Karnok')!.isLowSample).toBe(true);
     expect(rows.find((row) => row.opponentHero === 'Mak')!.isLowSample).toBe(false);
-    expect(rows[0]!.winWilsonLower).toBeCloseTo(0.5980574093302989, 12);
-    expect(rows.find((row) => row.opponentHero === 'Dooley')!.lossWilsonLower).toBeCloseTo(
-      0.5980574093302989,
-      12
-    );
-    expect(rows.find((row) => row.opponentHero === 'Dooley')!.winWilsonLower).toBeCloseTo(
-      0.14186967895549518,
-      12
-    );
+    expect(rows.find((row) => row.opponentHero === 'Mak')!.winRate).toBeCloseTo(0.75, 12);
+    expect(rows.find((row) => row.opponentHero === 'Dooley')!.winRate).toBeCloseTo(0.25, 12);
   });
 
   test('merged matchups across days feed a single per-opponent row', () => {
     const merged = mergeRows([
       makeRow({
         hero: 'Vanessa',
-        matchups: [{ opponent_hero: 'Mak', battle_decided_count: 15, wins: 10, losses: 5 }],
+        matchups: [{ opponent_hero: 'Mak', decided: 15, wins: 10, losses: 5 }],
       }),
       makeRow({
         hero: 'Vanessa',
-        matchups: [{ opponent_hero: 'Mak', battle_decided_count: 25, wins: 20, losses: 5 }],
+        matchups: [{ opponent_hero: 'Mak', decided: 25, wins: 20, losses: 5 }],
       }),
     ]).get('Vanessa')!;
 
@@ -513,7 +444,7 @@ describe('deriveMatchups', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       opponentHero: 'Mak',
-      battleDecidedCount: 40,
+      decided: 40,
       wins: 30,
       losses: 10,
       isLowSample: false,

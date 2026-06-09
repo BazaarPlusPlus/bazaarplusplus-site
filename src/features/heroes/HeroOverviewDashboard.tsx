@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from
 import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
   DEFAULT_LOCALE,
+  GAME_DAY_BUCKETS,
   type AnalyzerV4Manifest,
   type GameDayBucket,
   type Locale,
@@ -101,22 +102,6 @@ const RANKING_COLUMN_WIDTHS = [
   '8%',
 ];
 
-const COARSE_STAGE_KEYS: GameDayBucket[] = ['day_1_3', 'day_4_7', 'day_8_plus'];
-const DETAILED_STAGE_KEYS: GameDayBucket[] = [
-  'day_1',
-  'day_2',
-  'day_3',
-  'day_4',
-  'day_5',
-  'day_6',
-  'day_7',
-  'day_8',
-  'day_9',
-  'day_10',
-  'day_11',
-  'day_12',
-  'day_13_plus',
-];
 const VICTORY_TIER_KEYS = ['perfect', 'gold', 'silver', 'bronze', 'misfortune'] as const;
 
 type VictoryTierKey = (typeof VICTORY_TIER_KEYS)[number];
@@ -217,12 +202,12 @@ function getNearestChartPoint(
   );
 }
 
-function bucketRate(counts: { wins: number; count: number } | undefined): number | null {
-  if (!counts || counts.count <= 0) {
+function bucketRate(counts: { wins: number; decided: number } | undefined): number | null {
+  if (!counts || counts.decided <= 0) {
     return null;
   }
 
-  return counts.wins / counts.count;
+  return counts.wins / counts.decided;
 }
 
 function formatDays(value: number | null): string {
@@ -449,10 +434,6 @@ export default function HeroOverviewDashboard({
   const nominalDays = WEB_DAILY_NOMINAL[selectedWindow];
   const partialCoverage = loadedWindowDays.length < nominalDays;
 
-  const focusedDelta =
-    focusedTrendSeries?.latestWinRate != null && focusedTrendSeries.firstWinRate != null
-      ? focusedTrendSeries.latestWinRate - focusedTrendSeries.firstWinRate
-      : null;
   const maxTenWinRate = sortedRows.reduce(
     (max, row) => (row.tenWinRate != null && row.tenWinRate > max ? row.tenWinRate : max),
     0
@@ -502,7 +483,7 @@ export default function HeroOverviewDashboard({
       locale={locale}
       eyebrow={heroCopy.eyebrow}
       title={heroCopy.title}
-      generatedAt={manifest.generatedAt}
+      generatedAt={manifest.generated_at}
       actions={
         <>
           <a
@@ -615,17 +596,6 @@ export default function HeroOverviewDashboard({
                   <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 lg:flex-1">
                     <div className="flex items-center justify-between">
                       <span className="eyebrow text-[0.66rem] tracking-[0.22em]">{heroCopy.trend.inFocus}</span>
-                      {focusedDelta != null ? (
-                        <span
-                          className={`tnum text-[0.7rem] font-semibold ${
-                            focusedDelta >= 0
-                              ? 'text-[color:var(--color-pos)]'
-                              : 'text-[color:var(--color-neg)]'
-                          }`}
-                        >
-                          {focusedDelta >= 0 ? '▲' : '▼'} {formatPercent(Math.abs(focusedDelta))}
-                        </span>
-                      ) : null}
                     </div>
                     <div className="mt-3 flex items-baseline gap-3">
                       <span
@@ -1272,23 +1242,13 @@ function StagePanel({
 }) {
   const [stageSortState, setStageSortState] = useState<SortState<StageSortKey> | null>(null);
 
-  const visibleStageKeys = useMemo(() => {
-    const hasDetailedStageData = rows.some((row) => {
-      const counts = merged.get(row.hero)?.gameDayBattleCounts;
-      return DETAILED_STAGE_KEYS.some((key) => {
-        const bucket = counts?.[key];
-        return bucket != null && bucket.count > 0;
-      });
-    });
-
-    return hasDetailedStageData ? DETAILED_STAGE_KEYS : COARSE_STAGE_KEYS;
-  }, [merged, rows]);
+  const visibleStageKeys = GAME_DAY_BUCKETS;
 
   const hasAnyStageData = rows.some((row) => {
-    const counts = merged.get(row.hero)?.gameDayBattleCounts;
+    const counts = merged.get(row.hero)?.battleDays;
     return visibleStageKeys.some((key) => {
       const bucket = counts?.[key];
-      return bucket != null && bucket.count > 0;
+      return bucket != null && bucket.decided > 0;
     });
   });
   const sortedStageRows = useMemo(() => {
@@ -1308,14 +1268,12 @@ function StagePanel({
       Record<string, ((row: HeroMetricsRow) => string | number | null | undefined) | undefined>;
 
     for (const key of visibleStageKeys) {
-      sortAccessors[key] = (row) => bucketRate(merged.get(row.hero)?.gameDayBattleCounts[key]);
+      sortAccessors[key] = (row) => bucketRate(merged.get(row.hero)?.battleDays[key]);
     }
 
     return sortRows(rows, activeStageSortState, sortAccessors);
   }, [merged, rows, stageSortState, visibleStageKeys]);
-  const stageTableMinWidth = visibleStageKeys.length > COARSE_STAGE_KEYS.length
-    ? 120 + visibleStageKeys.length * 112
-    : 360;
+  const stageTableMinWidth = 120 + visibleStageKeys.length * 112;
   const handleStageSort = (key: StageSortKey, initialDirection: 'asc' | 'desc') => {
     setStageSortState((current) =>
       current == null ? { key, direction: initialDirection } : toggleSort(current, key, initialDirection)
@@ -1355,7 +1313,7 @@ function StagePanel({
             </thead>
             <tbody>
               {sortedStageRows.map((row) => {
-                const counts = merged.get(row.hero)?.gameDayBattleCounts;
+                const counts = merged.get(row.hero)?.battleDays;
                 return (
                   <tr
                     key={row.hero}
@@ -1473,7 +1431,7 @@ function MatchupPanel({
                 </span>
               </span>
               <span className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                {formatInteger(row.battleDecidedCount, locale)} {matchupCopy.sample}
+                {formatInteger(row.decided, locale)} {matchupCopy.sample}
               </span>
             </li>
           ))}

@@ -110,9 +110,6 @@ type HeroStatsCopy = {
   };
   stage: {
     title: string;
-    day_1_3: string;
-    day_4_7: string;
-    day_8_plus: string;
     day_1: string;
     day_2: string;
     day_3: string;
@@ -430,9 +427,6 @@ const zh: LocalizedSiteCopy = {
       },
       stage: {
         title: '战斗胜率',
-        day_1_3: '第 1-3 天',
-        day_4_7: '第 4-7 天',
-        day_8_plus: '第 8 天起',
         day_1: '第 1 天',
         day_2: '第 2 天',
         day_3: '第 3 天',
@@ -492,7 +486,7 @@ const zh: LocalizedSiteCopy = {
           winRate: '胜场 ÷ 有效对战',
           runShare: '该英雄局数 ÷ 窗口内全部局数',
           tenWinRate: '10胜局数 ÷ 完成局数',
-          runDays: '达成10胜天数 · 平均 / 75分位',
+          runDays: '达成10胜天数 · 平均',
         },
         tips: {
           hero: '按 10胜率排序。',
@@ -518,12 +512,12 @@ const zh: LocalizedSiteCopy = {
             body: '英雄按 10胜率排序，也就是达成 10 胜的局数除以完成局数。样本量不再参与排序修正。',
           },
           battles: {
-            title: '有效对战与终局对战',
-            body: '有效对战指分出胜负的一场战斗，平局和未结束的不计，因此胜场 + 负场始终等于有效对战。终局对战是一局中决定结束的最后一战。',
+            title: '有效对战',
+            body: '有效对战指分出胜负的一场战斗，平局和未结束的不计，因此胜场 + 负场始终等于有效对战。战斗胜率按对局天数分档展示。',
           },
           outcomes: {
             title: '对局结果',
-            body: '10胜率是完成局数中打到 10 胜的比例；局数占比是该英雄在窗口内的份额；达成10胜天数展示 10 胜局用了多久，给出平均值与 75 分位（p75，即每 4 局有 3 局在该天数内完成）。',
+            body: '10胜率是完成局数中打到 10 胜的比例；局数占比是该英雄在窗口内的份额；达成10胜天数展示 10 胜局用了多久，给出平均值。',
           },
           tiers: {
             title: '战绩等级',
@@ -544,10 +538,8 @@ const zh: LocalizedSiteCopy = {
         },
         glossary: [
           { term: '有效对战', definition: '分出胜负的对战，不含平局。' },
-          { term: '终局对战', definition: '一局中决定结束的最后一战。' },
           { term: '10胜局', definition: '打到 10 胜的对局。' },
           { term: '局数占比', definition: '该英雄占窗口内全部局数的比例。' },
-          { term: 'p75 达成天数', definition: '每 4 局 10 胜局有 3 局在此天数内完成。' },
         ],
       },
     },
@@ -862,9 +854,6 @@ const en: LocalizedSiteCopy = {
       },
       stage: {
         title: 'Battle win rate',
-        day_1_3: 'Day 1-3',
-        day_4_7: 'Day 4-7',
-        day_8_plus: 'Day 8+',
         day_1: 'Day 1',
         day_2: 'Day 2',
         day_3: 'Day 3',
@@ -924,7 +913,7 @@ const en: LocalizedSiteCopy = {
           winRate: 'wins ÷ decided battles',
           runShare: 'hero runs ÷ all runs in window',
           tenWinRate: '10-win runs ÷ completed runs',
-          runDays: 'days to 10 wins · avg / p75',
+          runDays: 'days to 10 wins · avg',
         },
         tips: {
           hero: 'Ranked by 10-win rate.',
@@ -950,12 +939,12 @@ const en: LocalizedSiteCopy = {
             body: 'Heroes are ranked by 10-win rate: 10-win runs divided by completed runs. Sample size no longer adjusts the order.',
           },
           battles: {
-            title: 'Decided & final battles',
-            body: 'A decided battle is one fight with a clear winner — draws and unfinished fights are left out, so wins + losses always equals decided battles. A final battle is the run’s last decisive fight, the one that ends the run.',
+            title: 'Decided battles',
+            body: 'A decided battle is one fight with a clear winner — draws and unfinished fights are left out, so wins + losses always equals decided battles. Battle win rate is shown per game day.',
           },
           outcomes: {
             title: 'Run outcomes',
-            body: '10-win rate is the share of completed runs that reached 10 wins. Run share is a hero’s slice of all runs in the window. Days-to-10W shows how fast 10-win runs got there — the average and the 75th percentile (p75 = 3 of 4 such runs finished within that many days).',
+            body: '10-win rate is the share of completed runs that reached 10 wins. Run share is a hero’s slice of all runs in the window. Days-to-10W shows how fast 10-win runs got there — the average.',
           },
           tiers: {
             title: 'Victory tiers',
@@ -976,13 +965,8 @@ const en: LocalizedSiteCopy = {
         },
         glossary: [
           { term: 'Decided battle', definition: 'A fight with a clear winner; draws excluded.' },
-          { term: 'Final battle', definition: 'The run’s last decisive fight.' },
           { term: '10-win run', definition: 'A run that reached 10 wins.' },
           { term: 'Run share', definition: 'A hero’s portion of all runs in the window.' },
-          {
-            term: 'p75 days-to-10W',
-            definition: '3 of 4 ten-win runs finished within this many days.',
-          },
         ],
       },
     },

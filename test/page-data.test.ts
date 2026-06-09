@@ -13,43 +13,35 @@ import type { RuntimeMetricsClient } from '../src/shared/lib/metrics-client';
 
 function makeManifest(days: string[]): AnalyzerV4Manifest {
   return {
-    schema_version: '1',
+    schema_version: '2',
     namespace: 'analyzer-v4',
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     latest_complete_day: days.at(-1) ?? '2026-06-06',
     web: {
-      schema_version: '1',
-      days: days.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, rowCount: 1 })),
+      schema_version: '2',
+      days: days.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, row_count: 1 })),
     },
   };
 }
 
 function makeRow(hero: string, tier: WebHeroDailyRow['rating_tier']): WebHeroDailyRow {
   return {
-    hero,
+    hero: hero as WebHeroDailyRow['hero'],
     rating_tier: tier,
-    runs_total: 10,
-    runs_completed: 8,
-    final_wins_counts: { '10': 2 },
-    run_days_10w_counts: { '11': 2 },
-    battle_decided_count: 50,
-    battle_wins: 30,
-    battle_losses: 20,
-    final_battle_decided_count: 8,
-    final_battle_wins: 3,
-    final_battle_losses: 5,
-    game_day_battle_counts: {},
-    victory_bucket_battle_counts: {},
+    runs: { completed: 8, scored: 8, ten_win: 2 },
+    outcomes: { perfect: 1, gold: 1, silver: 2, bronze: 2 },
+    ten_win_days: { known_count: 2, sum_days: 22 },
+    battle_days: {},
     matchups: [],
   };
 }
 
 function makePayload(day: string, rows: WebHeroDailyRow[]): WebHeroDailyPayload {
   return {
-    schema_version: '1',
-    kind: 'web_hero_daily',
+    schema_version: '2',
+    kind: 'hero_web_daily',
     day,
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     rows,
   };
 }

@@ -11,17 +11,26 @@ export const RATING_TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
 export type WebDayRef = {
   day: string;
   path: string;
-  rowCount: number;
+  row_count: number;
 };
 
 export type AnalyzerV4Manifest = {
-  schema_version: '1';
+  schema_version: '2';
   namespace: 'analyzer-v4';
-  generatedAt: string;
+  generated_at: string;
   latest_complete_day: string;
   web: {
-    schema_version: '1';
+    schema_version: '2';
     days: WebDayRef[];
+  };
+  mod?: {
+    tenwin_builds: {
+      schema_version: '2';
+      kind: 'mod_tenwin_builds';
+      path: string;
+      hero_count: number;
+      included_build_count: number;
+    };
   };
   dq?: {
     days?: number;
@@ -33,58 +42,67 @@ export type AnalyzerV4Manifest = {
     bundle_download_fail_rate?: number;
   };
   sli_path?: string;
+  analyze_duration_seconds?: number;
 };
 
-export type BattleBucketCounts = { count: number; wins: number; losses: number };
+export type BattleCounts = { decided: number; wins: number; losses: number };
 
-export type CoarseGameDayBucket = 'day_1_3' | 'day_4_7' | 'day_8_plus';
-export type DetailedGameDayBucket =
-  | 'day_1'
-  | 'day_2'
-  | 'day_3'
-  | 'day_4'
-  | 'day_5'
-  | 'day_6'
-  | 'day_7'
-  | 'day_8'
-  | 'day_9'
-  | 'day_10'
-  | 'day_11'
-  | 'day_12'
-  | 'day_13_plus';
-export type GameDayBucket = CoarseGameDayBucket | DetailedGameDayBucket;
-export type VictoryBucket = 'wins_0_3' | 'wins_4_6' | 'wins_7_9' | 'wins_10_plus';
+// v2 ships only the detailed per-game-day buckets; coarse day_1_3/day_4_7/day_8_plus are gone.
+export const GAME_DAY_BUCKETS = [
+  'day_1',
+  'day_2',
+  'day_3',
+  'day_4',
+  'day_5',
+  'day_6',
+  'day_7',
+  'day_8',
+  'day_9',
+  'day_10',
+  'day_11',
+  'day_12',
+  'day_13_plus',
+] as const;
+
+export type GameDayBucket = (typeof GAME_DAY_BUCKETS)[number];
+
+const GAME_DAY_BUCKET_SET = new Set<string>(GAME_DAY_BUCKETS);
+
+export function isGameDayBucket(value: string): value is GameDayBucket {
+  return GAME_DAY_BUCKET_SET.has(value);
+}
+
+export type CanonicalHero =
+  | 'Stelle'
+  | 'Mak'
+  | 'Jules'
+  | 'Dooley'
+  | 'Karnok'
+  | 'Pygmalien'
+  | 'Vanessa';
 
 export type WebHeroMatchupRow = {
-  opponent_hero: string;
-  battle_decided_count: number;
+  opponent_hero: CanonicalHero;
+  decided: number;
   wins: number;
   losses: number;
 };
 
 export type WebHeroDailyRow = {
-  hero: string;
+  hero: CanonicalHero;
   rating_tier: RatingTier;
-  runs_total: number;
-  runs_completed: number;
-  final_wins_counts: Record<string, number>;
-  run_days_10w_counts: Record<string, number>;
-  battle_decided_count: number;
-  battle_wins: number;
-  battle_losses: number;
-  final_battle_decided_count: number;
-  final_battle_wins: number;
-  final_battle_losses: number;
-  game_day_battle_counts: Partial<Record<GameDayBucket, BattleBucketCounts>>;
-  victory_bucket_battle_counts: Partial<Record<VictoryBucket, BattleBucketCounts>>;
+  runs: { completed: number; scored: number; ten_win: number };
+  outcomes: { perfect: number; gold: number; silver: number; bronze: number };
+  ten_win_days: { known_count: number; sum_days: number };
+  battle_days: Partial<Record<GameDayBucket, BattleCounts>>;
   matchups: WebHeroMatchupRow[];
 };
 
 export type WebHeroDailyPayload = {
-  schema_version: '1';
-  kind: 'web_hero_daily';
+  schema_version: '2';
+  kind: 'hero_web_daily';
   day: string;
-  generatedAt: string;
+  generated_at: string;
   rows: WebHeroDailyRow[];
 };
 
@@ -120,9 +138,10 @@ export function isAnalyzerV4Manifest(value: unknown): value is AnalyzerV4Manifes
   const manifest = value as Partial<AnalyzerV4Manifest>;
   return (
     manifest.namespace === 'analyzer-v4' &&
+    manifest.schema_version === '2' &&
     manifest.web != null &&
     typeof manifest.web === 'object' &&
-    manifest.web.schema_version === '1' &&
+    manifest.web.schema_version === '2' &&
     Array.isArray(manifest.web.days)
   );
 }
@@ -137,8 +156,8 @@ export function validateWebDailyPayload(
 
   const payload = value as Partial<WebHeroDailyPayload>;
   return (
-    payload.schema_version === '1' &&
-    payload.kind === 'web_hero_daily' &&
+    payload.schema_version === '2' &&
+    payload.kind === 'hero_web_daily' &&
     payload.day === expectedDay &&
     Array.isArray(payload.rows)
   );

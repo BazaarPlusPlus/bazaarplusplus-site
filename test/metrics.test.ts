@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   isAnalyzerV4Manifest,
+  isGameDayBucket,
   parseLocale,
   parseMetricWindow,
   parseRatingTier,
@@ -35,15 +36,25 @@ describe('metrics query-string parsers', () => {
   });
 });
 
+describe('game-day bucket guards', () => {
+  test('accepts only detailed v2 battle-day buckets', () => {
+    expect(isGameDayBucket('day_1')).toBe(true);
+    expect(isGameDayBucket('day_13_plus')).toBe(true);
+    expect(isGameDayBucket('day_1_3')).toBe(false);
+    expect(isGameDayBucket('day_4_7')).toBe(false);
+    expect(isGameDayBucket('day_8_plus')).toBe(false);
+  });
+});
+
 describe('analyzer-v4 schema guards', () => {
   const manifest: AnalyzerV4Manifest = {
-    schema_version: '1',
+    schema_version: '2',
     namespace: 'analyzer-v4',
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     latest_complete_day: '2026-06-06',
     web: {
-      schema_version: '1',
-      days: [{ day: '2026-06-06', path: 'analyzer-v4/web/2026-06-06.json', rowCount: 27 }],
+      schema_version: '2',
+      days: [{ day: '2026-06-06', path: 'analyzer-v4/web/2026-06-06.json', row_count: 27 }],
     },
     dq: {
       days: 2,
@@ -53,39 +64,40 @@ describe('analyzer-v4 schema guards', () => {
     sli_path: 'analyzer-v4/_sli.json',
   };
 
-  test('isAnalyzerV4Manifest accepts the live manifest shape', () => {
+  test('isAnalyzerV4Manifest accepts the live v2 manifest shape', () => {
     expect(isAnalyzerV4Manifest(manifest)).toBe(true);
   });
 
-  test('isAnalyzerV4Manifest rejects namespace and web schema mismatches', () => {
+  test('isAnalyzerV4Manifest rejects namespace and schema-version mismatches', () => {
     expect(isAnalyzerV4Manifest(null)).toBe(false);
     expect(isAnalyzerV4Manifest({})).toBe(false);
     expect(isAnalyzerV4Manifest({ ...manifest, namespace: 'analyzer-v3' })).toBe(false);
+    expect(isAnalyzerV4Manifest({ ...manifest, schema_version: '1' })).toBe(false);
     expect(
-      isAnalyzerV4Manifest({ ...manifest, web: { ...manifest.web, schema_version: '2' } })
+      isAnalyzerV4Manifest({ ...manifest, web: { ...manifest.web, schema_version: '1' } })
     ).toBe(false);
     expect(isAnalyzerV4Manifest({ ...manifest, web: undefined })).toBe(false);
     expect(
-      isAnalyzerV4Manifest({ ...manifest, web: { schema_version: '1', days: 'nope' } })
+      isAnalyzerV4Manifest({ ...manifest, web: { schema_version: '2', days: 'nope' } })
     ).toBe(false);
   });
 
   const payload: WebHeroDailyPayload = {
-    schema_version: '1',
-    kind: 'web_hero_daily',
+    schema_version: '2',
+    kind: 'hero_web_daily',
     day: '2026-06-06',
-    generatedAt: '2026-06-07T09:04:17Z',
+    generated_at: '2026-06-07T09:04:17Z',
     rows: [],
   };
 
-  test('validateWebDailyPayload accepts a payload matching the expected day', () => {
+  test('validateWebDailyPayload accepts a v2 payload matching the expected day', () => {
     expect(validateWebDailyPayload(payload, '2026-06-06')).toBe(true);
   });
 
   test('validateWebDailyPayload rejects schema/kind/day mismatches', () => {
     expect(validateWebDailyPayload(null, '2026-06-06')).toBe(false);
-    expect(validateWebDailyPayload({ ...payload, schema_version: '2' }, '2026-06-06')).toBe(false);
-    expect(validateWebDailyPayload({ ...payload, kind: 'web_hero_weekly' }, '2026-06-06')).toBe(
+    expect(validateWebDailyPayload({ ...payload, schema_version: '1' }, '2026-06-06')).toBe(false);
+    expect(validateWebDailyPayload({ ...payload, kind: 'web_hero_daily' }, '2026-06-06')).toBe(
       false
     );
     expect(validateWebDailyPayload(payload, '2026-06-05')).toBe(false);

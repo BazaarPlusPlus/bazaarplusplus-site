@@ -9,11 +9,11 @@ describe('createRuntimeMetricsClient', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       json: async () => ({
-        schema_version: '1',
+        schema_version: '2',
         namespace: 'analyzer-v4',
-        generatedAt: '2026-06-07T09:04:17Z',
+        generated_at: '2026-06-07T09:04:17Z',
         latest_complete_day: '2026-06-06',
-        web: { schema_version: '1', days: [] },
+        web: { schema_version: '2', days: [] },
       }),
     })) as unknown as typeof fetch;
     const client = createRuntimeMetricsClient({ fetchImpl });
@@ -33,11 +33,11 @@ describe('createRuntimeMetricsClient', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       json: async () => ({
-        schema_version: '1',
+        schema_version: '2',
         namespace: 'analyzer-v4',
-        generatedAt: '2026-06-07T09:04:17Z',
+        generated_at: '2026-06-07T09:04:17Z',
         latest_complete_day: '2026-06-06',
-        web: { schema_version: '1', days: [] },
+        web: { schema_version: '2', days: [] },
       }),
     })) as unknown as typeof fetch;
     const client = createRuntimeMetricsClient({
@@ -46,7 +46,7 @@ describe('createRuntimeMetricsClient', () => {
     });
 
     await expect(client.getManifest()).resolves.toMatchObject({
-      generatedAt: '2026-06-07T09:04:17Z',
+      generated_at: '2026-06-07T09:04:17Z',
     });
 
     expect(fetchImpl).toHaveBeenCalledWith(
@@ -61,10 +61,10 @@ describe('createRuntimeMetricsClient', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       json: async () => ({
-        schema_version: '1',
-        kind: 'web_hero_daily',
+        schema_version: '2',
+        kind: 'hero_web_daily',
         day: '2026-06-06',
-        generatedAt: '2026-06-07T09:04:17Z',
+        generated_at: '2026-06-07T09:04:17Z',
         rows: [],
       }),
     })) as unknown as typeof fetch;
@@ -111,11 +111,11 @@ describe('createRuntimeMetricsClient', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          schema_version: '1',
+          schema_version: '2',
           namespace: 'analyzer-v4',
-          generatedAt: '2026-06-07T09:04:17Z',
+          generated_at: '2026-06-07T09:04:17Z',
           latest_complete_day: '2026-06-06',
-          web: { schema_version: '1', days: [] },
+          web: { schema_version: '2', days: [] },
         }),
       }) as unknown as typeof fetch;
     const client = createRuntimeMetricsClient({
@@ -125,7 +125,7 @@ describe('createRuntimeMetricsClient', () => {
     });
 
     await expect(client.getManifest()).resolves.toMatchObject({
-      generatedAt: '2026-06-07T09:04:17Z',
+      generated_at: '2026-06-07T09:04:17Z',
     });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });

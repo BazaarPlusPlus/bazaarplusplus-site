@@ -79,22 +79,29 @@ describe('site copy', () => {
     expect(zhCopy.tutorial.quickStart.groups[1]?.note).toBe('在游戏“设置” -> “游玩设置”中重绑 Ctrl / Shift 预览键位');
 
     expect(enCopy.common.scope.tierLabels.high).toBe('High');
+    expect(zhCopy.stats.heroes.eyebrow).toBe('BazaarPlusPlus');
+    expect(enCopy.stats.heroes.eyebrow).toBe('Bazaar Almanac');
+    expect(zhCopy.stats.heroes.title).toBe('英雄统计');
+    expect(enCopy.stats.heroes.title).toBe('Hero stats');
+    expect(zhCopy.stats.heroes.trend.winrateTrend).toBe('胜率走势与对位');
+    expect(zhCopy.stats.heroes.trend.titleLead).toBe('近期');
+    expect(zhCopy.stats.heroes.trend.titleAccent).toBe('表现');
+    expect(enCopy.stats.heroes.trend.titleLead).toBe('Recent');
+    expect(enCopy.stats.heroes.trend.titleAccent).toBe('performance');
+    expect(zhCopy.stats.heroes.snapshot.titleLead).toBe('胜率');
+    expect(zhCopy.stats.heroes.snapshot.titleAccent).toBe('榜单');
+    expect(zhCopy.stats.heroes.dossier.label).toBe('战斗明细');
     expect(zhCopy.stats.heroes.detailLinkLabel).toBe('在 BazaarDB 查看详细统计');
     expect(enCopy.stats.heroes.detailLinkLabel).toBe('View detailed stats on BazaarDB');
     expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('10W rate');
     expect(zhCopy.stats.heroes.matchups.title).toBe('对位胜率');
+    expect(zhCopy.stats.heroes.matchups.selectedHeroLabel).toBe('当前英雄');
+    expect(enCopy.stats.heroes.matchups.selectedHeroLabel).toBe('Selected hero');
+    expect(zhCopy.stats.heroes.coverage.daysLoadedSeparator).toBe('/');
     expect(zhCopy.stats.heroes.stage.title).toBe('战斗胜率');
     expect(enCopy.stats.heroes.stage.title).toBe('Battle win rate');
     expect(zhCopy.stats.heroes.stage.day_13_plus).toBe('第 13 天起');
     expect(enCopy.stats.heroes.stage.day_13_plus).toBe('Day 13+');
-    expect(zhCopy.stats.heroes.methodology.tierLegend.misfortune.label).toBe('惨淡');
-    expect(enCopy.stats.heroes.methodology.rankedByCaption).toBe('Ranked by 10-win rate');
-    expect(zhCopy.stats.heroes.methodology.sections.quality.body).toBe(
-      '“同步”是这份快照的生成时间；覆盖显示窗口实际加载了多少天。没有上传的那天是未知，而不是 0。'
-    );
-    expect(enCopy.stats.heroes.methodology.sections.quality.body).toBe(
-      '“Synced” is when this snapshot was built. Coverage shows how many days the window actually loaded. Missing upload days are unknown, not zero-filled.'
-    );
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
     expect(enCopy.tutorial.installation.steps[3]?.description).toBe(
       'On the main menu, a BazaarPlusPlus dock appears above the Settings button, and the game version text below shows BPP version.'

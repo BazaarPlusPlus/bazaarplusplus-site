@@ -35,9 +35,7 @@ import {
   type MergedHeroRow,
 } from '../../shared/lib/web-daily';
 import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
-import DialogShell from '../../shared/components/DialogShell';
 import HeroBadge from '../../shared/components/HeroBadge';
-import InfoTip from '../../shared/components/InfoTip';
 import { SegmentedButton, SegmentedControl } from '../../shared/components/ScopeFilterPanel';
 import SortableHeader from '../../shared/components/SortableHeader';
 import StatsPageShell from '../../shared/components/StatsPageShell';
@@ -101,18 +99,6 @@ const RANKING_COLUMN_WIDTHS = [
   '8%',
   '8%',
 ];
-
-const VICTORY_TIER_KEYS = ['perfect', 'gold', 'silver', 'bronze', 'misfortune'] as const;
-
-type VictoryTierKey = (typeof VICTORY_TIER_KEYS)[number];
-
-const VICTORY_TIER_COLORS: Record<VictoryTierKey, string> = {
-  perfect: '#ffd47a',
-  gold: '#c08e2e',
-  silver: '#a8b0bb',
-  bronze: '#b07a45',
-  misfortune: '#d05a4a',
-};
 
 function isMetricWindow(value: string | null): value is MetricWindow {
   return value === '1d' || value === '3d' || value === '7d';
@@ -229,7 +215,6 @@ export default function HeroOverviewDashboard({
   const heroCopy = copy.stats.heroes;
   const scopeCopy = copy.common.scope;
   const coverageCopy = heroCopy.coverage;
-  const methodologyCopy = heroCopy.methodology;
   const noValueLabel = copy.common.noValueLabel;
 
   const initialSelection = useMemo(
@@ -250,8 +235,7 @@ export default function HeroOverviewDashboard({
     direction: 'desc',
   });
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
-  const [methodologyOpen, setMethodologyOpen] = useState(false);
-  const [selectedMatchupHero, setSelectedMatchupHero] = useState<string | null>(null);
+  const [tierFellBack, setTierFellBack] = useState(false);
 
   // --- window / tier scope ---------------------------------------------------
   const windowDayRefs = useMemo(
@@ -284,8 +268,14 @@ export default function HeroOverviewDashboard({
   useEffect(() => {
     if (selectedTier !== 'all' && tierRows.length === 0 && allTierRows.length > 0) {
       setSelectedTier('all');
+      setTierFellBack(true);
     }
   }, [allTierRows.length, selectedTier, tierRows.length]);
+
+  const selectTier = (tier: RatingTier) => {
+    setTierFellBack(false);
+    setSelectedTier(tier);
+  };
 
   const merged = useMemo(() => mergeRows(tierRows), [tierRows]);
   const heroMetrics = useMemo(() => {
@@ -341,24 +331,6 @@ export default function HeroOverviewDashboard({
   const focusedMerged: MergedHeroRow | undefined = focusedHero
     ? merged.get(focusedHero)
     : undefined;
-  const matchupHeroOptions = useMemo(() => sortedRows.map((row) => row.hero), [sortedRows]);
-
-  useEffect(() => {
-    if (matchupHeroOptions.length === 0) {
-      if (selectedMatchupHero != null) {
-        setSelectedMatchupHero(null);
-      }
-      return;
-    }
-
-    if (selectedMatchupHero == null || !matchupHeroOptions.includes(selectedMatchupHero)) {
-      setSelectedMatchupHero(
-        focusedHero != null && matchupHeroOptions.includes(focusedHero)
-          ? focusedHero
-          : matchupHeroOptions[0]!
-      );
-    }
-  }, [focusedHero, matchupHeroOptions, selectedMatchupHero]);
 
   // --- URL writes -------------------------------------------------------------
   useEffect(() => {
@@ -439,10 +411,9 @@ export default function HeroOverviewDashboard({
     0
   );
 
-  const selectedMatchupMerged = selectedMatchupHero ? merged.get(selectedMatchupHero) : undefined;
   const matchups = useMemo(
-    () => (selectedMatchupMerged ? deriveMatchups(selectedMatchupMerged, MATCHUP_MIN_SAMPLE) : null),
-    [selectedMatchupMerged]
+    () => (focusedMerged ? deriveMatchups(focusedMerged, MATCHUP_MIN_SAMPLE) : null),
+    [focusedMerged]
   );
 
   const hasAnyData = days.length > 0;
@@ -460,10 +431,6 @@ export default function HeroOverviewDashboard({
       </span>
     );
   }
-
-  // The ⓘ button takes the tip itself as its accessible name so it never
-  // collides with the adjacent sort button's name.
-  const headerInfo = (tip: string) => <InfoTip label={tip} tip={tip} />;
 
   // --- empty / degraded full-page states ---------------------------------------
   const emptyState = !hasAnyData ? (
@@ -548,31 +515,39 @@ export default function HeroOverviewDashboard({
                     <SegmentedButton
                       key={option}
                       active={option === selectedTier}
-                      onClick={() => setSelectedTier(option)}
+                      onClick={() => selectTier(option)}
                     >
                       {scopeCopy.tierLabels[option]}
                     </SegmentedButton>
                   ))}
                 </SegmentedControl>
               </div>
-              <div className="min-w-0 flex-1 self-end">
+              <div className="min-w-0 basis-full self-end sm:flex sm:justify-end lg:basis-auto lg:flex-1">
                 <CoverageStrip
                   loadedCount={loadedWindowDays.length}
                   nominalCount={nominalDays}
-                  windowLabel={WINDOW_LABELS[selectedWindow]}
                   partial={partialCoverage}
                   coverageCopy={coverageCopy}
                 />
               </div>
             </div>
+            {tierFellBack ? (
+              <p
+                role="status"
+                data-testid="tier-fallback-note"
+                className="mt-4 border-t border-[color:var(--color-border-soft)] pt-3 text-[0.74rem] text-[color:var(--color-accent-bright)]"
+              >
+                {coverageCopy.tierFallbackNote}
+              </p>
+            ) : null}
           </section>
         ) : null
       }
     >
       {emptyState ?? (
-        <section className="grid gap-6">
-          {/* === TREND ===================================================== */}
-          <section className="surface relative overflow-hidden p-5 sm:p-6">
+        <section className="grid min-w-0 gap-6">
+          {/* === HERO FOCUS ================================================ */}
+          <section data-testid="hero-focus-panel" className="surface relative overflow-hidden p-4 sm:p-6">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
@@ -583,70 +558,24 @@ export default function HeroOverviewDashboard({
               }}
             />
 
-            <div className="relative grid min-w-0 gap-4 lg:grid-cols-[260px_1fr] lg:gap-x-6">
-              <div className="flex flex-col gap-4 lg:h-full">
+            <div className="relative grid min-w-0 gap-5">
+              <div>
                 <div>
                   <p className="eyebrow eyebrow-rule">{WINDOW_LABELS['7d']} {heroCopy.trend.winrateTrend}</p>
-                  <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                    {heroCopy.trend.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
+                  <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)] sm:text-3xl">
+                    {heroCopy.trend.titleLead}{locale === 'zh' ? '' : ' '}
+                    <span className="text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
                   </h2>
                 </div>
-
-                {focusedTrendSeries ? (
-                  <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 lg:flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="eyebrow text-[0.66rem] tracking-[0.22em]">{heroCopy.trend.inFocus}</span>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-3">
-                      <span
-                        className="h-8 w-1 rounded-sm"
-                        style={{
-                          backgroundColor: focusedTrendSeries.color,
-                          boxShadow: `0 0 12px ${focusedTrendSeries.color}66`,
-                        }}
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <div className="font-display text-2xl font-semibold text-[color:var(--color-text-base)]">
-                          {focusedTrendSeries.hero}
-                        </div>
-                        <div className="font-display-italic text-[0.78rem] tracking-[0.18em] text-[color:var(--color-text-muted)]">
-                          {getHeroShortLabel(focusedTrendSeries.hero)} · {WINDOW_LABELS['7d']}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="eyebrow text-[0.62rem] tracking-[0.2em]">{heroCopy.trend.latest}</div>
-                        <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-accent-bright)]">
-                          {formatNullablePercent(focusedTrendSeries.latestWinRate)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="eyebrow text-[0.62rem] tracking-[0.2em]">{heroCopy.trend.startedAt}</div>
-                        <div className="mt-1 tnum text-2xl font-semibold text-[color:var(--color-text-muted)]">
-                          {formatNullablePercent(focusedTrendSeries.firstWinRate)}
-                        </div>
-                      </div>
-                    </div>
-                    {focusedTrendSeries.nullPointCount > 0 ? (
-                      <p className="mt-3 text-[0.72rem] leading-5 text-[color:var(--color-text-faint)]">
-                        {coverageCopy.noTrendValue}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : focusedHero != null ? (
-                  <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:rgba(10,8,5,0.6)] p-4 text-[0.78rem] leading-5 text-[color:var(--color-text-muted)] lg:flex-1">
-                    {coverageCopy.noTrendValue}
-                  </div>
-                ) : null}
               </div>
 
-              <div
-                data-testid="daily-winrate-chart"
-                className="h-full min-h-[260px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] p-2 sm:p-3 lg:min-h-[300px]"
-              >
-                {trendSeries.length > 0 ? (
+              <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
+                <section data-testid="trend-panel" className="grid min-w-0 gap-3">
+                  <div
+                    data-testid="daily-winrate-chart"
+                    className="h-full min-h-[220px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] p-2 sm:min-h-[280px] sm:p-3 xl:min-h-[320px]"
+                  >
+                    {trendSeries.length > 0 ? (
                 <svg
                   viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
                   className="block h-full w-full"
@@ -678,7 +607,7 @@ export default function HeroOverviewDashboard({
                         <text
                           x={CHART_PADDING.left - 12}
                           y={y + 4}
-                          fill="rgba(148, 131, 95, 0.78)"
+                          fill="rgba(179, 160, 121, 0.95)"
                           fontSize="11"
                           fontFamily="JetBrains Mono, monospace"
                           textAnchor="end"
@@ -705,7 +634,7 @@ export default function HeroOverviewDashboard({
                         <text
                           x={x}
                           y={CHART_HEIGHT - 14}
-                          fill={isLast ? 'rgba(255,212,122,0.95)' : 'rgba(148, 131, 95, 0.78)'}
+                          fill={isLast ? 'rgba(255,212,122,0.95)' : 'rgba(179, 160, 121, 0.95)'}
                           fontSize="11"
                           fontFamily="JetBrains Mono, monospace"
                           fontWeight={isLast ? '600' : '400'}
@@ -888,62 +817,109 @@ export default function HeroOverviewDashboard({
                     </g>
                   ) : null}
                 </svg>
-                ) : (
-                  <div className="flex h-full min-h-[240px] items-center justify-center text-sm text-[color:var(--color-text-muted)]">
-                    {heroCopy.snapshot.noData}
+                    ) : (
+                      <div className="flex h-full min-h-[220px] items-center justify-center text-sm text-[color:var(--color-text-muted)]">
+                        {heroCopy.snapshot.noData}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
-                {trendSeries.map((heroSeries) => {
-                  const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
-                  return (
-                    <button
-                      key={heroSeries.hero}
-                      type="button"
-                      data-selected={isFocused ? 'true' : 'false'}
-                      onMouseEnter={() => setFocusedHero(heroSeries.hero)}
-                      onFocus={() => setFocusedHero(heroSeries.hero)}
-                      onClick={() => setFocusedHero(heroSeries.hero)}
-                      className={`group inline-flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition ${
-                        isFocused
-                          ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
-                          : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
-                      }`}
-                      aria-label={`${heroSeries.hero} ${formatNullablePercent(heroSeries.latestWinRate)}`}
-                      title={heroSeries.hero}
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
+                  {focusedTrendSeries != null && focusedTrendSeries.nullPointCount > 0 ? (
+                    <p className="text-[0.72rem] leading-5 text-[color:var(--color-text-faint)]">
+                      {coverageCopy.noTrendValue}
+                    </p>
+                  ) : null}
+
+                  <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 2xl:grid-cols-7">
+                    {trendSeries.map((heroSeries) => {
+                      const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
+                      return (
+                        <button
+                          key={heroSeries.hero}
+                          type="button"
+                          data-selected={isFocused ? 'true' : 'false'}
+                          onMouseEnter={() => setFocusedHero(heroSeries.hero)}
+                          onFocus={() => setFocusedHero(heroSeries.hero)}
+                          onClick={() => setFocusedHero(heroSeries.hero)}
+                          className={`group inline-flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition ${
+                            isFocused
+                              ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
+                              : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
+                          }`}
+                          aria-label={`${heroSeries.hero} ${formatNullablePercent(heroSeries.latestWinRate)}`}
+                          title={heroSeries.hero}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span
+                              className="h-4 w-1 shrink-0 rounded-sm"
+                              style={{
+                                backgroundColor: heroSeries.color,
+                                boxShadow: isFocused ? `0 0 10px ${heroSeries.color}aa` : `0 0 6px ${heroSeries.color}55`,
+                              }}
+                              aria-hidden="true"
+                            />
+                            <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-base)]">
+                              {getHeroShortLabel(heroSeries.hero)}
+                            </span>
+                          </span>
+                          <span
+                            className={`tnum text-[0.74rem] font-semibold ${
+                              isFocused ? 'text-[color:var(--color-accent-bright)]' : 'text-[color:var(--color-text-muted)]'
+                            }`}
+                          >
+                            {formatNullablePercent(heroSeries.latestWinRate)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section data-testid="matchup-panel" className="min-w-0 rounded-2xl border border-[color:var(--color-border-soft)] bg-[rgba(10,8,5,0.58)] p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
+                      {heroCopy.matchups.title}
+                    </h3>
+                    {focusedTrendSeries ? (
+                      <div
+                        data-testid="selected-matchup-hero"
+                        aria-label={`${heroCopy.matchups.selectedHeroLabel}: ${focusedTrendSeries.hero}`}
+                        className="inline-flex w-full min-w-0 items-center gap-2 rounded-lg border border-[color:var(--color-border-soft)] bg-[rgba(15,12,8,0.72)] px-3 py-2 sm:w-auto"
+                      >
                         <span
-                          className="h-4 w-1 shrink-0 rounded-sm"
+                          className="h-5 w-1 shrink-0 rounded-sm"
                           style={{
-                            backgroundColor: heroSeries.color,
-                            boxShadow: isFocused ? `0 0 10px ${heroSeries.color}aa` : `0 0 6px ${heroSeries.color}55`,
+                            backgroundColor: focusedTrendSeries.color,
+                            boxShadow: `0 0 10px ${focusedTrendSeries.color}88`,
                           }}
                           aria-hidden="true"
                         />
-                        <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-base)]">
-                          {getHeroShortLabel(heroSeries.hero)}
+                        <span className="min-w-0 truncate font-display text-base font-semibold text-[color:var(--color-text-base)]">
+                          {focusedTrendSeries.hero}
                         </span>
-                      </span>
-                      <span
-                        className={`tnum text-[0.74rem] font-semibold ${
-                          isFocused ? 'text-[color:var(--color-accent-bright)]' : 'text-[color:var(--color-text-muted)]'
-                        }`}
-                      >
-                        {formatNullablePercent(heroSeries.latestWinRate)}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className="tnum shrink-0 text-[0.68rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                          {getHeroShortLabel(focusedTrendSeries.hero)} · {WINDOW_LABELS['7d']}
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-4">
+                    <MatchupList
+                      rows={matchups?.rows ?? []}
+                      matchupCopy={heroCopy.matchups}
+                      locale={locale}
+                      noValueLabel={noValueLabel}
+                      className="grid gap-2 md:grid-cols-2 xl:grid-cols-1"
+                    />
+                  </div>
+                </section>
               </div>
             </div>
           </section>
 
           {/* === HERO RANKING =============================================== */}
           <section className="surface overflow-hidden">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5">
+            <div className="border-b border-[color:var(--color-border-soft)] px-6 py-5">
               <div>
                 <p className="eyebrow eyebrow-rule">
                   {heroCopy.snapshot.label} · {loadedWindowDays.length > 0
@@ -951,38 +927,9 @@ export default function HeroOverviewDashboard({
                     : heroCopy.snapshot.noData}
                 </p>
                 <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.snapshot.titleLead} <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
+                  {heroCopy.snapshot.titleLead}{locale === 'zh' ? '' : ' '}
+                  <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
                 </h2>
-                <p className="mt-2 flex flex-wrap items-center gap-2 text-[0.74rem] text-[color:var(--color-text-muted)]">
-                  <span>{methodologyCopy.rankedByCaption}</span>
-                  <span className="tnum rounded-full border border-[color:var(--color-border-soft)] px-2 py-0.5 text-[0.66rem] text-[color:var(--color-text-faint)]">
-                    {methodologyCopy.formula.tenWinRate}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={methodologyCopy.triggerAriaLabel}
-                    onClick={() => setMethodologyOpen(true)}
-                    className="rounded-full border border-[color:var(--color-border-bright)] px-3 py-0.5 text-[0.7rem] font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)]"
-                  >
-                    {methodologyCopy.triggerLabel}
-                  </button>
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5" data-testid="tier-legend">
-                {VICTORY_TIER_KEYS.map((tier) => (
-                  <span
-                    key={tier}
-                    title={methodologyCopy.tierLegend[tier].gloss}
-                    className="inline-flex items-center gap-1.5 text-[0.7rem] text-[color:var(--color-text-muted)]"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: VICTORY_TIER_COLORS[tier] }}
-                    />
-                    {methodologyCopy.tierLegend[tier].label}
-                  </span>
-                ))}
               </div>
             </div>
 
@@ -1010,16 +957,16 @@ export default function HeroOverviewDashboard({
                   </colgroup>
                   <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
                     <tr>
-                      <SortableHeader label={heroCopy.tableHeaders.hero} className="px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} info={headerInfo(methodologyCopy.tips.hero)} />
-                      <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} info={headerInfo(methodologyCopy.formula.tenWinRate)} />
-                      <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} info={headerInfo(methodologyCopy.tips.runs)} />
-                      <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} info={headerInfo(methodologyCopy.tips.share)} />
-                      <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinCount' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinCount', 'desc'))} info={headerInfo(methodologyCopy.tips.wins10w)} />
-                      <SortableHeader label={heroCopy.tableHeaders.avgDays} className="px-3 py-3.5" activeDirection={sortState.key === 'avgRunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'avgRunDays10w', 'asc'))} info={headerInfo(methodologyCopy.formula.runDays)} />
-                      <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-3 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} info={headerInfo(methodologyCopy.tips.perfect)} />
-                      <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} info={headerInfo(methodologyCopy.tips.gold)} />
-                      <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} info={headerInfo(methodologyCopy.tips.silver)} />
-                      <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} info={headerInfo(methodologyCopy.tips.bronze)} />
+                      <SortableHeader label={heroCopy.tableHeaders.hero} className="sticky left-0 z-20 bg-[color:var(--color-bg-card)] px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinCount' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinCount', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.avgDays} className="px-3 py-3.5" activeDirection={sortState.key === 'avgRunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'avgRunDays10w', 'asc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-3 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
                     </tr>
                   </thead>
                   <tbody>
@@ -1036,7 +983,7 @@ export default function HeroOverviewDashboard({
                           className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
                           style={{ '--hero-color': heroColor } as React.CSSProperties}
                         >
-                          <td className="relative px-5 py-4">
+                          <td className="sticky left-0 z-10 bg-[color:var(--color-bg-card)] px-5 py-4">
                             <button
                               type="button"
                               data-selected={isSelected ? 'true' : 'false'}
@@ -1097,7 +1044,7 @@ export default function HeroOverviewDashboard({
 
           {/* === PER-HERO DOSSIER ========================================== */}
           {rankingHasRows && focusedHero != null && focusedMetrics != null ? (
-            <section data-testid="hero-dossier" className="grid gap-6">
+            <section data-testid="hero-dossier" className="grid min-w-0 gap-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="eyebrow eyebrow-rule">{heroCopy.dossier.label}</p>
                 <span className="tnum text-[0.72rem] uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
@@ -1105,78 +1052,21 @@ export default function HeroOverviewDashboard({
                 </span>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <StagePanel
-                  focusedHero={focusedHero}
-                  merged={merged}
-                  rows={sortedRows}
-                  locale={locale}
-                  heroLabel={heroCopy.tableHeaders.hero}
-                  stageCopy={heroCopy.stage}
-                  noDataLabel={heroCopy.snapshot.noData}
-                  noValueLabel={noValueLabel}
-                />
-                <MatchupPanel
-                  heroOptions={matchupHeroOptions}
-                  selectedHero={selectedMatchupHero}
-                  onHeroChange={setSelectedMatchupHero}
-                  matchups={matchups}
-                  matchupCopy={heroCopy.matchups}
-                  locale={locale}
-                  noValueLabel={noValueLabel}
-                />
-              </div>
+              <StagePanel
+                focusedHero={focusedHero}
+                merged={merged}
+                rows={sortedRows}
+                locale={locale}
+                heroLabel={heroCopy.tableHeaders.hero}
+                stageCopy={heroCopy.stage}
+                noDataLabel={heroCopy.snapshot.noData}
+                noValueLabel={noValueLabel}
+              />
             </section>
           ) : null}
         </section>
       )}
 
-      <DialogShell
-        open={methodologyOpen}
-        onClose={() => setMethodologyOpen(false)}
-        labelledBy="methodology-sheet-title"
-        closeLabel={methodologyCopy.closeLabel}
-        size="lg"
-      >
-        <p className="eyebrow eyebrow-rule">{methodologyCopy.sheetEyebrow}</p>
-        <h2
-          id="methodology-sheet-title"
-          className="mt-2 font-display text-3xl font-semibold tracking-tight text-[color:var(--color-text-base)]"
-        >
-          {methodologyCopy.sheetTitle}
-        </h2>
-        <p className="mt-3 text-sm leading-6 text-[color:var(--color-text-muted)]">
-          {methodologyCopy.intro}
-        </p>
-        <div className="mt-6 grid gap-5">
-          {(
-            ['ranking', 'battles', 'outcomes', 'tiers', 'tierVsAll', 'window', 'quality'] as const
-          ).map((sectionKey) => (
-            <section key={sectionKey}>
-              <h3 className="font-display text-lg font-semibold text-[color:var(--color-accent-bright)]">
-                {methodologyCopy.sections[sectionKey].title}
-              </h3>
-              <p className="mt-1.5 text-sm leading-6 text-[color:var(--color-text-muted)]">
-                {methodologyCopy.sections[sectionKey].body}
-              </p>
-            </section>
-          ))}
-        </div>
-        <div className="mt-6 border-t border-[color:var(--color-border-soft)] pt-5">
-          <dl className="grid gap-3 sm:grid-cols-2">
-            {methodologyCopy.glossary.map((entry) => (
-              <div key={entry.term}>
-                <dt className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-text-base)]">
-                  {entry.term}
-                </dt>
-                <dd className="mt-0.5 text-[0.8rem] leading-5 text-[color:var(--color-text-muted)]">
-                  {entry.definition}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </DialogShell>
     </StatsPageShell>
   );
 }
@@ -1186,7 +1076,6 @@ export default function HeroOverviewDashboard({
 type CoverageStripProps = {
   loadedCount: number;
   nominalCount: number;
-  windowLabel: string;
   partial: boolean;
   coverageCopy: ReturnType<typeof getSiteCopy>['stats']['heroes']['coverage'];
 };
@@ -1194,26 +1083,26 @@ type CoverageStripProps = {
 function CoverageStrip({
   loadedCount,
   nominalCount,
-  windowLabel,
   partial,
   coverageCopy,
 }: CoverageStripProps) {
   return (
-    <p
+    <div
       data-testid="coverage-strip"
-      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[0.72rem] uppercase tracking-[0.14em] text-[color:var(--color-text-faint)]"
+      className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] bg-[rgba(10,8,5,0.5)] px-3 py-2 text-[0.72rem] text-[color:var(--color-text-muted)]"
     >
-      <span className="tnum">
-        {windowLabel}
-        {coverageCopy.windowSuffix} · {coverageCopy.daysLoadedPrefix}
+      <span className="tnum font-semibold text-[color:var(--color-text-base)]">
+        {coverageCopy.daysLoadedPrefix}
         {loadedCount}
         {coverageCopy.daysLoadedSeparator}
         {nominalCount}
       </span>
       {partial ? (
-        <span className="text-[color:var(--color-accent-bright)]">{coverageCopy.partialNote}</span>
+        <span className="rounded-full border border-[color:var(--color-border-soft)] px-2 py-0.5 text-[0.64rem] text-[color:var(--color-accent-bright)]">
+          {coverageCopy.partialNote}
+        </span>
       ) : null}
-    </p>
+    </div>
   );
 }
 
@@ -1296,7 +1185,7 @@ function StagePanel({
               <tr>
                 <SortableHeader
                   label={heroLabel}
-                  className="py-2 pr-2"
+                  className="sticky left-0 z-20 bg-[color:var(--color-bg-card)] py-2 pr-2"
                   activeDirection={stageSortState?.key === 'hero' ? stageSortState.direction : undefined}
                   onToggle={() => handleStageSort('hero', 'asc')}
                 />
@@ -1320,7 +1209,7 @@ function StagePanel({
                     className="metric-row border-t border-[color:var(--color-border-soft)]"
                     data-selected={row.hero === focusedHero ? 'true' : 'false'}
                   >
-                    <td className="py-2 pr-2">
+                    <td className="sticky left-0 z-10 bg-[color:var(--color-bg-card)] py-2 pr-2">
                       <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
                     </td>
                     {visibleStageKeys.map((key) => {
@@ -1351,92 +1240,51 @@ function StagePanel({
 
 type MatchupsCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['matchups'];
 
-function MatchupPanel({
-  heroOptions,
-  selectedHero,
-  onHeroChange,
-  matchups,
+function MatchupList({
+  rows,
   matchupCopy,
   locale,
   noValueLabel,
+  className = 'grid gap-2 sm:grid-cols-2 lg:grid-cols-3',
 }: {
-  heroOptions: string[];
-  selectedHero: string | null;
-  onHeroChange: (hero: string) => void;
-  matchups: { rows: MatchupRow[] } | null;
+  rows: MatchupRow[];
   matchupCopy: MatchupsCopy;
   locale: Locale;
   noValueLabel: string;
+  className?: string;
 }) {
-  const rows = matchups?.rows ?? [];
+  if (rows.length === 0) {
+    return <p className="text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>;
+  }
 
   return (
-    <section data-testid="matchup-panel" className="surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-          {matchupCopy.title}
-        </h3>
-        {heroOptions.length > 0 ? (
-          <div
-            role="group"
-            aria-label={matchupCopy.heroSelectorLabel}
-            data-testid="matchup-hero-selector"
-            className="flex max-w-full flex-wrap justify-end gap-1.5"
+    <ul data-testid="matchup-list" className={className}>
+      {rows.map((row) => (
+        <li key={row.opponentHero} className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
+          <HeroBadge hero={row.opponentHero} size="sm" />
+          <span
+            className="databar databar-pos relative block h-6 rounded-sm"
+            style={{
+              '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
+            } as React.CSSProperties}
           >
-            {heroOptions.map((hero) => {
-              const selected = hero === selectedHero;
-              return (
-                <button
-                  key={hero}
-                  type="button"
-                  aria-pressed={selected}
-                  data-selected={selected ? 'true' : 'false'}
-                  onClick={() => onHeroChange(hero)}
-                  className={`inline-flex items-center rounded-lg border px-1.5 py-1 transition ${
-                    selected
-                      ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
-                      : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
-                  }`}
-                >
-                  <HeroBadge hero={hero} selected={selected} size="sm" />
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-      {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>
-      ) : (
-        <ul data-testid="matchup-list" className="mt-4 grid gap-2">
-          {rows.map((row) => (
-            <li key={row.opponentHero} className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
-              <HeroBadge hero={row.opponentHero} size="sm" />
-              <span
-                className="databar databar-pos relative block h-6 rounded-sm"
-                style={{
-                  '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
-                } as React.CSSProperties}
-              >
-                <span
-                  className="absolute inset-y-0 left-2 flex items-center gap-2 tnum text-[0.78rem] text-[color:var(--color-text-base)]"
-                  aria-label={row.isLowSample || row.winRate == null ? noValueLabel : undefined}
-                >
-                  {row.isLowSample ? '—' : formatNullablePercent(row.winRate)}
-                  {row.isLowSample ? (
-                    <span className="rounded-sm border border-[color:var(--color-border-soft)] px-1 py-0.5 text-[0.58rem] uppercase tracking-[0.1em] text-[color:var(--color-text-faint)]">
-                      {matchupCopy.lowSampleTag}
-                    </span>
-                  ) : null}
+            <span
+              className="absolute inset-y-0 left-2 flex items-center gap-2 tnum text-[0.78rem] text-[color:var(--color-text-base)]"
+              aria-label={row.isLowSample || row.winRate == null ? noValueLabel : undefined}
+            >
+              {row.isLowSample ? '—' : formatNullablePercent(row.winRate)}
+              {row.isLowSample ? (
+                <span className="rounded-sm border border-[color:var(--color-border-soft)] px-1 py-0.5 text-[0.58rem] uppercase tracking-[0.1em] text-[color:var(--color-text-faint)]">
+                  {matchupCopy.lowSampleTag}
                 </span>
-              </span>
-              <span className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
-                {formatInteger(row.decided, locale)} {matchupCopy.sample}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+              ) : null}
+            </span>
+          </span>
+          <span className="tnum text-[0.7rem] text-[color:var(--color-text-faint)]">
+            {formatInteger(row.decided, locale)} {matchupCopy.sample}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }

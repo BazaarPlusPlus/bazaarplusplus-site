@@ -64,7 +64,7 @@ export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
       className="sticky top-0 z-30 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(15,12,8,0.96),rgba(10,8,5,0.92))] backdrop-blur-md"
     >
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-[color:var(--color-accent-glow)] to-transparent" />
-      <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-center gap-4 px-6 py-4 sm:justify-between sm:px-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-center gap-4 px-6 py-4 sm:w-[calc(100%-5rem)] sm:justify-between sm:px-10 2xl:px-12">
         <a
           href={buildLocalizedHref('/', { lang: locale })}
           aria-label={commonCopy.homeAriaLabel}

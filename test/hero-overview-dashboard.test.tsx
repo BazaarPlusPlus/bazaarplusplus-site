@@ -223,10 +223,9 @@ describe('HeroOverviewDashboard', () => {
     );
     expect(container.querySelector('[data-hero="Stelle"]')).toBeNull();
 
-    // Dossier follows the focused hero of the new tier.
-    expect(
-      screen.getByTestId('hero-dossier').querySelector('[data-hero-badge="Mak"]')
-    ).not.toBeNull();
+    // The focus panel follows the focused hero of the new tier.
+    expect(screen.getByTestId('selected-matchup-hero')).toHaveAccessibleName('Selected hero: Mak');
+    expect(screen.getByTestId('selected-matchup-hero')).toHaveTextContent('Mak');
   });
 
   test('ranks by 10-win rate with nulls sinking and no NaN output', () => {
@@ -288,6 +287,7 @@ describe('HeroOverviewDashboard', () => {
     // Only 3 of 7 nominal days exist → partial coverage note, but 7d stays valid.
     expect(screen.getByTestId('coverage-strip').textContent).toContain('partial coverage');
     expect(screen.getByTestId('coverage-strip').textContent).toContain('3 of 7');
+    expect(screen.getByTestId('coverage-strip').textContent).not.toContain('7D window');
     expect(screen.getByRole('button', { name: '7D' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -327,8 +327,20 @@ describe('HeroOverviewDashboard', () => {
     fireEvent.mouseLeave(vanessaCircles[0]!);
   });
 
-  test('dossier shows stage, bucket, and matchup panels with present keys only', () => {
+  test('focus panel groups trend and matchups while dossier keeps stage buckets', () => {
     renderDashboard();
+
+    const focusPanel = screen.getByTestId('hero-focus-panel');
+    expect(within(focusPanel).getByTestId('daily-winrate-chart')).toBeInTheDocument();
+    const matchupPanel = within(focusPanel).getByTestId('matchup-panel');
+    expect(matchupPanel).toBeInTheDocument();
+    const selectedMatchupHero = within(matchupPanel).getByTestId('selected-matchup-hero');
+    expect(selectedMatchupHero).toHaveAccessibleName('Selected hero: Jules');
+    expect(selectedMatchupHero).toHaveTextContent('Jules');
+    expect(selectedMatchupHero).toHaveTextContent('JUL · 7D');
+    expect(within(matchupPanel).queryByText('In focus')).not.toBeInTheDocument();
+    expect(within(focusPanel).queryByText('Latest')).not.toBeInTheDocument();
+    expect(within(focusPanel).queryByText('Started at')).not.toBeInTheDocument();
 
     // The section header stays contextual without repeating the focused hero badge.
     const dossier = screen.getByTestId('hero-dossier');
@@ -336,6 +348,7 @@ describe('HeroOverviewDashboard', () => {
     expect(dossierHeader.querySelector('[data-hero-badge]')).toBeNull();
     expect(within(dossierHeader as HTMLElement).getByText('3D window · All')).toBeInTheDocument();
     expect(screen.queryByTestId('battle-panel')).not.toBeInTheDocument();
+    expect(within(dossier).queryByTestId('matchup-panel')).not.toBeInTheDocument();
 
     const stage = screen.getByTestId('stage-panel');
     // v2 ships only detailed per-game-day buckets; coarse day_1_3/4_7/8_plus are gone.
@@ -370,37 +383,37 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.queryByTestId('final-wins-histogram')).not.toBeInTheDocument();
   });
 
-  test('matchups render as one ordered list and tag low samples', () => {
+  test('matchups follow the focused hero as one ordered list and tag low samples', () => {
     renderDashboard();
-
-    const panel = screen.getByTestId('matchup-panel');
-    const selector = screen.getByTestId('matchup-hero-selector');
-    expect(within(selector).getAllByRole('button')).toHaveLength(4);
 
     const list = screen.getByTestId('matchup-list');
     const heroOrder = Array.from(list.querySelectorAll('[data-hero-badge]')).map((badge) =>
       badge.getAttribute('data-hero-badge')
     );
+    // Default focus is the top-ranked hero (Jules).
     expect(heroOrder).toEqual(['Stelle', 'Jules', 'Vanessa', 'Dooley']);
-    expect(within(panel).queryByText('Favorable')).not.toBeInTheDocument();
-    expect(within(panel).queryByText('Unfavorable')).not.toBeInTheDocument();
-    expect(within(panel).queryByText('Mirror')).not.toBeInTheDocument();
+    expect(within(list).queryByText('Favorable')).not.toBeInTheDocument();
+    expect(within(list).queryByText('Unfavorable')).not.toBeInTheDocument();
+    expect(within(list).queryByText('Mirror')).not.toBeInTheDocument();
 
-    expect(within(panel).getByText('70.0%')).toBeInTheDocument();
-    expect(within(panel).getByText('50.0%')).toBeInTheDocument();
-    expect(within(panel).getByText('33.3%')).toBeInTheDocument();
+    expect(within(list).getByText('70.0%')).toBeInTheDocument();
+    expect(within(list).getByText('50.0%')).toBeInTheDocument();
+    expect(within(list).getByText('33.3%')).toBeInTheDocument();
 
     expect(list.querySelector('[data-hero-badge="Dooley"]')).not.toBeNull();
-    expect(within(panel).getByText('low sample')).toBeInTheDocument();
-    expect(within(panel).getByText(/15 battles/)).toBeInTheDocument();
+    expect(within(list).getByText('low sample')).toBeInTheDocument();
+    expect(within(list).getByText(/15 battles/)).toBeInTheDocument();
 
-    fireEvent.click(within(selector).getByRole('button', { name: 'Stelle' }));
-    const updatedOrder = Array.from(screen.getByTestId('matchup-list').querySelectorAll('[data-hero-badge]')).map(
+    // Focusing another hero from the ranking re-derives the matchups.
+    const table = getRankingTable();
+    fireEvent.click(within(table).getByRole('button', { name: 'Stelle' }));
+    const updatedList = screen.getByTestId('matchup-list');
+    const updatedOrder = Array.from(updatedList.querySelectorAll('[data-hero-badge]')).map(
       (badge) => badge.getAttribute('data-hero-badge')
     );
     expect(updatedOrder).toEqual(['Mak', 'Jules']);
-    expect(within(panel).getByText('75.0%')).toBeInTheDocument();
-    expect(within(panel).getByText('40.0%')).toBeInTheDocument();
+    expect(within(updatedList).getByText('75.0%')).toBeInTheDocument();
+    expect(within(updatedList).getByText('40.0%')).toBeInTheDocument();
   });
 
   test('DQ failure-rate metadata is not shown in the dashboard chrome', () => {
@@ -424,28 +437,14 @@ describe('HeroOverviewDashboard', () => {
     expect(getRankingTable()).toBeInTheDocument();
   });
 
-  test('methodology sheet opens as a large scrollable dialog with ⓘ header tips', () => {
+  test('ranking keeps sortable headers without tip buttons or methodology trigger', () => {
     renderDashboard();
 
-    // ⓘ tooltip buttons are separate focus targets on metric headers.
-    expect(
-      screen.getAllByRole('button', { name: 'Ranked by 10-win rate.' }).length
-    ).toBeGreaterThan(0);
-    expect(screen.getByText('Ranked by 10-win rate')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'How we measure this' }));
-    const dialog = screen.getByRole('dialog', { name: 'How we measure this' });
-    expect(dialog.className).toContain('overflow-y-auto');
-    expect(within(dialog).queryByText(/Wilson/)).not.toBeInTheDocument();
-    expect(dialog.className).toContain('max-w-3xl');
-    expect(within(dialog).getByText('Ranking')).toBeInTheDocument();
-    expect(within(dialog).getByText('Decided battle')).toBeInTheDocument();
-
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'How we measure this' }));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]!);
+    expect(screen.queryByRole('button', { name: 'Ranked by 10-win rate.' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'wins ÷ decided battles' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '10W rate' })).toBeInTheDocument();
+    expect(screen.queryByTestId('tier-legend')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'How we measure this' })).not.toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

@@ -87,17 +87,20 @@ const POINT_TOOLTIP_WIDTH = 168;
 const POINT_TOOLTIP_HEIGHT = 56;
 const POINT_TOOLTIP_OFFSET = 18;
 const GRIDLINE_COUNT = 4;
+const HERO_COLUMN_WIDTH_PX = 104;
+const HERO_COLUMN_WIDTH = `${HERO_COLUMN_WIDTH_PX}px`;
+const STAGE_COLUMN_WIDTH_PX = 112;
 const RANKING_COLUMN_WIDTHS = [
-  '18%',
+  HERO_COLUMN_WIDTH,
+  '13.5%',
+  '12.25%',
+  '12.25%',
   '11%',
-  '10%',
-  '10%',
-  '9%',
-  '10%',
-  '8%',
-  '8%',
-  '8%',
-  '8%',
+  '12.25%',
+  '9.75%',
+  '9.75%',
+  '9.75%',
+  '9.5%',
 ];
 
 function isMetricWindow(value: string | null): value is MetricWindow {
@@ -1162,7 +1165,7 @@ function StagePanel({
 
     return sortRows(rows, activeStageSortState, sortAccessors);
   }, [merged, rows, stageSortState, visibleStageKeys]);
-  const stageTableMinWidth = 120 + visibleStageKeys.length * 112;
+  const stageTableMinWidth = HERO_COLUMN_WIDTH_PX + visibleStageKeys.length * STAGE_COLUMN_WIDTH_PX;
   const handleStageSort = (key: StageSortKey, initialDirection: 'asc' | 'desc') => {
     setStageSortState((current) =>
       current == null ? { key, direction: initialDirection } : toggleSort(current, key, initialDirection)

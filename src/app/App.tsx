@@ -26,6 +26,14 @@ function readLocale(search: string): Locale {
   return parseLocale(new URLSearchParams(search).get('lang'));
 }
 
+function isSamePageHashNavigation(nextUrl: URL): boolean {
+  return (
+    nextUrl.pathname === window.location.pathname &&
+    nextUrl.search === window.location.search &&
+    nextUrl.hash.length > 0
+  );
+}
+
 export default function App() {
   const client = useMemo(() => createRuntimeMetricsClient(), []);
   const [location, setLocation] = useState<BrowserLocation>(() => readBrowserLocation());
@@ -62,6 +70,10 @@ export default function App() {
 
       const nextUrl = new URL(target.href);
       if (nextUrl.origin !== window.location.origin || !isSpaRoutePath(nextUrl.pathname)) {
+        return;
+      }
+
+      if (isSamePageHashNavigation(nextUrl)) {
         return;
       }
 

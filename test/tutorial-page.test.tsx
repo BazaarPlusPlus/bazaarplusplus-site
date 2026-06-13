@@ -1,5 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import App from '../src/app/App';
 
@@ -12,6 +12,7 @@ describe('Tutorial route', () => {
 
   afterEach(() => {
     window.history.replaceState({}, '', originalUrl);
+    vi.restoreAllMocks();
   });
 
   test('renders the English mod overview and installation guide at /tutorial', async () => {
@@ -19,9 +20,8 @@ describe('Tutorial route', () => {
 
     render(<App />);
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: /BazaarPlusPlus Tutorial/ })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /BazaarPlusPlus Official Guide/ })).toBeInTheDocument();
+    expect(screen.getByText(/From installation to in-game combat controls/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'What the mod adds' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Run History' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Anonymous Mode' })).toBeInTheDocument();
@@ -46,27 +46,30 @@ describe('Tutorial route', () => {
     expect(screen.getByText(/Launch the game once so BazaarPlusPlus can finish setup/)).toBeInTheDocument();
     expect(
       screen.getByText(
-        /BazaarPlusPlus dock appears above the Settings button, and the game version text below shows BPP version/
+        /Codex button appears above the Settings button, and the game version text below shows BPP version/
       )
     ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: 'Lobby and personalization tools' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: 'Background upload and ghost battles' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Installation guide' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Installation Guide' })).toBeInTheDocument();
     expect(screen.queryByText('Before you install')).not.toBeInTheDocument();
     expect(screen.getByText('Download latest installer')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Common hotkeys' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Combat Hotkeys' })).toBeInTheDocument();
     expect(screen.getByText('Entry controls')).toBeInTheDocument();
     expect(screen.getByText('Preview holds')).toBeInTheDocument();
     expect(screen.getByText('Enchant preview')).toBeInTheDocument();
     expect(screen.getByText('Upgrade preview')).toBeInTheDocument();
     expect(screen.getByText('Ten-Win Build')).toBeInTheDocument();
+    expect(screen.getByText('Codex')).toBeInTheDocument();
     expect(screen.getByText(/Rebind Ctrl \/ Shift preview hotkeys in Settings -> Gameplay Settings/)).toBeInTheDocument();
     expect(screen.getByText('Caps Lock')).toBeInTheDocument();
-    expect(screen.getByText('A / D')).toBeInTheDocument();
-    expect(screen.getByText('W / S')).toBeInTheDocument();
-    expect(screen.getByText('Switch view')).toBeInTheDocument();
+    expect(screen.getByText('Tab')).toBeInTheDocument();
+    expect(screen.queryByText('A / D')).not.toBeInTheDocument();
+    expect(screen.queryByText('W / S')).not.toBeInTheDocument();
+    expect(screen.getByText(/Open the codex/)).toBeInTheDocument();
+    expect(screen.queryByText('Switch view')).not.toBeInTheDocument();
     expect(screen.queryByText('Switch display')).not.toBeInTheDocument();
-    expect(screen.getByText('Switch build')).toBeInTheDocument();
+    expect(screen.queryByText('Switch build')).not.toBeInTheDocument();
     expect(document.body).toHaveTextContent(/Compare current set with Ten-Win builds/);
     expect(screen.queryByText(/Compare the selected set with Ten-Win builds/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Open build view and compare the selected set with Ten-Win builds/)).not.toBeInTheDocument();
@@ -99,13 +102,13 @@ describe('Tutorial route', () => {
     expect(screen.queryByText('BepInEx 5 is installed in the game directory.')).not.toBeInTheDocument();
     expect(screen.queryByText('Advanced manual install')).not.toBeInTheDocument();
     expect(screen.queryByText(/release-page instructions/)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(6);
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(15);
     expect(screen.queryByRole('heading', { level: 2, name: 'Data and network behavior' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open downloads' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Download Now' })).toHaveAttribute(
       'href',
       '/download?lang=en'
     );
-    expect(screen.getByRole('link', { name: 'Support BazaarPlusPlus' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Support the Project' })).toHaveAttribute(
       'href',
       '/support?lang=en'
     );
@@ -117,7 +120,8 @@ describe('Tutorial route', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { level: 1, name: /BazaarPlusPlus 使用教程/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /BazaarPlusPlus 官方指南/ })).toBeInTheDocument();
+    expect(screen.getByText(/从下载安装到实战技巧/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: '模组主要功能' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '对局历史' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '匿名模式' })).toBeInTheDocument();
@@ -130,7 +134,7 @@ describe('Tutorial route', () => {
     const runHistory = within(runHistoryCard as HTMLElement);
     expect(runHistory.getByText(/打开对局历史，回看对局记录、战斗回放和幽灵对战/)).toBeInTheDocument();
     expect(runHistory.getByText(/快速找回刚结束的对局和关键战斗/)).toBeInTheDocument();
-    expect(screen.getByText(/本地玩家名显示为 Anonymous/)).toBeInTheDocument();
+    expect(screen.getByText(/在本地隐藏真实玩家昵称，保护隐私/)).toBeInTheDocument();
     expect(screen.getByText(/截图和录制时隐藏本地名称/)).toBeInTheDocument();
     expect(screen.getByText(/直播或分享画面时保持匿名展示/)).toBeInTheDocument();
     expect(screen.queryByText(/截图、录制或直播时隐藏名称/)).not.toBeInTheDocument();
@@ -143,7 +147,7 @@ describe('Tutorial route', () => {
     expect(screen.getByText(/可按需要隐藏名次、夸张展示战力/)).toBeInTheDocument();
     expect(screen.queryByText(/调整 Legendary 排名相关显示/)).not.toBeInTheDocument();
     expect(screen.getByText(/查看物品时提前看见附魔或升级后的变化/)).toBeInTheDocument();
-    expect(screen.getByText(/附魔预览进行附魔后效果补进物品提示，方便比较不同选择/)).toBeInTheDocument();
+    expect(screen.getByText(/将附魔后的效果直接整合进物品提示，方便横向对比不同选择/)).toBeInTheDocument();
     expect(screen.getByText(/升级预览适合在选择遭遇，调整构筑时，确认升级后的收益/)).toBeInTheDocument();
     expect(screen.queryByText(/附魔预览会把附魔后的数值与效果补进物品提示/)).not.toBeInTheDocument();
     expect(screen.queryByText(/购物、选奖励/)).not.toBeInTheDocument();
@@ -152,14 +156,17 @@ describe('Tutorial route', () => {
     expect(screen.getByText(/按你的常用地区术语显示 BazaarPlusPlus 中文界面/)).toBeInTheDocument();
     expect(screen.getByText(/支持简体中文、台湾繁体和香港繁体的术语习惯/)).toBeInTheDocument();
     expect(screen.getByText(/让 BazaarPlusPlus 完成初始化/)).toBeInTheDocument();
-    expect(screen.getByText(/设置按钮上方会出现 BazaarPlusPlus dock/)).toBeInTheDocument();
+    expect(screen.getByText(/设置按钮上方会出现图鉴按钮/)).toBeInTheDocument();
     expect(screen.getByText(/下方游戏版本信息会显示 BPP version/)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: '大厅与个性化设置' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: '后台上传与 Ghost Battles' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '安装指南' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '下载与安装指南' })).toBeInTheDocument();
     expect(screen.queryByText('安装前确认')).not.toBeInTheDocument();
     expect(screen.getByText('下载最新安装器')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '常用键位' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '实战快捷键' })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
+    ).toEqual(['模组主要功能', '实战快捷键', '下载与安装指南']);
     expect(screen.getByText('快捷入口')).toBeInTheDocument();
     expect(screen.getByText('按住预览')).toBeInTheDocument();
     expect(screen.getByText('附魔预览')).toBeInTheDocument();
@@ -171,15 +178,18 @@ describe('Tutorial route', () => {
     expect(screen.queryByText(/未始终显示时按住，查看物品附魔后的提示变化/)).not.toBeInTheDocument();
     expect(screen.queryByText(/悬停物品时按住，查看升级后的数值和效果/)).not.toBeInTheDocument();
     expect(screen.getByText('十胜阵容')).toBeInTheDocument();
+    expect(screen.getAllByText('图鉴')).toHaveLength(2);
     expect(screen.getByText(/在游戏“设置” -> “游玩设置”中重绑 Ctrl \/ Shift 预览键位/)).toBeInTheDocument();
     expect(screen.getByText('Caps Lock')).toBeInTheDocument();
-    expect(screen.getByText('A / D')).toBeInTheDocument();
-    expect(screen.getByText('W / S')).toBeInTheDocument();
-    expect(screen.getByText('打开')).toBeInTheDocument();
-    expect(screen.getByText('切换视图')).toBeInTheDocument();
+    expect(screen.getByText('Tab')).toBeInTheDocument();
+    expect(screen.queryByText('A / D')).not.toBeInTheDocument();
+    expect(screen.queryByText('W / S')).not.toBeInTheDocument();
+    expect(screen.getAllByText('打开')).toHaveLength(2);
+    expect(screen.queryByText('切换视图')).not.toBeInTheDocument();
     expect(screen.queryByText('切换展示')).not.toBeInTheDocument();
-    expect(screen.getByText('切换阵容')).toBeInTheDocument();
+    expect(screen.queryByText('切换阵容')).not.toBeInTheDocument();
     expect(screen.getByText(/对比当前卡组与十胜阵容/)).toBeInTheDocument();
+    expect(screen.getByText('打开图鉴')).toBeInTheDocument();
     expect(screen.queryByText(/打开阵容视图，对比当前卡组与十胜阵容/)).not.toBeInTheDocument();
     expect(screen.queryByText(/打开阵容视图后，切换当前卡组、十胜阵容和候选阵容/)).not.toBeInTheDocument();
     expect(screen.queryByText(/切换当前卡组、十胜阵容并浏览候选/)).not.toBeInTheDocument();
@@ -211,9 +221,9 @@ describe('Tutorial route', () => {
     expect(screen.queryByText('游戏目录中已经安装 BepInEx 5')).not.toBeInTheDocument();
     expect(screen.queryByText('高级手动安装')).not.toBeInTheDocument();
     expect(screen.queryByText(/发布页的手动安装说明/)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(6);
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(15);
     expect(screen.queryByRole('heading', { level: 2, name: '数据与网络行为' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '打开下载页' })).toHaveAttribute('href', '/download');
-    expect(screen.getByRole('link', { name: '前往支持' })).toHaveAttribute('href', '/support');
+    expect(screen.getByRole('link', { name: '立即下载' })).toHaveAttribute('href', '/download');
+    expect(screen.getByRole('link', { name: '赞助项目' })).toHaveAttribute('href', '/support');
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
 
 import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
@@ -172,20 +172,21 @@ function getChartY(value: number, min: number, max: number) {
 }
 
 function getNearestChartPoint(
-  event: ReactMouseEvent<SVGPolylineElement>,
+  event: ReactMouseEvent<SVGElement> | ReactTouchEvent<SVGElement>,
   points: ChartPoint[]
 ): ChartPoint | undefined {
   if (points.length === 0) {
     return undefined;
   }
 
-  const svg = event.currentTarget.ownerSVGElement;
+  const svg = event.currentTarget.ownerSVGElement || (event.currentTarget as SVGSVGElement);
   const rect = svg?.getBoundingClientRect();
   if (rect == null || rect.width <= 0) {
     return points.at(-1);
   }
 
-  const mouseX = ((event.clientX - rect.left) / rect.width) * CHART_WIDTH;
+  const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+  const mouseX = ((clientX - rect.left) / rect.width) * CHART_WIDTH;
   return points.reduce((nearest, point) =>
     Math.abs(point.x - mouseX) < Math.abs(nearest.x - mouseX) ? point : nearest
   );
@@ -576,15 +577,16 @@ export default function HeroOverviewDashboard({
                 <section data-testid="trend-panel" className="grid min-w-0 gap-3">
                   <div
                     data-testid="daily-winrate-chart"
-                    className="h-full min-h-[220px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] p-2 sm:min-h-[280px] sm:p-3 xl:min-h-[320px]"
+                    className="relative h-full min-h-[220px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] sm:min-h-[280px] xl:min-h-[320px]"
                   >
-                    {trendSeries.length > 0 ? (
-                <svg
-                  viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-                  className="block h-full w-full"
-                  role="img"
-                  aria-label={heroCopy.trend.chartAriaLabel}
-                >
+                    <div className="h-full w-full overflow-x-auto overflow-y-hidden p-2 sm:p-3">
+                      {trendSeries.length > 0 ? (
+                  <svg
+                    viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+                    className="block h-full w-full min-w-[720px]"
+                    role="img"
+                    aria-label={heroCopy.trend.chartAriaLabel}
+                  >
                   <defs>
                     {focusedTrendSeries ? (
                       <linearGradient id="focused-area" x1="0" y1="0" x2="0" y2="1">
@@ -720,7 +722,11 @@ export default function HeroOverviewDashboard({
                             aria-hidden="true"
                             onMouseEnter={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
                             onMouseMove={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
+                            onTouchStart={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
+                            onTouchMove={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
                             onMouseLeave={clearTrendPoint}
+                            onTouchEnd={clearTrendPoint}
+                            onTouchCancel={clearTrendPoint}
                             onClick={() => setFocusedHero(heroSeries.hero)}
                           />
                         ))}
@@ -826,6 +832,7 @@ export default function HeroOverviewDashboard({
                       </div>
                     )}
                   </div>
+                </div>
 
                   {focusedTrendSeries != null && focusedTrendSeries.nullPointCount > 0 ? (
                     <p className="text-[0.72rem] leading-5 text-[color:var(--color-text-faint)]">
@@ -960,7 +967,7 @@ export default function HeroOverviewDashboard({
                   </colgroup>
                   <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
                     <tr>
-                      <SortableHeader label={heroCopy.tableHeaders.hero} className="sticky left-0 z-20 bg-[color:var(--color-bg-card)] px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.hero} className="sticky left-0 z-20 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} />
@@ -973,7 +980,7 @@ export default function HeroOverviewDashboard({
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedRows.map((row, index) => {
+                    {sortedRows.map((row) => {
                       const heroColor = getHeroColor(row.hero);
                       const isSelected = row.hero === focusedHero;
                       const rateRatio =
@@ -986,19 +993,13 @@ export default function HeroOverviewDashboard({
                           className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
                           style={{ '--hero-color': heroColor } as React.CSSProperties}
                         >
-                          <td className="sticky left-0 z-10 bg-[color:var(--color-bg-card)] px-5 py-4">
+                          <td className="sticky left-0 z-10 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-4">
                             <button
                               type="button"
                               data-selected={isSelected ? 'true' : 'false'}
                               onClick={() => setFocusedHero(row.hero)}
-                              className="inline-flex items-center gap-3 bg-transparent p-0 text-left transition"
+                              className="inline-flex items-center bg-transparent p-0 text-left transition"
                             >
-                              <span
-                                className="font-display-italic tnum text-[0.78rem] text-[color:var(--color-text-faint)]"
-                                aria-hidden="true"
-                              >
-                                {String(index + 1).padStart(2, '0')}
-                              </span>
                               <HeroBadge hero={row.hero} selected={isSelected} size="sm" />
                             </button>
                           </td>
@@ -1064,6 +1065,7 @@ export default function HeroOverviewDashboard({
                 stageCopy={heroCopy.stage}
                 noDataLabel={heroCopy.snapshot.noData}
                 noValueLabel={noValueLabel}
+                onSelectHero={setFocusedHero}
               />
             </section>
           ) : null}
@@ -1122,6 +1124,7 @@ function StagePanel({
   stageCopy,
   noDataLabel,
   noValueLabel,
+  onSelectHero,
 }: {
   focusedHero: string | null;
   merged: Map<string, MergedHeroRow>;
@@ -1131,6 +1134,7 @@ function StagePanel({
   stageCopy: StageCopy;
   noDataLabel: string;
   noValueLabel: string;
+  onSelectHero: (hero: string) => void;
 }) {
   const [stageSortState, setStageSortState] = useState<SortState<StageSortKey> | null>(null);
 
@@ -1173,22 +1177,30 @@ function StagePanel({
   };
 
   return (
-    <section data-testid="stage-panel" className="surface p-5">
-      <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
-        {stageCopy.title}
-      </h3>
+    <section data-testid="stage-panel" className="surface overflow-hidden">
+      <div className="border-b border-[color:var(--color-border-soft)] px-6 py-5">
+        <h2 className="font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+          {stageCopy.title}
+        </h2>
+      </div>
 
       {hasAnyStageData ? (
-        <div className="mt-4 overflow-x-auto">
+        <div className="overflow-x-auto">
           <table
-            className="w-full min-w-[360px] table-fixed border-collapse text-[0.78rem]"
+            className="w-full min-w-[360px] table-fixed border-collapse text-sm"
             style={{ minWidth: stageTableMinWidth }}
           >
-            <thead className="font-display-italic text-left text-[0.66rem] uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
+            <colgroup>
+              <col style={{ width: HERO_COLUMN_WIDTH }} />
+              {visibleStageKeys.map((key) => (
+                <col key={key} />
+              ))}
+            </colgroup>
+            <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
               <tr>
                 <SortableHeader
                   label={heroLabel}
-                  className="sticky left-0 z-20 bg-[color:var(--color-bg-card)] py-2 pr-2"
+                  className="sticky left-0 z-20 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-3.5"
                   activeDirection={stageSortState?.key === 'hero' ? stageSortState.direction : undefined}
                   onToggle={() => handleStageSort('hero', 'asc')}
                 />
@@ -1196,7 +1208,7 @@ function StagePanel({
                   <SortableHeader
                     key={key}
                     label={stageCopy[key]}
-                    className="px-2 py-2"
+                    className="px-3 py-3.5"
                     activeDirection={stageSortState?.key === key ? stageSortState.direction : undefined}
                     onToggle={() => handleStageSort(key, 'desc')}
                   />
@@ -1206,21 +1218,30 @@ function StagePanel({
             <tbody>
               {sortedStageRows.map((row) => {
                 const counts = merged.get(row.hero)?.battleDays;
+                const heroColor = getHeroColor(row.hero);
                 return (
                   <tr
                     key={row.hero}
-                    className="metric-row border-t border-[color:var(--color-border-soft)]"
+                    className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-[color:var(--color-text-base)]"
                     data-selected={row.hero === focusedHero ? 'true' : 'false'}
+                    style={{ '--hero-color': heroColor } as React.CSSProperties}
                   >
-                    <td className="sticky left-0 z-10 bg-[color:var(--color-bg-card)] py-2 pr-2">
-                      <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
+                    <td className="sticky left-0 z-10 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-4">
+                      <button
+                        type="button"
+                        data-selected={row.hero === focusedHero ? 'true' : 'false'}
+                        onClick={() => onSelectHero(row.hero)}
+                        className="inline-flex items-center bg-transparent p-0 text-left transition"
+                      >
+                        <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
+                      </button>
                     </td>
                     {visibleStageKeys.map((key) => {
                       const rate = bucketRate(counts?.[key]);
                       return (
                         <td
                           key={key}
-                          className="databar relative px-2 py-2 tnum text-[color:var(--color-text-base)]"
+                          className="databar relative px-3 py-4 tnum text-[color:var(--color-text-base)]"
                           style={{ '--bar-width': `${(rate ?? 0) * 100}%` } as React.CSSProperties}
                           aria-label={rate == null ? noValueLabel : undefined}
                         >
@@ -1235,7 +1256,9 @@ function StagePanel({
           </table>
         </div>
       ) : (
-        <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
+        </div>
       )}
     </section>
   );

@@ -238,6 +238,7 @@ export type SupportPageCopy = {
 export type TutorialPageCopy = {
   eyebrow: string;
   title: string;
+  intro: string;
   primaryActionLabel: string;
   secondaryActionLabel: string;
   featureHeading: string;
@@ -441,12 +442,29 @@ const zh: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: 'BazaarPlusPlus 教程',
-    title: 'BazaarPlusPlus 使用教程',
-    primaryActionLabel: '打开下载页',
-    secondaryActionLabel: '前往支持',
+    eyebrow: '新手指南',
+    title: 'BazaarPlusPlus 官方指南',
+    intro: '从下载安装到实战技巧，带你全面了解 BazaarPlusPlus 的各项核心功能，助你快速上手。',
+    primaryActionLabel: '立即下载',
+    secondaryActionLabel: '赞助项目',
     featureHeading: '模组主要功能',
     features: [
+      {
+        title: '图鉴',
+        description: '在游戏中随时查阅所有物品与技能，支持多维度的深度检索',
+        details: [
+          '按英雄、品质、体型，甚至售卖商人进行精细筛选',
+          '支持跟随当前游戏天数，显示当前阶段可获取的物品',
+        ],
+      },
+      {
+        title: 'BazaarDB 自动上传',
+        description: '参与社区数据共建，在结算时自动上传通关截图与阵容数据',
+        details: [
+          '上传完全在后台进行，且仅在非战斗状态执行，确保游戏流畅',
+          '此功能默认关闭，可在设置中手动开启，贡献你的构筑数据',
+        ],
+      },
       {
         title: '对局历史',
         description: '打开对局历史，回看对局记录、战斗回放和幽灵对战',
@@ -456,8 +474,16 @@ const zh: LocalizedSiteCopy = {
         ],
       },
       {
+        title: '战斗状态栏',
+        description: '在战斗中查看时间、暂停状态和速度控制',
+        details: [
+          '适合复盘战斗节奏，或在录制时控制播放',
+          '速度按钮会在 0.50、0.67 和 1.00 倍之间切换',
+        ],
+      },
+      {
         title: '匿名模式',
-        description: '本地玩家名显示为 Anonymous',
+        description: '在本地隐藏真实玩家昵称，保护隐私',
         details: ['截图和录制时隐藏本地名称', '直播或分享画面时保持匿名展示'],
       },
       {
@@ -472,16 +498,8 @@ const zh: LocalizedSiteCopy = {
         title: '附魔与升级预览',
         description: '查看物品时提前看见附魔或升级后的变化，减少临场判断成本',
         details: [
-          '附魔预览进行附魔后效果补进物品提示，方便比较不同选择',
+          '将附魔后的效果直接整合进物品提示，方便横向对比不同选择',
           '升级预览适合在选择遭遇，调整构筑时，确认升级后的收益',
-        ],
-      },
-      {
-        title: '战斗状态栏',
-        description: '在战斗中查看时间、暂停状态和速度控制',
-        details: [
-          '适合复盘战斗节奏，或在录制时控制播放',
-          '速度按钮会在 0.50、0.67 和 1.00 倍之间切换',
         ],
       },
       {
@@ -494,7 +512,7 @@ const zh: LocalizedSiteCopy = {
       },
     ],
     installation: {
-      heading: '安装指南',
+      heading: '下载与安装指南',
       steps: [
         {
           title: '下载最新安装器',
@@ -502,7 +520,7 @@ const zh: LocalizedSiteCopy = {
         },
         {
           title: '运行安装器',
-          description: '关闭游戏后运行安装器。更新时建议先卸载旧版本，再安装新版本',
+          description: '请在关闭游戏后运行安装程序。如需更新，建议先卸载旧版本。',
         },
         {
           title: '启动游戏完成初始化',
@@ -510,12 +528,12 @@ const zh: LocalizedSiteCopy = {
         },
         {
           title: '确认模组生效',
-          description: '主菜单设置按钮上方会出现 BazaarPlusPlus dock；下方游戏版本信息会显示 BPP version',
+          description: '主菜单设置按钮上方会出现图鉴按钮；下方游戏版本信息会显示 BPP version',
         },
       ],
     },
     quickStart: {
-      heading: '常用键位',
+      heading: '实战快捷键',
       groups: [
         {
           title: '快捷入口',
@@ -527,11 +545,12 @@ const zh: LocalizedSiteCopy = {
               description: '打开对局历史，回看对局记录、战斗回放和幽灵对战',
             },
             {
-              bindings: [
-                { key: 'Caps Lock', action: '打开' },
-                { key: 'A / D', action: '切换视图' },
-                { key: 'W / S', action: '切换阵容' },
-              ],
+              bindings: [{ key: 'Tab', action: '打开' }],
+              title: '图鉴',
+              description: '打开图鉴',
+            },
+            {
+              bindings: [{ key: 'Caps Lock', action: '打开' }],
               title: '十胜阵容',
               description: '对比当前卡组与十胜阵容',
             },
@@ -799,18 +818,43 @@ const en: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: 'BazaarPlusPlus Tutorial',
-    title: 'BazaarPlusPlus Tutorial',
-    primaryActionLabel: 'Open downloads',
-    secondaryActionLabel: 'Support BazaarPlusPlus',
+    eyebrow: 'Getting Started',
+    title: 'BazaarPlusPlus Official Guide',
+    intro: 'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.',
+    primaryActionLabel: 'Download Now',
+    secondaryActionLabel: 'Support the Project',
     featureHeading: 'What the mod adds',
     features: [
+      {
+        title: 'Card Collection',
+        description: 'Browse all items and skills in-game with powerful, multi-dimensional filters.',
+        details: [
+          'Filter precisely by Hero, Tier, Size, or even the specific Merchant.',
+          'Sync with your current run day to see exactly what is available to you.',
+        ],
+      },
+      {
+        title: 'BazaarDB Auto Upload',
+        description: 'Contribute to community data by automatically uploading your end-of-run boards and stats.',
+        details: [
+          'Uploads run silently in the background only when out of combat to ensure zero lag.',
+          'This feature is opt-in and disabled by default. Turn it on in settings to help build the database.',
+        ],
+      },
       {
         title: 'Run History',
         description: 'Open run history to review saved runs, combat replays, and ghost battles.',
         details: [
           'Return to recent runs and key fights without leaving the game flow.',
           'Saved local battles and downloaded replays can open from history.',
+        ],
+      },
+      {
+        title: 'Combat Controls',
+        description: 'Show combat time, pause state, and speed controls during fights.',
+        details: [
+          'Useful for reviewing combat pacing or controlling playback while recording.',
+          'Speed buttons cycle between 0.50x, 0.67x, and 1.00x.',
         ],
       },
       {
@@ -838,14 +882,6 @@ const en: LocalizedSiteCopy = {
         ],
       },
       {
-        title: 'Combat Controls',
-        description: 'Show combat time, pause state, and speed controls during fights.',
-        details: [
-          'Useful for reviewing combat pacing or controlling playback while recording.',
-          'Speed buttons cycle between 0.50x, 0.67x, and 1.00x.',
-        ],
-      },
-      {
         title: 'Chinese Terminology',
         description: 'Display BazaarPlusPlus Chinese UI with the regional terminology you prefer.',
         details: [
@@ -855,7 +891,7 @@ const en: LocalizedSiteCopy = {
       },
     ],
     installation: {
-      heading: 'Installation guide',
+      heading: 'Installation Guide',
       steps: [
         {
           title: 'Download latest installer',
@@ -872,12 +908,12 @@ const en: LocalizedSiteCopy = {
         {
           title: 'Confirm the mod loaded',
           description:
-            'On the main menu, a BazaarPlusPlus dock appears above the Settings button, and the game version text below shows BPP version.',
+            'On the main menu, a Codex button appears above the Settings button, and the game version text below shows BPP version.',
         },
       ],
     },
     quickStart: {
-      heading: 'Common hotkeys',
+      heading: 'Combat Hotkeys',
       groups: [
         {
           title: 'Entry controls',
@@ -889,11 +925,12 @@ const en: LocalizedSiteCopy = {
               description: 'Open recent runs, battles, and board snapshots from the lobby.',
             },
             {
-              bindings: [
-                { key: 'Caps Lock', action: 'Open' },
-                { key: 'A / D', action: 'Switch view' },
-                { key: 'W / S', action: 'Switch build' },
-              ],
+              bindings: [{ key: 'Tab', action: 'Open' }],
+              title: 'Codex',
+              description: 'Open the codex.',
+            },
+            {
+              bindings: [{ key: 'Caps Lock', action: 'Open' }],
               title: 'Ten-Win Build',
               description: 'Compare current set with Ten-Win builds.',
             },

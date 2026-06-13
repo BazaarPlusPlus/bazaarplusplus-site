@@ -47,30 +47,30 @@ describe('site copy', () => {
     expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
     expect(zhCopy.secondaryNav.tutorial).toBe('教程');
+    expect(zhCopy.tutorial.intro).toBe(
+      '从下载安装到实战技巧，带你全面了解 BazaarPlusPlus 的各项核心功能，助你快速上手。'
+    );
     expect(zhCopy.tutorial.installation.steps[0]?.title).toBe('下载最新安装器');
     expect(zhCopy.tutorial.installation.steps[3]?.description).toBe(
-      '主菜单设置按钮上方会出现 BazaarPlusPlus dock；下方游戏版本信息会显示 BPP version'
+      '主菜单设置按钮上方会出现图鉴按钮；下方游戏版本信息会显示 BPP version'
     );
     expect(zhCopy.tutorial.features.find((feature) => feature.title === '附魔与升级预览')?.details).toEqual([
-      '附魔预览进行附魔后效果补进物品提示，方便比较不同选择',
+      '将附魔后的效果直接整合进物品提示，方便横向对比不同选择',
       '升级预览适合在选择遭遇，调整构筑时，确认升级后的收益',
     ]);
     expect(zhCopy.tutorial.features.find((feature) => feature.title === '匿名模式')).toMatchObject({
-      description: '本地玩家名显示为 Anonymous',
+      description: '在本地隐藏真实玩家昵称，保护隐私',
       details: ['截图和录制时隐藏本地名称', '直播或分享画面时保持匿名展示'],
     });
-    expect(zhCopy.tutorial.quickStart.heading).toBe('常用键位');
+    expect(zhCopy.tutorial.quickStart.heading).toBe('实战快捷键');
     expect(zhCopy.tutorial.quickStart.groups.map((group) => group.title)).toEqual([
       '快捷入口',
       '按住预览',
     ]);
     expect(zhCopy.tutorial.quickStart.groups[0]?.items.map((item) => item.bindings)).toEqual([
       [{ key: 'F8' }],
-      [
-        { key: 'Caps Lock', action: '打开' },
-        { key: 'A / D', action: '切换视图' },
-        { key: 'W / S', action: '切换阵容' },
-      ],
+      [{ key: 'Tab', action: '打开' }],
+      [{ key: 'Caps Lock', action: '打开' }],
     ]);
     expect(zhCopy.tutorial.quickStart.groups[1]?.items.map((item) => item.bindings)).toEqual([
       [{ key: 'Ctrl' }],
@@ -103,21 +103,21 @@ describe('site copy', () => {
     expect(zhCopy.stats.heroes.stage.day_13_plus).toBe('第 13 天起');
     expect(enCopy.stats.heroes.stage.day_13_plus).toBe('Day 13+');
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
-    expect(enCopy.tutorial.installation.steps[3]?.description).toBe(
-      'On the main menu, a BazaarPlusPlus dock appears above the Settings button, and the game version text below shows BPP version.'
+    expect(enCopy.tutorial.intro).toBe(
+      'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.'
     );
-    expect(enCopy.tutorial.quickStart.heading).toBe('Common hotkeys');
+    expect(enCopy.tutorial.installation.steps[3]?.description).toBe(
+      'On the main menu, a Codex button appears above the Settings button, and the game version text below shows BPP version.'
+    );
+    expect(enCopy.tutorial.quickStart.heading).toBe('Combat Hotkeys');
     expect(enCopy.tutorial.quickStart.groups.map((group) => group.title)).toEqual([
       'Entry controls',
       'Preview holds',
     ]);
     expect(enCopy.tutorial.quickStart.groups[0]?.items.map((item) => item.bindings)).toEqual([
       [{ key: 'F8' }],
-      [
-        { key: 'Caps Lock', action: 'Open' },
-        { key: 'A / D', action: 'Switch view' },
-        { key: 'W / S', action: 'Switch build' },
-      ],
+      [{ key: 'Tab', action: 'Open' }],
+      [{ key: 'Caps Lock', action: 'Open' }],
     ]);
     expect(enCopy.tutorial.quickStart.groups[1]?.items.map((item) => item.bindings)).toEqual([
       [{ key: 'Ctrl' }],
@@ -125,11 +125,13 @@ describe('site copy', () => {
     ]);
     expect(enCopy.tutorial.quickStart.groups[1]?.note).toBe('Rebind Ctrl / Shift preview hotkeys in Settings -> Gameplay Settings.');
     expect(enCopy.tutorial.features.map((feature) => feature.title)).toEqual([
+      'Card Collection',
+      'BazaarDB Auto Upload',
       'Run History',
+      'Combat Controls',
       'Anonymous Mode',
       'Legendary Rank Display',
       'Enchant and upgrade previews',
-      'Combat Controls',
       'Chinese Terminology',
     ]);
     expect(enCopy.tutorial.features.find((feature) => feature.title === 'Anonymous Mode')).toMatchObject({

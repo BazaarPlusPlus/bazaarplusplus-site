@@ -1,0 +1,93 @@
+test/tutorial-page.test.tsx
+  s_7df17c4f725893::t_2b1e0bc8871c84 54
+  s_7df17c4f725893::t_6d716f27093dc7 57
+  s_7df17c4f725893::t_66016aad3a58aa 123-124
+  s_7df17c4f725893::t_5b9a0fe5332e18 159
+  s_7df17c4f725893::t_70ae0b710f0d63 166
+  s_7df17c4f725893::t_d0c03c71f9e693 169
+  s_7df17c4f725893::t_dca496212d8383 49
+  s_7df17c4f725893::t_421f287203c044 224
+  s_7df17c4f725893::t_dbb4cb408bd86d 137
+  s_7df17c4f725893::t_64f7b810b8bb3e 163
+  s_7df17c4f725893::t_8f79ad81a6b399 23-24
+  s_7df17c4f725893::t_5c25998b900a49 107,111
+  s_7df17c4f725893::t_1332c925842d33 181
+  s_7df17c4f725893::t_c7e661b3486e82 105
+  s_7df17c4f725893::t_d15579766f2921 150
+  s_7df17c4f725893::t_ecdeb7fadc6800 226-227
+src/content/site-copy.ts
+  s_7df17c4f725893::t_314f03cfcaf675 916
+  s_7df17c4f725893::t_91e852b0a2b20d 911
+  s_7df17c4f725893::t_9b85e99b5a33ec 551-553
+  s_7df17c4f725893::t_4e904cc92d3ce0 462
+  s_7df17c4f725893::t_6e2e4a566c8f54 931-933
+  s_7df17c4f725893::t_403bf633bfbc1b 453-461,463-467
+  s_7df17c4f725893::t_d43b942edaf921 853-859
+  s_7df17c4f725893::t_4764d03b8dba87 531
+  s_7df17c4f725893::t_96b562cf3f2972 445-449,486,501,515,523,536
+  s_7df17c4f725893::t_36b49b6742f006 477-483
+  s_7df17c4f725893::t_6c300a450b4659 821-825
+  s_7df17c4f725893::t_770a2cdadfe37f 829-843
+  s_7df17c4f725893::t_b8bfe9ef20b3e5 894
+test/site-copy.test.ts
+  s_7df17c4f725893::t_62f43d5edca7b5 58
+  s_7df17c4f725893::t_df63f712112451 51
+  s_7df17c4f725893::t_c4d8a9cdf9b7a1 112,119-120,128-129,131
+  s_7df17c4f725893::t_a41990494977a1 55
+  s_7df17c4f725893::t_3558f5196e8855 62,65,72-73
+  s_7df17c4f725893::t_7ac4e36e05a79d 107-108,110
+src/features/heroes/HeroOverviewDashboard.tsx
+  s_549d0ed233d285::t_1d6d322383224d 1068
+  s_549d0ed233d285::t_d0e83896e1db7f 1230-1237
+  s_5874b559d574b1::t_483193a47d6392 175,182,188-189
+  s_5874b559d574b1::t_0bfc402fe53721 580-588
+  s_549d0ed233d285::t_04af558e375ad2 1127,1137
+  s_5874b559d574b1::t_e2b2c1957cbcd7 996
+  s_5874b559d574b1::t_dc734c9d27ea90 1
+  s_549d0ed233d285::t_3f91a3cf65e7b5 1180-1185,1188,1190,1199,1203,1211,1221,1225,1227,1229,1244,1259-1261
+  s_549d0ed233d285::t_b5401fa4289b8a 1193-1198
+  s_549d0ed233d285::t_8d55d9e5ac3c5a 983,1001
+  s_5874b559d574b1::t_cbf0f45c5e8ab7 970
+  s_5874b559d574b1::t_f8d70b0b92c397 835
+  s_5874b559d574b1::t_7a4159ad90d826 725-726,728-729
+src/features/tutorial/TutorialPage.tsx
+  s_7df17c4f725893::t_df029a7c334021 18-22,27,31
+  s_7df17c4f725893::t_fcfe8c01d12e7b 103-121,123-124,126,128,130,136,142,144
+  s_7df17c4f725893::t_05cd72c099d214 157-161,163,168-172,175
+  s_7df17c4f725893::t_59673cde5a7eed 240-241
+  s_7df17c4f725893::t_2a82dcf8975952 199,210,217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "92cbc3e1deb0a7a77113c1673ef6670e99b8fd7c",
+  "prompts": {},
+  "sessions": {
+    "s_549d0ed233d285": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a2be6f0edefee59a3c10269",
+        "model": "openrouter-3o__max"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    },
+    "s_5874b559d574b1": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a2bc9a2edefee59a3c10223",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    },
+    "s_7df17c4f725893": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a2af685556a27278717d1f2",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Xinyu YANG <cauyxy@gmail.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}

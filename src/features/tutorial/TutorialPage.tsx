@@ -201,6 +201,8 @@ export default function TutorialPage({ locale }: TutorialPageProps) {
             src="/bazaarplusplus-icon.webp"
             alt=""
             aria-hidden="true"
+            width={96}
+            height={96}
             className="h-24 w-24 object-contain drop-shadow-[0_0_28px_rgba(232,185,74,0.38)]"
             decoding="async"
           />

@@ -75,8 +75,11 @@ export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
             <img
               src="/bazaarplusplus-icon.webp"
               alt=""
+              width={44}
+              height={44}
               className="relative h-11 w-11 object-contain drop-shadow-[0_0_18px_rgba(232,185,74,0.32)]"
-              decoding="async"
+              decoding="sync"
+              fetchPriority="high"
             />
           </span>
           <span className="grid gap-1.5 leading-none">

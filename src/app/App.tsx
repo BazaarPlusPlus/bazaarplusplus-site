@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import DownloadPage from '../features/download/DownloadPage';
 import SupportPage from '../features/support/SupportPage';
@@ -6,9 +6,12 @@ import TutorialPage from '../features/tutorial/TutorialPage';
 import { getPageTitle } from '../content/site-copy';
 import { parseLocale, type Locale } from '../shared/lib/metrics';
 import { createRuntimeMetricsClient } from '../shared/lib/metrics-client';
-import { HeroOverviewPage } from './route-pages';
 import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from './router';
-import { NotFoundScreen } from './screens';
+import { LoadingScreen, NotFoundScreen } from './screens';
+
+const HeroOverviewPage = lazy(() =>
+  import('./route-pages').then((module) => ({ default: module.HeroOverviewPage }))
+);
 
 type BrowserLocation = {
   pathname: string;
@@ -92,7 +95,11 @@ export default function App() {
   }, []);
 
   if (route.page === 'heroes') {
-    return <HeroOverviewPage client={client} locale={locale} search={location.search} />;
+    return (
+      <Suspense fallback={<LoadingScreen locale={locale} />}>
+        <HeroOverviewPage client={client} locale={locale} search={location.search} />
+      </Suspense>
+    );
   }
 
   if (route.page === 'tutorial') {

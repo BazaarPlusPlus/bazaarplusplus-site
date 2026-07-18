@@ -13,7 +13,6 @@ type SecondaryNavCopy = {
 type PageTitleKey =
   | keyof PrimaryNavCopy
   | keyof SecondaryNavCopy
-  | 'download-preview'
   | 'not-found';
 
 type PageTitleCopy = Record<PageTitleKey, string>;
@@ -179,28 +178,6 @@ export type DownloadPageCopy = {
     arch: string;
     actionLabel: string;
   };
-  preview: {
-    eyebrow: string;
-    title: string;
-    versionLabel: string;
-    versionPending: string;
-    versionUnavailable: string;
-    versionFailed: string;
-    cautionTitle: string;
-    cautionLead: string;
-    cautionItems: string[];
-    cautionFeedback: {
-      title: string;
-      body: string;
-      groupLabel: string;
-      groupValue: string;
-    };
-  };
-  previewCta: {
-    eyebrow: string;
-    title: string;
-    actionLabel: string;
-  };
   noteTitle: string;
   noteParagraphs: string[];
 };
@@ -349,7 +326,6 @@ const zh: LocalizedSiteCopy = {
     heroes: '英雄统计',
     tutorial: '教程',
     download: '下载',
-    'download-preview': '预览下载',
     support: '支持',
     'not-found': '页面不存在',
   },
@@ -595,33 +571,6 @@ const zh: LocalizedSiteCopy = {
       arch: 'Apple Silicon · arm64',
       actionLabel: '下载 .dmg',
     },
-    preview: {
-      eyebrow: '预览版下载',
-      title: '下载 BazaarPlusPlus Preview',
-      versionLabel: '预览版本',
-      versionPending: '正在获取 Preview 版本...',
-      versionUnavailable: 'Preview 获取失败',
-      versionFailed: '暂时无法获取 Preview 版本，请稍后重试。',
-      cautionTitle: 'Preview 风险提示',
-      cautionLead:
-        'Preview 版本包含尚未完全验证的新改动，适合愿意提前试用并反馈问题的用户。',
-      cautionItems: [
-        '游戏稳定性可能受到影响',
-        '可能与游戏更新内容不兼容',
-        '稳定性优先的用户建议等待正式版',
-      ],
-      cautionFeedback: {
-        title: '预览反馈',
-        body: '如果遇到问题，欢迎加入预览版 QQ 群反馈。',
-        groupLabel: 'QQ群',
-        groupValue: '672424871',
-      },
-    },
-    previewCta: {
-      eyebrow: 'Preview',
-      title: '想先体验预览版？',
-      actionLabel: '打开 Preview 下载页',
-    },
     noteTitle: '安装提示',
     noteParagraphs: [
       '建议先退出游戏再安装。更新时建议先卸载旧版本，再安装新版本',
@@ -725,7 +674,6 @@ const en: LocalizedSiteCopy = {
     heroes: 'Hero Stats',
     tutorial: 'Tutorial',
     download: 'Download',
-    'download-preview': 'Preview Download',
     support: 'Support',
     'not-found': 'Page Not Found',
   },
@@ -974,33 +922,6 @@ const en: LocalizedSiteCopy = {
       title: 'macOS',
       arch: 'Apple Silicon · arm64',
       actionLabel: 'Download .dmg',
-    },
-    preview: {
-      eyebrow: 'Preview downloads',
-      title: 'Download BazaarPlusPlus Preview',
-      versionLabel: 'Preview version',
-      versionPending: 'Fetching Preview version...',
-      versionUnavailable: 'Preview unavailable',
-      versionFailed: 'Cannot reach the Preview version right now. Please try again later.',
-      cautionTitle: 'Preview Risk Notice',
-      cautionLead:
-        'Preview builds include changes that have not been fully verified yet, and are intended for users who want to try updates early and report issues.',
-      cautionItems: [
-        'Game stability may be affected.',
-        'This build may be incompatible with game updates.',
-        'If stability matters most, wait for the stable release.',
-      ],
-      cautionFeedback: {
-        title: 'Preview Feedback',
-        body: 'If you run into issues, join the Preview QQ group and send feedback.',
-        groupLabel: 'QQ Group',
-        groupValue: '672424871',
-      },
-    },
-    previewCta: {
-      eyebrow: 'Preview',
-      title: 'Want the preview build?',
-      actionLabel: 'Open Preview downloads',
     },
     noteTitle: 'Install notes',
     noteParagraphs: [

@@ -110,10 +110,6 @@ export default function App() {
     return <DownloadPage locale={locale} />;
   }
 
-  if (route.page === 'download-preview') {
-    return <DownloadPage locale={locale} variant="preview" />;
-  }
-
   if (route.page === 'support') {
     return <SupportPage locale={locale} />;
   }

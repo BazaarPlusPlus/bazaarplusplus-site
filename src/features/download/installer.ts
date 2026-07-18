@@ -35,22 +35,10 @@ export async function fetchLatestVersion(signal?: AbortSignal): Promise<VersionM
   return fetchVersionManifest('latest.json', signal);
 }
 
-export async function fetchPreviewVersion(signal?: AbortSignal): Promise<VersionManifest> {
-  return fetchVersionManifest('preview.json', signal);
-}
-
 export function buildDownloadUrl(platform: DownloadPlatform, version: string): string {
   if (platform === 'windows') {
     return `${INSTALLER_BASE}/${version}/windows-x86_64/installer/BazaarPlusPlus_${version}_x64-setup.exe`;
   }
 
   return `${INSTALLER_BASE}/${version}/darwin-aarch64/installer/BazaarPlusPlus_${version}_aarch64.dmg`;
-}
-
-export function buildPreviewDownloadUrl(platform: DownloadPlatform, version: string): string {
-  if (platform === 'windows') {
-    return `${INSTALLER_BASE}/preview/${version}/windows-x86_64/BazaarPlusPlus_${version}_x64-setup.exe`;
-  }
-
-  return `${INSTALLER_BASE}/preview/${version}/darwin-aarch64/BazaarPlusPlus_${version}_aarch64.dmg`;
 }

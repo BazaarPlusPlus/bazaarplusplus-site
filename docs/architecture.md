@@ -1,10 +1,10 @@
 # BazaarPlusPlus Site Architecture
 
-Last updated: 2026-06-07
+Last updated: 2026-07-18
 
 ## Purpose
 
-This site renders the BazaarPlusPlus public website, including support, downloads (with a preview build variant), tutorials, a preview release-notes page, and the hero stats dashboard. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
+This site renders the BazaarPlusPlus public website, including support, stable installer downloads, tutorials, and the hero stats dashboard. It is a Vite + React + TypeScript single-page app deployed as static assets through Cloudflare Workers.
 
 ## Runtime Flow
 
@@ -12,7 +12,7 @@ This site renders the BazaarPlusPlus public website, including support, download
 2. `src/app/App.tsx` creates the runtime metrics client, reads the browser path and query string, resolves the SPA route, parses locale, and sets document title/lang.
 3. `src/app/route-pages.tsx` uses React Query to load route data. Hero overview uses a bounded-concurrency page-data loader in `src/app/page-data.ts`.
 4. Feature dashboards transform raw payloads into view rows and render shared shells, filters, and tables.
-5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, the hero stats dashboard, tutorial, download, preview release notes, support, loading, error, and not-found states.
+5. `src/content/site-copy.ts` provides localized UI copy for shared chrome, the hero stats dashboard, tutorial, download, support, loading, error, and not-found states.
 
 ## Routes
 
@@ -21,9 +21,7 @@ This site renders the BazaarPlusPlus public website, including support, download
 - `/supporters` -> canonicalized to `/support`
 - `/tutorial` -> mod tutorial, install guide, and hotkeys
 - `/download` -> installer downloads
-- `/download/preview` -> installer downloads, preview build variant (deep-link only)
 - `/heroes` -> hero overview dashboard
-- `/release/preview` -> preview release-notes page (deep-link only, no inbound nav link)
 
 Unknown paths render the localized not-found screen.
 

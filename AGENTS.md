@@ -22,7 +22,7 @@
 
 - This is a Vite + React + TypeScript SPA deployed as Cloudflare Workers static assets.
 - Routes are resolved client-side in `src/app/router.ts`; Cloudflare uses SPA fallback.
-- Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, `/download/preview`, `/heroes`, and `/release/preview`; `/supporters` canonicalizes to `/support`. The two preview routes are deep-link only (not in the header nav).
+- Public SPA routes are `/`, `/support`, `/tutorial`, `/download`, and `/heroes`; `/supporters` canonicalizes to `/support`.
 - React Query owns runtime data fetching and caching.
 - Metrics payloads come from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
 - Build/preview can proxy `/metrics/*` through the Vite plugin in `vite.config.ts`.

@@ -23,7 +23,6 @@ describe('site copy', () => {
     expect(getPageTitle('heroes', 'en')).toBe('Hero Stats | BazaarPlusPlus');
     expect(getPageTitle('tutorial', 'en')).toBe('Tutorial | BazaarPlusPlus');
     expect(getPageTitle('download', 'en')).toBe('Download | BazaarPlusPlus');
-    expect(getPageTitle('download-preview', 'zh')).toBe('预览下载 | BazaarPlusPlus');
     expect(getPageTitle('support', 'zh')).toBe('支持 | BazaarPlusPlus');
     expect(getPageTitle('not-found', 'en')).toBe('Page Not Found | BazaarPlusPlus');
   });

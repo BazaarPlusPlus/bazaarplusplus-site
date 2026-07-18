@@ -11,11 +11,9 @@ describe('spa router', () => {
     expect(resolveSpaRoute('/')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/tutorial')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
-    expect(resolveSpaRoute('/download/preview')).toEqual({ page: 'download-preview' });
     expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
     expect(resolveSpaRoute('/tutorial/')).toEqual({ page: 'tutorial' });
     expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
-    expect(resolveSpaRoute('/download/preview/')).toEqual({ page: 'download-preview' });
   });
 
   test('treats /supporters as an alias of /support', () => {
@@ -41,18 +39,20 @@ describe('spa router', () => {
     expect(isSpaRoutePath('/heroes')).toBe(true);
     expect(isSpaRoutePath('/tutorial')).toBe(true);
     expect(isSpaRoutePath('/download')).toBe(true);
-    expect(isSpaRoutePath('/download/preview')).toBe(true);
     expect(isSpaRoutePath('/support')).toBe(true);
     expect(isSpaRoutePath('/archetypes')).toBe(false);
     expect(isSpaRoutePath('/unknown')).toBe(false);
   });
 
-  test('treats removed card, build, and preview release routes as not found', () => {
+  test('treats removed card, build, preview download, and preview release routes as not found', () => {
     expect(resolveSpaRoute('/cards')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/builds')).toEqual({ page: 'not-found' });
+    expect(resolveSpaRoute('/download/preview')).toEqual({ page: 'not-found' });
+    expect(resolveSpaRoute('/download/preview/')).toEqual({ page: 'not-found' });
     expect(resolveSpaRoute('/release/preview')).toEqual({ page: 'not-found' });
     expect(isSpaRoutePath('/cards')).toBe(false);
     expect(isSpaRoutePath('/builds')).toBe(false);
+    expect(isSpaRoutePath('/download/preview')).toBe(false);
     expect(isSpaRoutePath('/release/preview')).toBe(false);
   });
 });

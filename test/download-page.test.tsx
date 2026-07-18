@@ -57,11 +57,8 @@ describe('DownloadPage', () => {
     );
 
     expect(screen.getAllByText(/v3\.1\.1/)).toHaveLength(2);
-    expect(screen.getByRole('heading', { level: 2, name: 'Want the preview build?' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open Preview downloads/ })).toHaveAttribute(
-      'href',
-      '/download/preview?lang=en'
-    );
+    expect(screen.queryByRole('heading', { level: 2, name: 'Want the preview build?' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Open Preview downloads/ })).not.toBeInTheDocument();
     expect(screen.getByText(/check the troubleshooting notes or reinstall the game and BazaarPlusPlus/)).toBeInTheDocument();
     expect(screen.queryByText(/deleting the entire The Bazaar directory/)).not.toBeInTheDocument();
   });
@@ -88,56 +85,4 @@ describe('DownloadPage', () => {
     expect(winButton).toHaveAttribute('aria-disabled', 'true');
   });
 
-  test('renders preview download links from preview manifest', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ version: '4.0.1' }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
-
-    renderWithClient(<DownloadPage locale="en" variant="preview" />);
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Download BazaarPlusPlus Preview' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Preview Risk Notice' })).toBeInTheDocument();
-    expect(screen.getByText(/not been fully verified yet/)).toBeInTheDocument();
-    expect(screen.getByText(/wait for the stable release/)).toBeInTheDocument();
-    expect(screen.getByText('Preview Feedback')).toBeInTheDocument();
-    expect(screen.getByText(/join the Preview QQ group/)).toBeInTheDocument();
-    expect(screen.getByText(/672424871/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Open Preview downloads/ })).not.toBeInTheDocument();
-    expect(await screen.findAllByText(/v4\.0\.1/)).toHaveLength(3);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://bppinstaller.bazaarplusplus.com/preview.json',
-      expect.objectContaining({
-        headers: { Accept: 'application/json' },
-      })
-    );
-
-    expect(screen.getByRole('link', { name: /Download \.exe/ })).toHaveAttribute(
-      'href',
-      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/windows-x86_64/BazaarPlusPlus_4.0.1_x64-setup.exe'
-    );
-    expect(screen.getByRole('link', { name: /Download \.dmg/ })).toHaveAttribute(
-      'href',
-      'https://bppinstaller.bazaarplusplus.com/preview/4.0.1/darwin-aarch64/BazaarPlusPlus_4.0.1_aarch64.dmg'
-    );
-  });
-
-  test('shows preview manifest failure without linking to stable releases', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
-    );
-
-    renderWithClient(<DownloadPage locale="en" variant="preview" />);
-
-    await waitFor(() =>
-      expect(screen.getByText(/Cannot reach the Preview version right now/)).toBeInTheDocument()
-    );
-
-    expect(screen.queryByRole('link', { name: 'GitHub Release' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Download \.exe/ })).toHaveAttribute('aria-disabled', 'true');
-  });
 });

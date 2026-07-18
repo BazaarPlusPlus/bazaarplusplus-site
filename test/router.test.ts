@@ -1,58 +1,162 @@
-import { describe, expect, test } from 'vitest';
+// @vitest-environment node
 
-import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from '../src/app/router';
+import { describe, expect, test, vi } from 'vitest';
 
-describe('spa router', () => {
-  test('resolves top-level stats routes', () => {
-    expect(resolveSpaRoute('/heroes')).toEqual({ page: 'heroes' });
+import {
+  createMemorySpaLocationAdapter,
+  createSpaLocation,
+} from '../src/app/router';
+
+function setup(href: string) {
+  const memory = createMemorySpaLocationAdapter(href);
+  const location = createSpaLocation(memory.adapter);
+  return { memory, location };
+}
+
+describe('deep SPA location interface', () => {
+  test.each([
+    ['https://example.test/', 'support'],
+    ['https://example.test/support', 'support'],
+    ['https://example.test/support/', 'support'],
+    ['https://example.test/tutorial/', 'tutorial'],
+    ['https://example.test/download/', 'download'],
+    ['https://example.test/heroes/', 'heroes'],
+  ] as const)('resolves %s to %s', (href, page) => {
+    expect(setup(href).location.current().route.page).toBe(page);
   });
 
-  test('resolves info pages', () => {
-    expect(resolveSpaRoute('/')).toEqual({ page: 'support' });
-    expect(resolveSpaRoute('/tutorial')).toEqual({ page: 'tutorial' });
-    expect(resolveSpaRoute('/download')).toEqual({ page: 'download' });
-    expect(resolveSpaRoute('/support')).toEqual({ page: 'support' });
-    expect(resolveSpaRoute('/tutorial/')).toEqual({ page: 'tutorial' });
-    expect(resolveSpaRoute('/download/')).toEqual({ page: 'download' });
+  test.each([
+    '/heroes/Mak',
+    '/archetypes',
+    '/cards',
+    '/builds',
+    '/download/preview',
+    '/release/preview',
+    '/unknown',
+  ])('keeps unknown or removed route %s not found', (path) => {
+    expect(setup(`https://example.test${path}`).location.current().route.page).toBe('not-found');
   });
 
-  test('treats /supporters as an alias of /support', () => {
-    expect(resolveSpaRoute('/supporters')).toEqual({ page: 'support' });
-    expect(resolveSpaRoute('/supporters/')).toEqual({ page: 'support' });
-    expect(isSpaRoutePath('/supporters')).toBe(true);
+  test('canonicalizes support aliases with replace semantics while preserving search', () => {
+    const { memory, location } = setup('https://example.test/supporters/?lang=en&w=3d#lost');
+
+    expect(location.current()).toMatchObject({
+      route: { page: 'support' },
+      canonicalHref: '/support?lang=en&w=3d',
+    });
+    location.canonicalize();
+
+    expect(memory.actions).toEqual([{ mode: 'replace', href: '/support?lang=en&w=3d' }]);
+    expect(location.current().pathname).toBe('/support');
   });
 
-  test('getCanonicalPath returns the canonical alias target', () => {
-    expect(getCanonicalPath('/supporters')).toBe('/support');
-    expect(getCanonicalPath('/supporters/')).toBe('/support');
-    expect(getCanonicalPath('/support')).toBeNull();
-    expect(getCanonicalPath('/download')).toBeNull();
-    expect(getCanonicalPath('/unknown')).toBeNull();
+  test('parses locale and Analysis Scope defaults from one resolved model', () => {
+    expect(setup('https://example.test/heroes').location.current()).toMatchObject({
+      locale: 'zh',
+      scope: { window: '1d', tier: 'all' },
+    });
+    expect(
+      setup('https://example.test/heroes?lang=en&w=7d&t=high').location.current()
+    ).toMatchObject({ locale: 'en', scope: { window: '7d', tier: 'high' } });
+    expect(
+      setup('https://example.test/heroes?lang=ja&w=30d&t=platinum').location.current()
+    ).toMatchObject({ locale: 'zh', scope: { window: '1d', tier: 'all' } });
   });
 
-  test('rejects unknown routes and unknown heroes', () => {
-    expect(resolveSpaRoute('/heroes/Mak')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/heroes/Pygmalien')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/heroes/Unknown')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/archetypes')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/unknown')).toEqual({ page: 'not-found' });
-    expect(isSpaRoutePath('/heroes')).toBe(true);
-    expect(isSpaRoutePath('/tutorial')).toBe(true);
-    expect(isSpaRoutePath('/download')).toBe(true);
-    expect(isSpaRoutePath('/support')).toBe(true);
-    expect(isSpaRoutePath('/archetypes')).toBe(false);
-    expect(isSpaRoutePath('/unknown')).toBe(false);
+  test('builds route links from the route catalog with default query values omitted', () => {
+    const current = setup('https://example.test/heroes?lang=en&w=3d&t=high').location.current();
+
+    expect(current.navigation.homeHref).toBe('/?lang=en');
+    expect(current.navigation.heroesHref).toBe('/heroes?lang=en');
+    expect(current.navigation.items).toEqual([
+      { page: 'heroes', group: 'primary', href: '/heroes?lang=en' },
+      { page: 'tutorial', group: 'secondary', href: '/tutorial?lang=en' },
+      { page: 'download', group: 'secondary', href: '/download?lang=en' },
+      { page: 'support', group: 'secondary', href: '/support?lang=en' },
+    ]);
   });
 
-  test('treats removed card, build, preview download, and preview release routes as not found', () => {
-    expect(resolveSpaRoute('/cards')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/builds')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/download/preview')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/download/preview/')).toEqual({ page: 'not-found' });
-    expect(resolveSpaRoute('/release/preview')).toEqual({ page: 'not-found' });
-    expect(isSpaRoutePath('/cards')).toBe(false);
-    expect(isSpaRoutePath('/builds')).toBe(false);
-    expect(isSpaRoutePath('/download/preview')).toBe(false);
-    expect(isSpaRoutePath('/release/preview')).toBe(false);
+  test('locale hrefs preserve path, scope, unrelated query values, and hash', () => {
+    const en = setup(
+      'https://example.test/heroes?w=3d&t=high&keep=yes&lang=en#trend'
+    ).location.current();
+    const zh = setup('https://example.test/heroes?w=7d&keep=yes#trend').location.current();
+
+    expect(en.navigation.localeHrefs.zh).toBe('/heroes?w=3d&t=high&keep=yes#trend');
+    expect(zh.navigation.localeHrefs.en).toBe('/heroes?w=7d&keep=yes&lang=en#trend');
+  });
+
+  test('scope changes use replace, omit defaults, preserve supported current values, and add no history entry', () => {
+    const { memory, location } = setup(
+      'https://example.test/heroes?keep=yes&lang=en&w=3d&t=mid#trend'
+    );
+    const initialLength = memory.entries.length;
+
+    location.replaceScope({ window: '1d', tier: 'all' });
+
+    expect(memory.entries).toHaveLength(initialLength);
+    expect(memory.actions).toEqual([
+      { mode: 'replace', href: '/heroes?keep=yes&lang=en' },
+    ]);
+    expect(location.current()).toMatchObject({
+      locale: 'en',
+      scope: { window: '1d', tier: 'all' },
+    });
+  });
+
+  test('normalizes explicit and invalid scope defaults through replace semantics', () => {
+    const { memory, location } = setup(
+      'https://example.test/heroes?lang=zh&w=invalid&t=all&keep=yes'
+    );
+
+    location.replaceScope(location.current().scope);
+
+    expect(memory.actions).toEqual([
+      { mode: 'replace', href: '/heroes?keep=yes' },
+    ]);
+  });
+
+  test('normal internal navigation uses push semantics', () => {
+    const { memory, location } = setup('https://example.test/tutorial?lang=en');
+
+    expect(
+      location.handleLinkClick({
+        href: 'https://example.test/support?lang=en',
+        button: 0,
+      })
+    ).toBe(true);
+
+    expect(memory.actions).toEqual([{ mode: 'push', href: '/support?lang=en' }]);
+    expect(memory.entries).toHaveLength(2);
+  });
+
+  test.each([
+    ['external origin', { href: 'https://other.test/support', button: 0 }],
+    ['target', { href: 'https://example.test/support', button: 0, target: '_blank' }],
+    ['download', { href: 'https://example.test/support', button: 0, download: true }],
+    ['modifier', { href: 'https://example.test/support', button: 0, metaKey: true }],
+    ['non-primary', { href: 'https://example.test/support', button: 1 }],
+    ['unknown route', { href: 'https://example.test/unknown', button: 0 }],
+    ['same-page hash', { href: 'https://example.test/tutorial?lang=en#part', button: 0 }],
+  ])('retains browser-default behavior for %s links', (_label, click) => {
+    const { memory, location } = setup('https://example.test/tutorial?lang=en');
+
+    expect(location.handleLinkClick(click)).toBe(false);
+    expect(memory.actions).toEqual([]);
+  });
+
+  test('popstate refreshes subscribers from the in-memory adapter', () => {
+    const { memory, location } = setup('https://example.test/tutorial');
+    const listener = vi.fn();
+    const unsubscribe = location.subscribe(listener);
+    location.handleLinkClick({ href: 'https://example.test/support', button: 0 });
+    listener.mockClear();
+
+    memory.back();
+
+    expect(listener).toHaveBeenCalledWith(
+      expect.objectContaining({ route: { page: 'tutorial', path: '/tutorial', group: 'secondary' } })
+    );
+    unsubscribe();
   });
 });

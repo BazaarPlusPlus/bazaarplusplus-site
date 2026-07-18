@@ -5,6 +5,14 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import SupportPage from '../src/features/support/SupportPage';
 import type { Supporter } from '../src/features/support/supporters-data';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
+
+function supportLocation(locale: 'en' | 'zh') {
+  const memory = createMemorySpaLocationAdapter(
+    locale === 'en' ? '/support?lang=en' : '/support'
+  );
+  return createSpaLocation(memory.adapter).current();
+}
 
 function makeTestClient(): QueryClient {
   return new QueryClient({
@@ -50,7 +58,7 @@ describe('SupportPage', () => {
 
   test('renders WeChat and Ko-fi cards with the right links', () => {
     stubSupporterFetch(seededSupporters);
-    renderWithClient(<SupportPage locale="en" />);
+    renderWithClient(<SupportPage location={supportLocation('en')} />);
 
     expect(screen.getByText('Your support helps keep BazaarPlusPlus going.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'WeChat Pay' })).toBeInTheDocument();
@@ -64,7 +72,7 @@ describe('SupportPage', () => {
 
   test('renders the Ko-fi card in English for Chinese locale', () => {
     stubSupporterFetch(seededSupporters);
-    renderWithClient(<SupportPage locale="zh" />);
+    renderWithClient(<SupportPage location={supportLocation('zh')} />);
 
     expect(screen.getByText('Global')).toBeInTheDocument();
     expect(screen.getByText('Buy BazaarPlusPlus a drink on Ko-fi.')).toBeInTheDocument();
@@ -74,7 +82,7 @@ describe('SupportPage', () => {
 
   test('opens and closes the WeChat modal', () => {
     stubSupporterFetch(seededSupporters);
-    renderWithClient(<SupportPage locale="en" />);
+    renderWithClient(<SupportPage location={supportLocation('en')} />);
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
@@ -91,7 +99,7 @@ describe('SupportPage', () => {
 
   test('renders fetched supporters below the support CTAs', async () => {
     stubSupporterFetch(seededSupporters);
-    renderWithClient(<SupportPage locale="zh" />);
+    renderWithClient(<SupportPage location={supportLocation('zh')} />);
 
     expect(screen.getByText('支持者名单')).toBeInTheDocument();
     expect(screen.getByText('感谢每一位支持 BazaarPlusPlus 的朋友。')).toBeInTheDocument();
@@ -110,7 +118,7 @@ describe('SupportPage', () => {
 
   test('uses english copy for the supporters section', async () => {
     stubSupporterFetch(seededSupporters);
-    renderWithClient(<SupportPage locale="en" />);
+    renderWithClient(<SupportPage location={supportLocation('en')} />);
 
     expect(screen.getByText('Roll call')).toBeInTheDocument();
     expect(
@@ -125,7 +133,7 @@ describe('SupportPage', () => {
 
   test('shows the error note when the supporter list fetch fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 503 })));
-    renderWithClient(<SupportPage locale="zh" />);
+    renderWithClient(<SupportPage location={supportLocation('zh')} />);
 
     await waitFor(() =>
       expect(screen.getByText('暂时无法加载支持者名单，请稍后再试。')).toBeInTheDocument()
@@ -134,7 +142,7 @@ describe('SupportPage', () => {
 
   test('shows the empty note when the supporter list is empty', async () => {
     stubSupporterFetch([]);
-    renderWithClient(<SupportPage locale="zh" />);
+    renderWithClient(<SupportPage location={supportLocation('zh')} />);
 
     await waitFor(() =>
       expect(screen.getByText('支持者名单还在整理中，请稍后再来看看。')).toBeInTheDocument()

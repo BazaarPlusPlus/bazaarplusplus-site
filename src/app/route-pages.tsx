@@ -2,38 +2,21 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import HeroOverviewDashboard from '../features/heroes/HeroOverviewDashboard';
+import type { HeroMetricsDataset } from '../features/heroes/hero-metrics-dataset';
+import type { AnalysisScope } from '../features/heroes/hero-analysis';
 import {
-  parseMetricWindow,
-  parseRatingTier,
-  type Locale,
-  type MetricWindow,
-  type RatingTier,
-} from '../shared/lib/metrics';
-import type { RuntimeMetricsClient } from '../shared/lib/metrics-client';
-import {
-  loadHeroOverviewPageData,
-  type HeroOverviewPageData,
-  type PageLoadProgress,
-} from './page-data';
+  loadHeroMetricsDataset,
+  type HeroMetricsLoadProgress,
+  type HeroMetricsTransport,
+} from '../features/heroes/hero-metrics-dataset';
 import { ErrorScreen, LoadingScreen } from './screens';
+import type { ResolvedSpaLocation } from './router';
 
 type RoutePageProps = {
-  client: RuntimeMetricsClient;
-  locale: Locale;
-  search: string;
+  transport: HeroMetricsTransport;
+  location: ResolvedSpaLocation;
+  onScopeChange: (scope: AnalysisScope) => void;
 };
-
-function getInitialWindow(availableWindows: MetricWindow[], search: string): MetricWindow {
-  const requestedWindow = parseMetricWindow(new URLSearchParams(search).get('w'));
-  return availableWindows.includes(requestedWindow)
-    ? requestedWindow
-    : availableWindows[0] ?? '1d';
-}
-
-function getInitialTier(options: RatingTier[], search: string): RatingTier {
-  const requestedTier = parseRatingTier(new URLSearchParams(search).get('t'));
-  return options.includes(requestedTier) ? requestedTier : options[0] ?? 'all';
-}
 
 function usePageQuery<T>(
   queryKey: readonly unknown[],
@@ -45,47 +28,46 @@ function usePageQuery<T>(
   });
 }
 
-export function HeroOverviewPage({ client, locale, search }: RoutePageProps) {
-  const [progress, setProgress] = useState<PageLoadProgress | undefined>();
+export function HeroOverviewPage({ transport, location, onScopeChange }: RoutePageProps) {
+  const [progress, setProgress] = useState<HeroMetricsLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['hero-overview'],
-    (signal) => loadHeroOverviewPageData(client, { onProgress: setProgress, signal })
+    (signal) => loadHeroMetricsDataset(transport, { onProgress: setProgress, signal })
   );
 
   if (isLoading) {
-    return <LoadingScreen locale={locale} progress={progress} />;
+    return <LoadingScreen locale={location.locale} progress={progress} />;
   }
 
   if (!data) {
-    return <ErrorScreen locale={locale} error={error} />;
+    return <ErrorScreen location={location} error={error} />;
   }
 
-  return <HeroOverviewRouteContent data={data} locale={locale} search={search} />;
+  return (
+    <HeroOverviewRouteContent
+      data={data}
+      location={location}
+      onScopeChange={onScopeChange}
+    />
+  );
 }
 
 function HeroOverviewRouteContent({
   data,
-  locale,
-  search,
+  location,
+  onScopeChange,
 }: {
-  data: HeroOverviewPageData;
-  locale: Locale;
-  search: string;
+  data: HeroMetricsDataset;
+  location: ResolvedSpaLocation;
+  onScopeChange: (scope: AnalysisScope) => void;
 }) {
-  const initialSelectedWindow = getInitialWindow(data.availableWindows, search);
-  const initialSelectedTier = getInitialTier(data.availableTiers, search);
-
   return (
     <HeroOverviewDashboard
-      locale={locale}
-      manifest={data.manifest}
-      days={data.days}
-      latestCompleteDay={data.latestCompleteDay}
-      availableWindows={data.availableWindows}
-      availableTiers={data.availableTiers}
-      coverage={data.coverage}
-      initialSelectedWindow={initialSelectedWindow}
-      initialSelectedTier={initialSelectedTier}
+      locale={location.locale}
+      location={location}
+      dataset={data}
+      requestedScope={location.scope}
+      onScopeChange={onScopeChange}
     />
   );
 }

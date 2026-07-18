@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 
-import type { Locale } from '../lib/metrics';
+import type { Locale, ResolvedSpaLocation } from '../../app/router';
 import FooterCredit from './FooterCredit';
 import SiteHeader from './SiteHeader';
 
 type InfoPageShellProps = {
-  activeSection: 'tutorial' | 'download' | 'support';
   locale: Locale;
+  location: ResolvedSpaLocation;
   eyebrow: string;
   title: string;
   intro?: string;
@@ -14,8 +14,8 @@ type InfoPageShellProps = {
 };
 
 export default function InfoPageShell({
-  activeSection,
   locale,
+  location,
   eyebrow,
   title,
   intro,
@@ -23,7 +23,7 @@ export default function InfoPageShell({
 }: InfoPageShellProps) {
   return (
     <div className="relative min-h-screen">
-      <SiteHeader activeSection={activeSection} locale={locale} />
+      <SiteHeader location={location} />
 
       <main className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12 sm:px-10 sm:py-16">
         <section className="relative overflow-hidden">

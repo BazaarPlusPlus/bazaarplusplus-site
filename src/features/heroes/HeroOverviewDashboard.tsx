@@ -2,18 +2,6 @@ import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type 
 
 import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
-  DEFAULT_LOCALE,
-  GAME_DAY_BUCKETS,
-  type AnalyzerV4Manifest,
-  type GameDayBucket,
-  type Locale,
-  type MetricWindow,
-  type RatingTier,
-  type WebHeroDailyPayload,
-} from '../../shared/lib/metrics';
-import {
-  MATCHUP_MIN_SAMPLE,
-  WEB_DAILY_NOMINAL,
   WINDOW_LABELS,
   formatInteger,
   formatNullablePercent,
@@ -22,36 +10,32 @@ import {
 } from '../../shared/lib/dashboard';
 import { getHeroColor, getHeroShortLabel } from '../../shared/lib/heroes';
 import {
-  collectTierRows,
-  deriveHeroMetrics,
-  deriveMatchups,
-  deriveTrendSeries,
-  mergeRows,
-  segmentTrendPoints,
-  selectDays,
-  type HeroMetricsRow,
-  type HeroTrendSeries,
-  type MatchupRow,
-  type MergedHeroRow,
-} from '../../shared/lib/web-daily';
+  analyzeHeroes,
+  type AnalysisScope,
+  type HeroMatchup,
+  type HeroRanking,
+  type HeroStage,
+  type MetricWindow,
+} from './hero-analysis';
+import {
+  GAME_DAY_BUCKETS,
+  type GameDayBucket,
+  type HeroMetricsDataset,
+  type RatingTier,
+} from './hero-metrics-dataset';
+import type { Locale, ResolvedSpaLocation } from '../../app/router';
 import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
 import HeroBadge from '../../shared/components/HeroBadge';
 import { SegmentedButton, SegmentedControl } from '../../shared/components/ScopeFilterPanel';
 import SortableHeader from '../../shared/components/SortableHeader';
 import StatsPageShell from '../../shared/components/StatsPageShell';
 
-import type { HeroOverviewCoverage } from '../../app/page-data';
-
 type HeroOverviewDashboardProps = {
   locale: Locale;
-  manifest: AnalyzerV4Manifest;
-  days: WebHeroDailyPayload[];
-  latestCompleteDay: string;
-  availableWindows: MetricWindow[];
-  availableTiers: RatingTier[];
-  coverage: HeroOverviewCoverage;
-  initialSelectedWindow: MetricWindow;
-  initialSelectedTier: RatingTier;
+  location: ResolvedSpaLocation;
+  dataset: HeroMetricsDataset;
+  requestedScope: AnalysisScope;
+  onScopeChange: (scope: AnalysisScope) => void;
 };
 
 type RankingSortKey =
@@ -103,53 +87,8 @@ const RANKING_COLUMN_WIDTHS = [
   '9.5%',
 ];
 
-function isMetricWindow(value: string | null): value is MetricWindow {
-  return value === '1d' || value === '3d' || value === '7d';
-}
-
-function isRatingTier(value: string | null): value is RatingTier {
-  return value === 'all' || value === 'low' || value === 'mid' || value === 'high';
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-function getValidWindow(
-  candidate: string | null,
-  availableWindows: MetricWindow[],
-  fallback: MetricWindow
-): MetricWindow {
-  return candidate && isMetricWindow(candidate) && availableWindows.includes(candidate)
-    ? candidate
-    : fallback;
-}
-
-function getValidTier(
-  candidate: string | null,
-  availableTiers: RatingTier[],
-  fallback: RatingTier
-): RatingTier {
-  return candidate && isRatingTier(candidate) && availableTiers.includes(candidate)
-    ? candidate
-    : fallback;
-}
-
-function readInitialSelection(
-  availableWindows: MetricWindow[],
-  availableTiers: RatingTier[],
-  fallbackWindow: MetricWindow,
-  fallbackTier: RatingTier
-) {
-  if (typeof window === 'undefined') {
-    return { window: fallbackWindow, tier: fallbackTier };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  return {
-    window: getValidWindow(params.get('w'), availableWindows, fallbackWindow),
-    tier: getValidTier(params.get('t'), availableTiers, fallbackTier),
-  };
 }
 
 function getChartX(dayIndex: number, dayCount: number) {
@@ -192,28 +131,16 @@ function getNearestChartPoint(
   );
 }
 
-function bucketRate(counts: { wins: number; decided: number } | undefined): number | null {
-  if (!counts || counts.decided <= 0) {
-    return null;
-  }
-
-  return counts.wins / counts.decided;
-}
-
 function formatDays(value: number | null): string {
   return value == null ? '—' : value.toFixed(1);
 }
 
 export default function HeroOverviewDashboard({
   locale,
-  manifest,
-  days,
-  latestCompleteDay,
-  availableWindows,
-  availableTiers,
-  coverage,
-  initialSelectedWindow,
-  initialSelectedTier,
+  location,
+  dataset,
+  requestedScope,
+  onScopeChange,
 }: HeroOverviewDashboardProps) {
   const copy = getSiteCopy(locale);
   const heroCopy = copy.stats.heroes;
@@ -221,18 +148,8 @@ export default function HeroOverviewDashboard({
   const coverageCopy = heroCopy.coverage;
   const noValueLabel = copy.common.noValueLabel;
 
-  const initialSelection = useMemo(
-    () =>
-      readInitialSelection(
-        availableWindows,
-        availableTiers,
-        initialSelectedWindow,
-        initialSelectedTier
-      ),
-    [availableTiers, availableWindows, initialSelectedTier, initialSelectedWindow]
-  );
-  const [selectedWindow, setSelectedWindow] = useState<MetricWindow>(initialSelection.window);
-  const [selectedTier, setSelectedTier] = useState<RatingTier>(initialSelection.tier);
+  const [selectedWindow, setSelectedWindow] = useState<MetricWindow>(requestedScope.window);
+  const [selectedTier, setSelectedTier] = useState<RatingTier>(requestedScope.tier);
   const [focusedHero, setFocusedHero] = useState<string | null>(null);
   const [sortState, setSortState] = useState<SortState<RankingSortKey>>({
     key: 'tenWinRate',
@@ -241,54 +158,53 @@ export default function HeroOverviewDashboard({
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
   const [tierFellBack, setTierFellBack] = useState(false);
 
-  // --- window / tier scope ---------------------------------------------------
-  const windowDayRefs = useMemo(
-    () => selectDays(manifest.web.days, selectedWindow, latestCompleteDay),
-    [latestCompleteDay, manifest.web.days, selectedWindow]
-  );
-  const loadedDaySet = useMemo(
-    () => new Set(days.map((payload) => payload.day)),
-    [days]
-  );
-  const loadedWindowDays = useMemo(
-    () => windowDayRefs.filter((ref) => loadedDaySet.has(ref.day)),
-    [loadedDaySet, windowDayRefs]
-  );
-  const failedWindowDays = useMemo(
-    () => windowDayRefs.filter((ref) => coverage.failedDays.includes(ref.day)),
-    [coverage.failedDays, windowDayRefs]
-  );
+  useEffect(() => {
+    setSelectedWindow(requestedScope.window);
+    setSelectedTier(requestedScope.tier);
+  }, [requestedScope.tier, requestedScope.window]);
 
-  const tierRows = useMemo(
-    () => collectTierRows(days, windowDayRefs, selectedTier),
-    [days, selectedTier, windowDayRefs]
+  useEffect(() => {
+    onScopeChange(requestedScope);
+  }, [onScopeChange, requestedScope.tier, requestedScope.window]);
+
+  const analysis = useMemo(
+    () => analyzeHeroes(dataset, { window: selectedWindow, tier: selectedTier }, focusedHero),
+    [dataset, focusedHero, selectedTier, selectedWindow]
   );
-  const allTierRows = useMemo(
-    () => collectTierRows(days, windowDayRefs, 'all'),
-    [days, windowDayRefs]
-  );
+  const availableWindows = analysis.scope.availableWindows;
+  const availableTiers = analysis.scope.availableTiers;
+  const loadedWindowDays = analysis.coverage.usableDates;
+  const failedWindowDays = analysis.coverage.failedDates;
 
   // A tier emptied by a window change falls back to the explicit all row (§9).
   useEffect(() => {
-    if (selectedTier !== 'all' && tierRows.length === 0 && allTierRows.length > 0) {
-      setSelectedTier('all');
+    if (analysis.scope.tierFellBack) {
+      setSelectedTier(analysis.scope.effective.tier);
       setTierFellBack(true);
+      onScopeChange({
+        window: selectedWindow,
+        tier: analysis.scope.effective.tier,
+      });
     }
-  }, [allTierRows.length, selectedTier, tierRows.length]);
+  }, [
+    analysis.scope.effective.tier,
+    analysis.scope.tierFellBack,
+    onScopeChange,
+    selectedWindow,
+  ]);
 
   const selectTier = (tier: RatingTier) => {
     setTierFellBack(false);
     setSelectedTier(tier);
+    onScopeChange({ window: selectedWindow, tier });
   };
 
-  const merged = useMemo(() => mergeRows(tierRows), [tierRows]);
-  const heroMetrics = useMemo(() => {
-    // Base order: completed runs desc then hero asc, so the stable sort below
-    // resolves ties in the documented order.
-    return deriveHeroMetrics(merged).sort(
-      (a, b) => b.runsCompleted - a.runsCompleted || a.hero.localeCompare(b.hero)
-    );
-  }, [merged]);
+  const selectWindow = (window: MetricWindow) => {
+    setSelectedWindow(window);
+    onScopeChange({ window, tier: selectedTier });
+  };
+
+  const heroMetrics = analysis.ranking;
   const sortedRows = useMemo(
     () =>
       sortRows(heroMetrics, sortState, {
@@ -307,64 +223,18 @@ export default function HeroOverviewDashboard({
   );
 
   // --- trend (fixed 7d span; honors tier, ignores window) --------------------
-  const trendSpanRefs = useMemo(
-    () => selectDays(manifest.web.days, '7d', latestCompleteDay),
-    [latestCompleteDay, manifest.web.days]
-  );
-  const trendDayAxis = useMemo(() => trendSpanRefs.map((ref) => ref.day), [trendSpanRefs]);
-  const trendSeries = useMemo(
-    () => deriveTrendSeries(days, trendSpanRefs, selectedTier),
-    [days, selectedTier, trendSpanRefs]
-  );
+  const trendDayAxis = analysis.trend.dayAxis;
+  const trendSeries = analysis.trend.series;
 
   // --- shared focused hero ----------------------------------------------------
   useEffect(() => {
-    const candidates = sortedRows.filter((row) => row.isCanonical);
-    const fallback = candidates[0]?.hero ?? null;
-    if (focusedHero == null || !sortedRows.some((row) => row.hero === focusedHero)) {
-      setFocusedHero(fallback);
+    if (analysis.focus.hero !== focusedHero) {
+      setFocusedHero(analysis.focus.hero);
     }
-  }, [focusedHero, sortedRows]);
+  }, [analysis.focus.hero, focusedHero]);
 
-  const focusedTrendSeries: HeroTrendSeries | undefined = focusedHero
-    ? trendSeries.find((series) => series.hero === focusedHero)
-    : undefined;
-  const focusedMetrics: HeroMetricsRow | undefined = focusedHero
-    ? heroMetrics.find((row) => row.hero === focusedHero)
-    : undefined;
-  const focusedMerged: MergedHeroRow | undefined = focusedHero
-    ? merged.get(focusedHero)
-    : undefined;
-
-  // --- URL writes -------------------------------------------------------------
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    if (selectedWindow !== '1d') {
-      params.set('w', selectedWindow);
-    } else {
-      params.delete('w');
-    }
-
-    if (selectedTier !== 'all') {
-      params.set('t', selectedTier);
-    } else {
-      params.delete('t');
-    }
-
-    if (locale !== DEFAULT_LOCALE) {
-      params.set('lang', locale);
-    } else {
-      params.delete('lang');
-    }
-
-    const query = params.toString();
-    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-    window.history.replaceState({}, '', nextUrl);
-  }, [locale, selectedTier, selectedWindow]);
+  const focusedTrendSeries = analysis.focus.trend ?? undefined;
+  const focusedMetrics = analysis.focus.ranking ?? undefined;
 
   // --- chart geometry ---------------------------------------------------------
   const trendWinRates = trendSeries.flatMap((series) =>
@@ -407,7 +277,7 @@ export default function HeroOverviewDashboard({
   });
 
   // --- coverage ---------------------------------------------------------------
-  const nominalDays = WEB_DAILY_NOMINAL[selectedWindow];
+  const nominalDays = analysis.coverage.nominalDateCount;
   const partialCoverage = loadedWindowDays.length < nominalDays;
 
   const maxTenWinRate = sortedRows.reduce(
@@ -415,13 +285,10 @@ export default function HeroOverviewDashboard({
     0
   );
 
-  const matchups = useMemo(
-    () => (focusedMerged ? deriveMatchups(focusedMerged, MATCHUP_MIN_SAMPLE) : null),
-    [focusedMerged]
-  );
+  const matchups = analysis.focus.matchups;
 
-  const hasAnyData = days.length > 0;
-  const noDaysPublished = coverage.requested.length === 0;
+  const hasAnyData = dataset.days.length > 0;
+  const noDaysPublished = dataset.coverage.requestedDates.length === 0;
   const rankingHasRows = sortedRows.length > 0;
 
   const dossierContextLabel = `${WINDOW_LABELS[selectedWindow]}${coverageCopy.windowSuffix} · ${
@@ -450,11 +317,11 @@ export default function HeroOverviewDashboard({
 
   return (
     <StatsPageShell
-      activeSection="heroes"
       locale={locale}
+      location={location}
       eyebrow={heroCopy.eyebrow}
       title={heroCopy.title}
-      generatedAt={manifest.generated_at}
+      generatedAt={analysis.generatedAt}
       actions={
         <>
           <a
@@ -505,7 +372,7 @@ export default function HeroOverviewDashboard({
                     <SegmentedButton
                       key={option}
                       active={option === selectedWindow}
-                      onClick={() => setSelectedWindow(option)}
+                      onClick={() => selectWindow(option)}
                     >
                       {WINDOW_LABELS[option]}
                     </SegmentedButton>
@@ -653,7 +520,7 @@ export default function HeroOverviewDashboard({
 
                   {/* Focused area fill — drawn per segment beneath all lines */}
                   {focusedTrendSeries
-                    ? segmentTrendPoints(focusedTrendSeries.points, trendDayAxis).map(
+                    ? focusedTrendSeries.segments.map(
                         (segment, segmentIndex) => {
                           const points = segment.map(toChartPoint);
                           if (points.length === 0) return null;
@@ -674,7 +541,7 @@ export default function HeroOverviewDashboard({
                   {trendSeries.map((heroSeries) => {
                     const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
                     const allPoints: ChartPoint[] = heroSeries.points.map(toChartPoint);
-                    const segments = segmentTrendPoints(heroSeries.points, trendDayAxis).map(
+                    const segments = heroSeries.segments.map(
                       (segment) => segment.map(toChartPoint)
                     );
                     const showTrendPoint = (point: ChartPoint | undefined) => {
@@ -915,7 +782,7 @@ export default function HeroOverviewDashboard({
                   </div>
                   <div className="mt-4">
                     <MatchupList
-                      rows={matchups?.rows ?? []}
+                      rows={matchups}
                       matchupCopy={heroCopy.matchups}
                       locale={locale}
                       noValueLabel={noValueLabel}
@@ -948,8 +815,8 @@ export default function HeroOverviewDashboard({
                 {coverageCopy.someDaysUnavailable}{' '}
                 <span className="tnum text-[color:var(--color-text-faint)]">
                   {loadedWindowDays.length > 0
-                    ? `${formatShortDate(loadedWindowDays[0]!.day, locale)} – ${formatShortDate(
-                        loadedWindowDays.at(-1)!.day,
+                    ? `${formatShortDate(loadedWindowDays[0]!, locale)} – ${formatShortDate(
+                        loadedWindowDays.at(-1)!,
                         locale
                       )}`
                     : ''}
@@ -1058,7 +925,7 @@ export default function HeroOverviewDashboard({
 
               <StagePanel
                 focusedHero={focusedHero}
-                merged={merged}
+                stages={analysis.stages}
                 rows={sortedRows}
                 locale={locale}
                 heroLabel={heroCopy.tableHeaders.hero}
@@ -1117,7 +984,7 @@ type StageCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['stage'];
 
 function StagePanel({
   focusedHero,
-  merged,
+  stages,
   rows,
   locale,
   heroLabel,
@@ -1127,8 +994,8 @@ function StagePanel({
   onSelectHero,
 }: {
   focusedHero: string | null;
-  merged: Map<string, MergedHeroRow>;
-  rows: HeroMetricsRow[];
+  stages: HeroStage[];
+  rows: HeroRanking[];
   locale: Locale;
   heroLabel: string;
   stageCopy: StageCopy;
@@ -1139,13 +1006,14 @@ function StagePanel({
   const [stageSortState, setStageSortState] = useState<SortState<StageSortKey> | null>(null);
 
   const visibleStageKeys = GAME_DAY_BUCKETS;
+  const stageByHero = useMemo(
+    () => new Map(stages.map((stage) => [stage.hero, stage])),
+    [stages]
+  );
 
   const hasAnyStageData = rows.some((row) => {
-    const counts = merged.get(row.hero)?.battleDays;
-    return visibleStageKeys.some((key) => {
-      const bucket = counts?.[key];
-      return bucket != null && bucket.decided > 0;
-    });
+    const rates = stageByHero.get(row.hero)?.rates;
+    return visibleStageKeys.some((key) => rates?.[key] != null);
   });
   const sortedStageRows = useMemo(() => {
     const activeStageSortState =
@@ -1160,15 +1028,15 @@ function StagePanel({
 
     const sortAccessors = {
       hero: (row) => row.hero,
-    } as Record<StageSortKey, (row: HeroMetricsRow) => string | number | null | undefined> &
-      Record<string, ((row: HeroMetricsRow) => string | number | null | undefined) | undefined>;
+    } as Record<StageSortKey, (row: HeroRanking) => string | number | null | undefined> &
+      Record<string, ((row: HeroRanking) => string | number | null | undefined) | undefined>;
 
     for (const key of visibleStageKeys) {
-      sortAccessors[key] = (row) => bucketRate(merged.get(row.hero)?.battleDays[key]);
+      sortAccessors[key] = (row) => stageByHero.get(row.hero)?.rates[key];
     }
 
     return sortRows(rows, activeStageSortState, sortAccessors);
-  }, [merged, rows, stageSortState, visibleStageKeys]);
+  }, [rows, stageByHero, stageSortState, visibleStageKeys]);
   const stageTableMinWidth = HERO_COLUMN_WIDTH_PX + visibleStageKeys.length * STAGE_COLUMN_WIDTH_PX;
   const handleStageSort = (key: StageSortKey, initialDirection: 'asc' | 'desc') => {
     setStageSortState((current) =>
@@ -1217,7 +1085,7 @@ function StagePanel({
             </thead>
             <tbody>
               {sortedStageRows.map((row) => {
-                const counts = merged.get(row.hero)?.battleDays;
+                const rates = stageByHero.get(row.hero)?.rates;
                 const heroColor = getHeroColor(row.hero);
                 return (
                   <tr
@@ -1237,7 +1105,7 @@ function StagePanel({
                       </button>
                     </td>
                     {visibleStageKeys.map((key) => {
-                      const rate = bucketRate(counts?.[key]);
+                      const rate = rates?.[key];
                       return (
                         <td
                           key={key}
@@ -1245,7 +1113,7 @@ function StagePanel({
                           style={{ '--bar-width': `${(rate ?? 0) * 100}%` } as React.CSSProperties}
                           aria-label={rate == null ? noValueLabel : undefined}
                         >
-                          <span className="relative">{formatNullablePercent(rate)}</span>
+                          <span className="relative">{formatNullablePercent(rate ?? null)}</span>
                         </td>
                       );
                     })}
@@ -1273,7 +1141,7 @@ function MatchupList({
   noValueLabel,
   className = 'grid gap-2 sm:grid-cols-2 lg:grid-cols-3',
 }: {
-  rows: MatchupRow[];
+  rows: HeroMatchup[];
   matchupCopy: MatchupsCopy;
   locale: Locale;
   noValueLabel: string;

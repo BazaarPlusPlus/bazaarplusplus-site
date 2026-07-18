@@ -1,37 +1,8 @@
-import { buildLocalizedHref } from '../lib/dashboard';
-import { DEFAULT_LOCALE, type Locale } from '../lib/metrics';
 import { getSiteCopy } from '../../content/site-copy';
-
-type SiteHeaderActiveSection =
-  | 'heroes'
-  | 'tutorial'
-  | 'download'
-  | 'support';
-
-type PrimaryNavItem = {
-  key: 'heroes';
-  href: string;
-  labelSource: 'primary';
-};
-
-type SecondaryNavItem = {
-  key: 'tutorial' | 'download' | 'support';
-  href: string;
-  labelSource: 'secondary';
-};
-
-type HeaderNavItem = PrimaryNavItem | SecondaryNavItem;
-
-const HEADER_NAV_ITEMS: HeaderNavItem[] = [
-  { key: 'heroes', href: '/heroes', labelSource: 'primary' },
-  { key: 'tutorial', href: '/tutorial', labelSource: 'secondary' },
-  { key: 'download', href: '/download', labelSource: 'secondary' },
-  { key: 'support', href: '/support', labelSource: 'secondary' },
-];
+import type { Locale, ResolvedSpaLocation } from '../../app/router';
 
 type SiteHeaderProps = {
-  activeSection: SiteHeaderActiveSection;
-  locale: Locale;
+  location: ResolvedSpaLocation;
 };
 
 const LOCALE_OPTIONS: Array<{ code: Locale; label: string }> = [
@@ -39,22 +10,8 @@ const LOCALE_OPTIONS: Array<{ code: Locale; label: string }> = [
   { code: 'zh', label: '中' },
 ];
 
-function buildLocaleToggleHref(targetLocale: Locale): string {
-  if (typeof window === 'undefined') {
-    return '#';
-  }
-
-  const url = new URL(window.location.href);
-  if (targetLocale === DEFAULT_LOCALE) {
-    url.searchParams.delete('lang');
-  } else {
-    url.searchParams.set('lang', targetLocale);
-  }
-
-  return `${url.pathname}${url.search}${url.hash}`;
-}
-
-export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
+export default function SiteHeader({ location }: SiteHeaderProps) {
+  const { locale } = location;
   const copy = getSiteCopy(locale);
   const commonCopy = copy.common;
 
@@ -66,7 +23,7 @@ export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-[color:var(--color-accent-glow)] to-transparent" />
       <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-center gap-4 px-6 py-4 sm:w-[calc(100%-5rem)] sm:justify-between sm:px-10 2xl:px-12">
         <a
-          href={buildLocalizedHref('/', { lang: locale })}
+          href={location.navigation.homeHref}
           aria-label={commonCopy.homeAriaLabel}
           className="group flex w-fit items-center gap-3"
         >
@@ -100,20 +57,20 @@ export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
             aria-label={commonCopy.primaryNavAriaLabel}
             className="flex flex-wrap items-center gap-1 rounded-full border border-[color:var(--color-border-soft)] bg-[rgba(255,245,220,0.025)] p-1"
           >
-            {HEADER_NAV_ITEMS.map((item) => {
-              const active = item.key === activeSection;
+            {location.navigation.items.map((item) => {
+              const active = item.page === location.route.page;
               const label =
-                item.labelSource === 'primary'
-                  ? copy.primaryNav[item.key]
-                  : copy.secondaryNav[item.key];
+                item.group === 'primary'
+                  ? copy.primaryNav[item.page as 'heroes']
+                  : copy.secondaryNav[item.page as 'tutorial' | 'download' | 'support'];
               const labelTypography =
                 locale === 'zh'
                   ? 'text-[0.84rem] tracking-normal'
                   : 'text-[0.76rem] tracking-[0.06em]';
               return (
                 <a
-                  key={item.key}
-                  href={buildLocalizedHref(item.href, { lang: locale })}
+                  key={item.page}
+                  href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={`inline-flex min-h-8 items-center rounded-full px-3 py-1.5 font-medium transition ${labelTypography} ${
                     active
@@ -148,7 +105,7 @@ export default function SiteHeader({ activeSection, locale }: SiteHeaderProps) {
               return (
                 <a
                   key={option.code}
-                  href={buildLocaleToggleHref(option.code)}
+                  href={location.navigation.localeHrefs[option.code]}
                   hrefLang={option.code}
                   className="rounded-full px-2.5 py-0.5 text-[color:var(--color-text-muted)] transition hover:text-[color:var(--color-text-base)]"
                 >

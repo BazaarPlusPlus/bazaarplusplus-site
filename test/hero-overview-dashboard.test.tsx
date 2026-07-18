@@ -1,25 +1,23 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, test } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, test, vi } from 'vitest';
 
 import HeroOverviewDashboard from '../src/features/heroes/HeroOverviewDashboard';
+import type { HeroMetricsDataset } from '../src/features/heroes/hero-metrics-dataset';
 import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL } from '../src/content/site-copy';
-import type { HeroOverviewCoverage } from '../src/app/page-data';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
 import type {
-  AnalyzerV4Manifest,
-  MetricWindow,
-  RatingTier,
-  WebHeroDailyPayload,
-  WebHeroDailyRow,
-} from '../src/shared/lib/metrics';
+  HeroMetricsDay,
+  HeroMetricsRow,
+} from '../src/features/heroes/hero-metrics-dataset';
 
 const DAYS = ['2026-06-04', '2026-06-05', '2026-06-06'];
 
 function makeRow(
-  overrides: Omit<Partial<WebHeroDailyRow>, 'hero'> & { hero: string }
-): WebHeroDailyRow {
+  overrides: Omit<Partial<HeroMetricsRow>, 'hero'> & { hero: string }
+): HeroMetricsRow {
   const { hero, ...rest } = overrides;
   return {
-    hero: hero as WebHeroDailyRow['hero'],
+    hero,
     rating_tier: 'all',
     runs: { completed: 0, scored: 0, ten_win: 0 },
     outcomes: { perfect: 0, gold: 0, silver: 0, bronze: 0 },
@@ -30,7 +28,7 @@ function makeRow(
   };
 }
 
-function makeDayRows(dayIndex: number): WebHeroDailyRow[] {
+function makeDayRows(dayIndex: number): HeroMetricsRow[] {
   return [
     makeRow({
       hero: 'Stelle',
@@ -102,7 +100,7 @@ function makeDayRows(dayIndex: number): WebHeroDailyRow[] {
   ];
 }
 
-function makePayload(day: string, dayIndex: number): WebHeroDailyPayload {
+function makePayload(day: string, dayIndex: number): HeroMetricsDay {
   return {
     schema_version: '2',
     kind: 'hero_web_daily',
@@ -112,57 +110,49 @@ function makePayload(day: string, dayIndex: number): WebHeroDailyPayload {
   };
 }
 
-function makeManifest(bundleFailRate: number): AnalyzerV4Manifest {
-  return {
-    schema_version: '2',
-    namespace: 'analyzer-v4',
-    generated_at: '2026-06-07T09:04:17Z',
-    latest_complete_day: DAYS.at(-1)!,
-    web: {
-      schema_version: '2',
-      days: DAYS.map((day) => ({ day, path: `analyzer-v4/web/${day}.json`, row_count: 7 })),
-    },
-    dq: {
-      days: DAYS.length,
-      bundle_download_fail_rate: bundleFailRate,
-      decode_fail_rate: 0,
-    },
-  };
-}
-
 function renderDashboard(options?: {
-  bundleFailRate?: number;
   excludeDays?: string[];
-  payloads?: WebHeroDailyPayload[];
+  payloads?: HeroMetricsDay[];
   url?: string;
 }) {
-  const bundleFailRate = options?.bundleFailRate ?? 0.01;
   const excludeDays = options?.excludeDays ?? [];
-  window.history.replaceState({}, '', options?.url ?? '/?w=3d');
+  const url = options?.url ?? '/heroes?lang=en&w=3d';
 
   const loadedDays = options?.payloads
     ? options.payloads.map((payload) => payload.day)
     : DAYS.filter((day) => !excludeDays.includes(day));
   const days = options?.payloads ?? loadedDays.map((day) => makePayload(day, DAYS.indexOf(day)));
-  const coverage: HeroOverviewCoverage = {
-    requested: DAYS,
-    loaded: loadedDays,
-    failedDays: excludeDays,
+  const dataset: HeroMetricsDataset = {
+    generatedAt: '2026-06-07T09:04:17Z',
+    latestCompleteDay: DAYS.at(-1)!,
+    publishedDays: DAYS.map((day) => ({
+      day,
+      path: `analyzer-v4/web/${day}.json`,
+      row_count: 7,
+    })),
+    days,
+    coverage: {
+      requestedDates: DAYS,
+      usableDates: loadedDays,
+      failedDates: excludeDays,
+    },
   };
+  const memory = createMemorySpaLocationAdapter(url);
+  const location = createSpaLocation(memory.adapter).current();
+  const onScopeChange = vi.fn();
 
-  return render(
+  return {
+    ...render(
     <HeroOverviewDashboard
-      locale="en"
-      manifest={makeManifest(bundleFailRate)}
-      days={days}
-      latestCompleteDay={DAYS.at(-1)!}
-      availableWindows={['1d', '3d', '7d'] as MetricWindow[]}
-      availableTiers={['all', 'mid', 'high'] as RatingTier[]}
-      coverage={coverage}
-      initialSelectedWindow="1d"
-      initialSelectedTier="all"
+      locale={location.locale}
+      location={location}
+      dataset={dataset}
+      requestedScope={location.scope}
+      onScopeChange={onScopeChange}
     />
-  );
+    ),
+    onScopeChange,
+  };
 }
 
 function getRankingTable() {
@@ -175,8 +165,18 @@ function getRankingTable() {
 }
 
 describe('HeroOverviewDashboard', () => {
+  test('reports the hydrated scope so the location interface can normalize its query defaults', async () => {
+    const { onScopeChange } = renderDashboard({
+      url: '/heroes?lang=zh&w=invalid&t=all',
+    });
+
+    await waitFor(() =>
+      expect(onScopeChange).toHaveBeenCalledWith({ window: '1d', tier: 'all' })
+    );
+  });
+
   test('hydrates scope from the URL and keeps BazaarDB links', () => {
-    renderDashboard({ url: '/?w=3d&t=high' });
+    renderDashboard({ url: '/heroes?lang=en&w=3d&t=high' });
 
     const detailDataLink = screen.getByRole('link', { name: 'View detailed stats on BazaarDB' });
     expect(detailDataLink).toHaveAttribute('href', BAZAARDB_META_URL);
@@ -199,7 +199,7 @@ describe('HeroOverviewDashboard', () => {
   });
 
   test('one global tier control drives ranking, trend, and dossier together', () => {
-    const { container } = renderDashboard();
+    const { container, onScopeChange } = renderDashboard();
 
     // Single global control: exactly one Mid pill on the whole page.
     expect(screen.getAllByRole('button', { name: 'Mid' })).toHaveLength(1);
@@ -209,7 +209,7 @@ describe('HeroOverviewDashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mid' }));
     expect(screen.getByRole('button', { name: 'Mid' })).toHaveAttribute('aria-pressed', 'true');
-    expect(window.location.search).toContain('t=mid');
+    expect(onScopeChange).toHaveBeenCalledWith({ window: '3d', tier: 'mid' });
 
     // Ranking switches to mid-tier rows.
     const table = getRankingTable();
@@ -228,7 +228,7 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.getByTestId('selected-matchup-hero')).toHaveTextContent('Mak');
   });
 
-  test('ranks by 10-win rate with nulls sinking and no NaN output', () => {
+  test('renders ranking order, null values, and sortable interactions from Hero Analysis', () => {
     const { container } = renderDashboard();
 
     const table = getRankingTable();
@@ -251,10 +251,6 @@ describe('HeroOverviewDashboard', () => {
     expect(heroOrder).toEqual(['Jules', 'Stelle', 'Vanessa', 'Karnok']);
     expect(within(table).queryByText('Common')).not.toBeInTheDocument();
 
-    // Aggregates across the 3-day window.
-    expect(within(table).getByRole('cell', { name: /50\.0%/ })).toBeInTheDocument();
-    expect(within(table).getByRole('cell', { name: /41\.0%/ })).toBeInTheDocument();
-
     // Zero-denominator rates render as em dash, never NaN.
     expect(container.textContent).not.toContain('NaN');
     const karnokRow = within(table).getByText('Karnok').closest('tr')!;
@@ -272,18 +268,15 @@ describe('HeroOverviewDashboard', () => {
     expect(ascOrder).toEqual(['Jules', 'Karnok', 'Stelle', 'Vanessa']);
   });
 
-  test('window pills re-slice the aggregate and write w= to the URL', () => {
-    renderDashboard();
-
-    const table = getRankingTable();
-    expect(within(table).getByRole('cell', { name: /41\.0%/ })).toBeInTheDocument();
+  test('window pills update the requested scope and write w= to the URL', () => {
+    const { onScopeChange } = renderDashboard();
 
     fireEvent.click(screen.getByRole('button', { name: '1D' }));
-    expect(window.location.search).not.toContain('w=');
-    expect(within(getRankingTable()).getByRole('cell', { name: /42\.0%/ })).toBeInTheDocument();
+    expect(onScopeChange).toHaveBeenCalledWith({ window: '1d', tier: 'all' });
+    expect(screen.getByRole('button', { name: '1D' })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: '7D' }));
-    expect(window.location.search).toContain('w=7d');
+    expect(onScopeChange).toHaveBeenCalledWith({ window: '7d', tier: 'all' });
     // Only 3 of 7 nominal days exist → partial coverage note, but 7d stays valid.
     expect(screen.getByTestId('coverage-strip').textContent).toContain('partial coverage');
     expect(screen.getByTestId('coverage-strip').textContent).toContain('3 of 7');
@@ -417,7 +410,7 @@ describe('HeroOverviewDashboard', () => {
   });
 
   test('DQ failure-rate metadata is not shown in the dashboard chrome', () => {
-    renderDashboard({ bundleFailRate: 0.126 });
+    renderDashboard();
 
     expect(screen.queryByTestId('dq-banner')).not.toBeInTheDocument();
     expect(screen.queryByText(/Bundle download failures/)).not.toBeInTheDocument();

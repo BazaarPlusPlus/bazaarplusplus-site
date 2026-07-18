@@ -4,6 +4,12 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import DownloadPage from '../src/features/download/DownloadPage';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
+
+function downloadLocation() {
+  const memory = createMemorySpaLocationAdapter('/download?lang=en');
+  return createSpaLocation(memory.adapter).current();
+}
 
 function makeTestClient(): QueryClient {
   return new QueryClient({
@@ -39,7 +45,7 @@ describe('DownloadPage', () => {
       )
     );
 
-    renderWithClient(<DownloadPage locale="en" />);
+    renderWithClient(<DownloadPage location={downloadLocation()} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Windows' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'macOS' })).toBeInTheDocument();
@@ -69,7 +75,7 @@ describe('DownloadPage', () => {
       vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
     );
 
-    renderWithClient(<DownloadPage locale="en" />);
+    renderWithClient(<DownloadPage location={downloadLocation()} />);
 
     await waitFor(() =>
       expect(screen.getByText(/Cannot reach the latest version right now/)).toBeInTheDocument()

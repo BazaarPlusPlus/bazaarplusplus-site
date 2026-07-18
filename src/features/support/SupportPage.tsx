@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import DialogShell from '../../shared/components/DialogShell';
 import InfoPageShell from '../../shared/components/InfoPageShell';
-import type { Locale } from '../../shared/lib/metrics';
+import type { ResolvedSpaLocation } from '../../app/router';
 import { getSiteCopy, KOFI_URL, type SupportPageCopy } from '../../content/site-copy';
 import {
   loadSupporters,
@@ -13,7 +13,7 @@ import {
 import { wechatPayQrSvg } from './wechat-pay';
 
 type SupportPageProps = {
-  locale: Locale;
+  location: ResolvedSpaLocation;
 };
 
 const SUPPORTER_SKELETON_WIDTHS = ['w-20', 'w-24', 'w-28', 'w-16', 'w-32', 'w-24', 'w-20', 'w-28'];
@@ -90,7 +90,8 @@ function SupportersBody({ copy, isLoading, isError, ordered }: SupportersBodyPro
   );
 }
 
-export default function SupportPage({ locale }: SupportPageProps) {
+export default function SupportPage({ location }: SupportPageProps) {
+  const { locale } = location;
   const copy = getSiteCopy(locale).support;
   const [wechatOpen, setWechatOpen] = useState(false);
   const wechatTitleId = useId();
@@ -107,8 +108,8 @@ export default function SupportPage({ locale }: SupportPageProps) {
 
   return (
     <InfoPageShell
-      activeSection="support"
       locale={locale}
+      location={location}
       eyebrow={copy.eyebrow}
       title={copy.title}
     >

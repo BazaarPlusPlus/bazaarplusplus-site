@@ -1,19 +1,16 @@
-import type { Locale, RatingTier } from '../shared/lib/metrics';
+import type { RatingTier } from '../features/heroes/hero-metrics-dataset';
+import type {
+  Locale,
+  PrimaryNavigationPage,
+  SecondaryNavigationPage,
+  SpaPage,
+} from '../app/router';
 
-type PrimaryNavCopy = {
-  heroes: string;
-};
+type PrimaryNavCopy = Record<PrimaryNavigationPage, string>;
 
-type SecondaryNavCopy = {
-  tutorial: string;
-  download: string;
-  support: string;
-};
+type SecondaryNavCopy = Record<SecondaryNavigationPage, string>;
 
-type PageTitleKey =
-  | keyof PrimaryNavCopy
-  | keyof SecondaryNavCopy
-  | 'not-found';
+type PageTitleKey = SpaPage;
 
 type PageTitleCopy = Record<PageTitleKey, string>;
 
@@ -47,9 +44,15 @@ type CommonCopy = {
     dataLabel: string;
     connectingLabel: string;
     progressAriaLabel: string;
-    loadingPrefix: string;
-    loadedPrefix: string;
-    failedPrefix: string;
+    statusLabels: {
+      loading: string;
+      loaded: string;
+      failed: string;
+    };
+    resources: {
+      manifest: string;
+      dailyPrefix: string;
+    };
   };
   error: {
     eyebrow: string;
@@ -283,9 +286,15 @@ const zh: LocalizedSiteCopy = {
       dataLabel: '正在加载数据',
       connectingLabel: '正在连接数据源',
       progressAriaLabel: '数据加载进度',
-      loadingPrefix: '正在加载',
-      loadedPrefix: '已加载',
-      failedPrefix: '加载失败',
+      statusLabels: {
+        loading: '正在加载',
+        loaded: '已加载',
+        failed: '加载失败',
+      },
+      resources: {
+        manifest: 'manifest',
+        dailyPrefix: 'web_daily/',
+      },
     },
     error: {
       eyebrow: '加载失败',
@@ -631,9 +640,15 @@ const en: LocalizedSiteCopy = {
       dataLabel: 'Loading data',
       connectingLabel: 'Connecting',
       progressAriaLabel: 'Data loading progress',
-      loadingPrefix: 'Loading',
-      loadedPrefix: 'Loaded',
-      failedPrefix: 'Failed',
+      statusLabels: {
+        loading: 'Loading',
+        loaded: 'Loaded',
+        failed: 'Failed',
+      },
+      resources: {
+        manifest: 'manifest',
+        dailyPrefix: 'web_daily/',
+      },
     },
     error: {
       eyebrow: 'A hush falls over the bazaar',

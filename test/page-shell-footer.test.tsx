@@ -3,13 +3,19 @@ import { describe, expect, test } from 'vitest';
 
 import InfoPageShell from '../src/shared/components/InfoPageShell';
 import StatsPageShell from '../src/shared/components/StatsPageShell';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
+
+function pageLocation(href: string) {
+  const memory = createMemorySpaLocationAdapter(href);
+  return createSpaLocation(memory.adapter).current();
+}
 
 describe('page shell footer', () => {
   test('renders the author credit link in info pages', () => {
     render(
       <InfoPageShell
-        activeSection="download"
         locale="en"
+        location={pageLocation('/download?lang=en')}
         eyebrow="Download"
         title="Download BazaarPlusPlus"
       >
@@ -29,8 +35,8 @@ describe('page shell footer', () => {
   test('renders the author credit in English for Chinese pages', () => {
     render(
       <InfoPageShell
-        activeSection="download"
         locale="zh"
+        location={pageLocation('/download')}
         eyebrow="下载"
         title="下载 BazaarPlusPlus"
       >
@@ -48,8 +54,8 @@ describe('page shell footer', () => {
   test('renders the author credit link in stats pages', () => {
     render(
       <StatsPageShell
-        activeSection="heroes"
         locale="en"
+        location={pageLocation('/heroes?lang=en')}
         eyebrow="Analytics"
         title="Hero winrate"
         generatedAt="2026-04-18T18:57:46Z"

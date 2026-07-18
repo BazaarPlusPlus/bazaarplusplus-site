@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
 import InfoPageShell from '../../shared/components/InfoPageShell';
+import type { ResolvedSpaLocation } from '../../app/router';
 import {
   buildDownloadUrl,
   fetchLatestVersion,
   GITHUB_RELEASE_URL,
 } from './installer';
-import type { Locale } from '../../shared/lib/metrics';
 import { macIconDataUri, windowsIconDataUri } from './platform-icons';
 import { getSiteCopy, type DownloadPageCopy } from '../../content/site-copy';
 
@@ -94,7 +94,7 @@ function DownloadCard({
 }
 
 type DownloadPageContentProps = {
-  locale: Locale;
+  location: ResolvedSpaLocation;
 };
 
 function FailureFallback({ copy }: { copy: DownloadPageCopy }) {
@@ -115,7 +115,8 @@ function FailureFallback({ copy }: { copy: DownloadPageCopy }) {
   );
 }
 
-export default function DownloadPage({ locale }: DownloadPageContentProps) {
+export default function DownloadPage({ location }: DownloadPageContentProps) {
+  const { locale } = location;
   const copy = getSiteCopy(locale).download;
   const { data, isLoading, isError } = useQuery({
     queryKey: ['latest-version'],
@@ -129,8 +130,8 @@ export default function DownloadPage({ locale }: DownloadPageContentProps) {
 
   return (
     <InfoPageShell
-      activeSection="download"
       locale={locale}
+      location={location}
       eyebrow={copy.eyebrow}
       title={copy.title}
     >

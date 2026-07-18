@@ -44,6 +44,20 @@ describe('site copy', () => {
 
     expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
     expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
+    expect(zhCopy.common.loading.statusLabels).toEqual({
+      loading: '正在加载',
+      loaded: '已加载',
+      failed: '加载失败',
+    });
+    expect(zhCopy.common.loading.resources).toEqual({
+      manifest: 'manifest',
+      dailyPrefix: 'web_daily/',
+    });
+    expect(enCopy.common.loading.statusLabels).toEqual({
+      loading: 'Loading',
+      loaded: 'Loaded',
+      failed: 'Failed',
+    });
     expect(zhCopy.common.scope.tierLabels.high).toBe('高');
     expect(zhCopy.secondaryNav.tutorial).toBe('教程');
     expect(zhCopy.tutorial.intro).toBe(

@@ -8,7 +8,12 @@ describe('LoadingScreen', () => {
     render(
       <LoadingScreen
         locale="zh"
-        progress={{ completed: 4, total: 16, label: 'Loaded hero_overview/1d/all' }}
+        progress={{
+          completed: 4,
+          total: 16,
+          status: 'loaded',
+          resource: { kind: 'daily', date: '2026-06-07' },
+        }}
       />
     );
 
@@ -19,6 +24,22 @@ describe('LoadingScreen', () => {
       'aria-valuenow',
       '25'
     );
-    expect(screen.getByText('已加载 hero_overview/1d/all')).toBeInTheDocument();
+    expect(screen.getByText('已加载 web_daily/2026-06-07')).toBeInTheDocument();
+  });
+
+  test('renders manifest failure semantics in English', () => {
+    render(
+      <LoadingScreen
+        locale="en"
+        progress={{
+          completed: 0,
+          total: 1,
+          status: 'failed',
+          resource: { kind: 'manifest' },
+        }}
+      />
+    );
+
+    expect(screen.getByText('Failed manifest')).toBeInTheDocument();
   });
 });

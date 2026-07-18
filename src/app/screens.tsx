@@ -1,28 +1,19 @@
-import type { PageLoadProgress } from './page-data';
 import { getSiteCopy } from '../content/site-copy';
-import { buildLocalizedHref } from '../shared/lib/dashboard';
-import type { Locale } from '../shared/lib/metrics';
+import type { HeroMetricsLoadProgress } from '../features/heroes/hero-metrics-dataset';
+import type { Locale, ResolvedSpaLocation } from './router';
 
 type LoadingScreenProps = {
   locale?: Locale;
-  progress?: PageLoadProgress;
+  progress?: HeroMetricsLoadProgress;
 };
 
-function translateProgressLabel(label: string, locale: Locale): string {
+function renderProgressLabel(progress: HeroMetricsLoadProgress, locale: Locale): string {
   const copy = getSiteCopy(locale).common.loading;
-  const prefixTranslations = [
-    ['Loading ', copy.loadingPrefix],
-    ['Loaded ', copy.loadedPrefix],
-    ['Failed ', copy.failedPrefix],
-  ] as const;
-
-  for (const [sourcePrefix, localizedPrefix] of prefixTranslations) {
-    if (label.startsWith(sourcePrefix)) {
-      return `${localizedPrefix} ${label.slice(sourcePrefix.length)}`;
-    }
-  }
-
-  return label;
+  const resource =
+    progress.resource.kind === 'manifest'
+      ? copy.resources.manifest
+      : `${copy.resources.dailyPrefix}${progress.resource.date}`;
+  return `${copy.statusLabels[progress.status]} ${resource}`;
 }
 
 export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
@@ -63,7 +54,7 @@ export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
         </div>
         {progress ? (
           <p className="truncate text-center text-xs text-[color:var(--color-text-muted)]">
-            {translateProgressLabel(progress.label, locale)}
+            {renderProgressLabel(progress, locale)}
           </p>
         ) : null}
       </div>
@@ -71,7 +62,14 @@ export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
   );
 }
 
-export function ErrorScreen({ error, locale = 'en' }: { error: unknown; locale?: Locale }) {
+export function ErrorScreen({
+  error,
+  location,
+}: {
+  error: unknown;
+  location: ResolvedSpaLocation;
+}) {
+  const { locale } = location;
   const copy = getSiteCopy(locale).common.error;
   const message = error instanceof Error ? error.message : copy.unknownMessage;
 
@@ -87,7 +85,7 @@ export function ErrorScreen({ error, locale = 'en' }: { error: unknown; locale?:
       </p>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href={buildLocalizedHref('/heroes', { lang: locale })}
+        href={location.navigation.heroesHref}
       >
         {copy.backToHeroes}
       </a>
@@ -95,7 +93,8 @@ export function ErrorScreen({ error, locale = 'en' }: { error: unknown; locale?:
   );
 }
 
-export function NotFoundScreen({ locale = 'en' }: { locale?: Locale }) {
+export function NotFoundScreen({ location }: { location: ResolvedSpaLocation }) {
+  const { locale } = location;
   const copy = getSiteCopy(locale).common.notFound;
 
   return (
@@ -107,7 +106,7 @@ export function NotFoundScreen({ locale = 'en' }: { locale?: Locale }) {
       </h1>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"
-        href={buildLocalizedHref('/heroes', { lang: locale })}
+        href={location.navigation.heroesHref}
       >
         {copy.backToHeroes}
       </a>

@@ -2,13 +2,15 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import StatsPageShell from '../src/shared/components/StatsPageShell';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
 
 describe('StatsPageShell', () => {
   test('renders shared navigation and highlights the active section', () => {
+    const memory = createMemorySpaLocationAdapter('/heroes');
     render(
       <StatsPageShell
-        activeSection="heroes"
         locale="zh"
+        location={createSpaLocation(memory.adapter).current()}
         eyebrow="BazaarPlusPlus analytics"
         title="Hero winrate"
         generatedAt="2026-04-18T18:57:46Z"

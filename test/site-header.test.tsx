@@ -1,21 +1,17 @@
 import { render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import SiteHeader from '../src/shared/components/SiteHeader';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
+
+function renderHeader(href: string) {
+  const memory = createMemorySpaLocationAdapter(href);
+  return render(<SiteHeader location={createSpaLocation(memory.adapter).current()} />);
+}
 
 describe('SiteHeader', () => {
-  let originalUrl: string;
-
-  beforeEach(() => {
-    originalUrl = window.location.href;
-  });
-
-  afterEach(() => {
-    window.history.replaceState({}, '', originalUrl);
-  });
-
   test('renders localized unified nav without a live feed pill', () => {
-    const { container } = render(<SiteHeader activeSection="heroes" locale="zh" />);
+    const { container } = renderHeader('/heroes');
 
     const primaryNav = screen.getByRole('navigation', { name: '主要导航' });
 
@@ -34,7 +30,7 @@ describe('SiteHeader', () => {
   });
 
   test('uses english labels when explicitly selected', () => {
-    render(<SiteHeader activeSection="download" locale="en" />);
+    renderHeader('/download?lang=en');
 
     expect(screen.queryByText('Live feed')).not.toBeInTheDocument();
 
@@ -47,9 +43,7 @@ describe('SiteHeader', () => {
   });
 
   test('language toggle highlights current locale and links to other locale preserving path + query', () => {
-    window.history.replaceState({}, '', '/heroes?w=3d&t=high&lang=en');
-
-    render(<SiteHeader activeSection="heroes" locale="en" />);
+    renderHeader('/heroes?w=3d&t=high&lang=en');
 
     const group = screen.getByRole('group', { name: 'Language' });
 
@@ -62,9 +56,7 @@ describe('SiteHeader', () => {
   });
 
   test('language toggle adds lang param when switching to english', () => {
-    window.history.replaceState({}, '', '/heroes?w=7d');
-
-    render(<SiteHeader activeSection="heroes" locale="zh" />);
+    renderHeader('/heroes?w=7d');
 
     const enLink = screen.getByRole('link', { name: 'EN' });
     expect(enLink).toHaveAttribute('href', '/heroes?w=7d&lang=en');
@@ -77,7 +69,7 @@ describe('SiteHeader', () => {
   });
 
   test('marks tutorial as active in the unified nav', () => {
-    render(<SiteHeader activeSection="tutorial" locale="en" />);
+    renderHeader('/tutorial?lang=en');
 
     expect(screen.getByRole('link', { name: 'Tutorial' })).toHaveAttribute('aria-current', 'page');
   });

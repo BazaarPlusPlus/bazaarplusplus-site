@@ -1,10 +1,9 @@
 import InfoPageShell from '../../shared/components/InfoPageShell';
-import { buildLocalizedHref } from '../../shared/lib/dashboard';
-import type { Locale } from '../../shared/lib/metrics';
+import type { ResolvedSpaLocation } from '../../app/router';
 import { getSiteCopy, type TutorialPageCopy } from '../../content/site-copy';
 
 type TutorialPageProps = {
-  locale: Locale;
+  location: ResolvedSpaLocation;
 };
 
 function FeatureCard({
@@ -184,13 +183,16 @@ function QuickStart({ copy }: { copy: TutorialPageCopy['quickStart'] }) {
   );
 }
 
-export default function TutorialPage({ locale }: TutorialPageProps) {
+export default function TutorialPage({ location }: TutorialPageProps) {
+  const { locale } = location;
   const copy = getSiteCopy(locale).tutorial;
+  const downloadHref = location.navigation.items.find((item) => item.page === 'download')!.href;
+  const supportHref = location.navigation.items.find((item) => item.page === 'support')!.href;
 
   return (
     <InfoPageShell
-      activeSection="tutorial"
       locale={locale}
+      location={location}
       eyebrow={copy.eyebrow}
       title={copy.title}
       intro={copy.intro}
@@ -208,14 +210,14 @@ export default function TutorialPage({ locale }: TutorialPageProps) {
           />
           <div className="flex flex-wrap gap-3">
             <a
-              href={buildLocalizedHref('/download', { lang: locale })}
+              href={downloadHref}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[color:var(--color-accent)] px-5 py-3 text-sm font-medium tracking-[0.04em] text-[#1a1306] shadow-[0_18px_36px_-12px_rgba(232,185,74,0.5)] transition hover:bg-[color:var(--color-accent-bright)]"
             >
               <span>{copy.primaryActionLabel}</span>
               <span aria-hidden="true">→</span>
             </a>
             <a
-              href={buildLocalizedHref('/support', { lang: locale })}
+              href={supportHref}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[color:var(--color-accent)] px-5 py-3 text-sm font-medium tracking-[0.04em] text-[color:var(--color-accent-bright)] transition hover:bg-[color:var(--color-accent)] hover:text-[#1a1306]"
             >
               <span>{copy.secondaryActionLabel}</span>

@@ -1,5 +1,7 @@
 # Analyzer-v4 Hero Dashboard Migration & Upgrade
 
+> Historical implementation specification. Its module paths and seams describe the pre-deepening design and are superseded by `docs/architecture.md` and the current code. Product behavior and remote analyzer-v4 contract notes remain reference material.
+
 Status: **Proposed, review-fixed** · 2026-06-07 · Scope: single full-scope PR · Route unchanged: `/heroes`
 
 ## 1. Goal & non-goals

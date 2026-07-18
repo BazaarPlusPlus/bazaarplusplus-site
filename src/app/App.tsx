@@ -1,118 +1,92 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
+import { getPageTitle } from '../content/site-copy';
 import DownloadPage from '../features/download/DownloadPage';
+import { createHeroMetricsHttpTransport } from '../features/heroes/hero-metrics-dataset';
 import SupportPage from '../features/support/SupportPage';
 import TutorialPage from '../features/tutorial/TutorialPage';
-import { getPageTitle } from '../content/site-copy';
-import { parseLocale, type Locale } from '../shared/lib/metrics';
-import { createRuntimeMetricsClient } from '../shared/lib/metrics-client';
-import { getCanonicalPath, isSpaRoutePath, resolveSpaRoute } from './router';
+import {
+  createBrowserSpaLocationAdapter,
+  createSpaLocation,
+  type ResolvedSpaLocation,
+} from './router';
 import { LoadingScreen, NotFoundScreen } from './screens';
 
 const HeroOverviewPage = lazy(() =>
   import('./route-pages').then((module) => ({ default: module.HeroOverviewPage }))
 );
 
-type BrowserLocation = {
-  pathname: string;
-  search: string;
-};
-
-function readBrowserLocation(): BrowserLocation {
-  return {
-    pathname: window.location.pathname,
-    search: window.location.search,
-  };
-}
-
-function readLocale(search: string): Locale {
-  return parseLocale(new URLSearchParams(search).get('lang'));
-}
-
-function isSamePageHashNavigation(nextUrl: URL): boolean {
-  return (
-    nextUrl.pathname === window.location.pathname &&
-    nextUrl.search === window.location.search &&
-    nextUrl.hash.length > 0
-  );
-}
-
 export default function App() {
-  const client = useMemo(() => createRuntimeMetricsClient(), []);
-  const [location, setLocation] = useState<BrowserLocation>(() => readBrowserLocation());
-  const route = resolveSpaRoute(location.pathname);
-  const locale = readLocale(location.search);
+  const transport = useMemo(() => createHeroMetricsHttpTransport(), []);
+  const spaLocation = useMemo(
+    () => createSpaLocation(createBrowserSpaLocationAdapter()),
+    []
+  );
+  const [location, setLocation] = useState<ResolvedSpaLocation>(() => spaLocation.current());
+
+  useEffect(() => spaLocation.subscribe(setLocation), [spaLocation]);
 
   useEffect(() => {
-    document.title = getPageTitle(route.page, locale);
-    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
-  }, [route.page, locale]);
+    document.title = getPageTitle(location.route.page, location.locale);
+    document.documentElement.lang = location.locale === 'zh' ? 'zh-CN' : 'en';
+  }, [location.locale, location.route.page]);
 
   useEffect(() => {
-    const canonical = getCanonicalPath(location.pathname);
-    if (canonical && canonical !== location.pathname) {
-      window.history.replaceState({}, '', `${canonical}${location.search}`);
-      setLocation(readBrowserLocation());
+    if (location.canonicalHref) {
+      spaLocation.canonicalize();
     }
-  }, [location.pathname, location.search]);
+  }, [location.canonicalHref, spaLocation]);
 
   useEffect(() => {
-    function handlePopState() {
-      setLocation(readBrowserLocation());
-    }
-
     function handleClick(event: MouseEvent) {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
-
       const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
-      if (!(target instanceof HTMLAnchorElement) || target.target || target.hasAttribute('download')) {
+      if (!(target instanceof HTMLAnchorElement)) {
         return;
       }
 
-      const nextUrl = new URL(target.href);
-      if (nextUrl.origin !== window.location.origin || !isSpaRoutePath(nextUrl.pathname)) {
-        return;
+      const handled = spaLocation.handleLinkClick({
+        href: target.href,
+        button: event.button,
+        defaultPrevented: event.defaultPrevented,
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        target: target.target,
+        download: target.hasAttribute('download'),
+      });
+      if (handled) {
+        event.preventDefault();
       }
-
-      if (isSamePageHashNavigation(nextUrl)) {
-        return;
-      }
-
-      event.preventDefault();
-      window.history.pushState({}, '', nextUrl);
-      setLocation(readBrowserLocation());
     }
 
-    window.addEventListener('popstate', handlePopState);
     document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [spaLocation]);
 
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      document.removeEventListener('click', handleClick);
-    };
-  }, []);
-
-  if (route.page === 'heroes') {
+  if (location.route.page === 'heroes') {
     return (
-      <Suspense fallback={<LoadingScreen locale={locale} />}>
-        <HeroOverviewPage client={client} locale={locale} search={location.search} />
+      <Suspense fallback={<LoadingScreen locale={location.locale} />}>
+        <HeroOverviewPage
+          transport={transport}
+          location={location}
+          onScopeChange={spaLocation.replaceScope}
+        />
       </Suspense>
     );
   }
 
-  if (route.page === 'tutorial') {
-    return <TutorialPage locale={locale} />;
+  if (location.route.page === 'tutorial') {
+    return <TutorialPage location={location} />;
   }
 
-  if (route.page === 'download') {
-    return <DownloadPage locale={locale} />;
+  if (location.route.page === 'download') {
+    return <DownloadPage location={location} />;
   }
 
-  if (route.page === 'support') {
-    return <SupportPage locale={locale} />;
+  if (location.route.page === 'support') {
+    return <SupportPage location={location} />;
   }
 
-  return <NotFoundScreen locale={locale} />;
+  return <NotFoundScreen location={location} />;
 }

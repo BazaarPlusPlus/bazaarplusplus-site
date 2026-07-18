@@ -1,16 +1,14 @@
 import type { ReactNode } from 'react';
 
 import { getSiteCopy } from '../../content/site-copy';
-import type { Locale } from '../lib/metrics';
+import type { Locale, ResolvedSpaLocation } from '../../app/router';
 import { formatDateTime } from '../lib/dashboard';
 import FooterCredit from './FooterCredit';
 import SiteHeader from './SiteHeader';
 
-type Section = 'heroes';
-
 type StatsPageShellProps = {
-  activeSection: Section;
   locale: Locale;
+  location: ResolvedSpaLocation;
   eyebrow: string;
   title: string;
   generatedAt: string;
@@ -20,8 +18,8 @@ type StatsPageShellProps = {
 };
 
 export default function StatsPageShell({
-  activeSection,
   locale,
+  location,
   eyebrow,
   title,
   generatedAt,
@@ -34,7 +32,7 @@ export default function StatsPageShell({
 
   return (
     <div className="relative min-h-screen">
-      <SiteHeader activeSection={activeSection} locale={locale} />
+      <SiteHeader location={location} />
 
       <main className="relative mx-auto flex min-w-0 w-full max-w-[1440px] flex-col gap-10 px-6 py-8 sm:w-[calc(100%-5rem)] sm:px-10 sm:py-10 2xl:px-12">
         <section className="relative overflow-hidden">

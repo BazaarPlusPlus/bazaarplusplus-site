@@ -1,5 +1,5 @@
 import { getSiteCopy } from '../../content/site-copy';
-import type { Locale } from '../lib/metrics';
+import type { Locale } from '../../app/router';
 
 const AUTHOR_URL = 'https://github.com/cauyxy';
 

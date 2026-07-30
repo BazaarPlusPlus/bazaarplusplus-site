@@ -434,8 +434,7 @@ export default function HeroOverviewDashboard({
                 <div>
                   <p className="eyebrow eyebrow-rule">{WINDOW_LABELS['7d']} {heroCopy.trend.winrateTrend}</p>
                   <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)] sm:text-3xl">
-                    {heroCopy.trend.titleLead}{locale === 'zh' ? '' : ' '}
-                    <span className="text-[color:var(--color-accent-bright)]">{heroCopy.trend.titleAccent}</span>
+                    {heroCopy.trend.title}
                   </h2>
                 </div>
               </div>
@@ -804,8 +803,7 @@ export default function HeroOverviewDashboard({
                     : heroCopy.snapshot.noData}
                 </p>
                 <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.snapshot.titleLead}{locale === 'zh' ? '' : ' '}
-                  <span className="text-[color:var(--color-accent-bright)]">{heroCopy.snapshot.titleAccent}</span>
+                  {heroCopy.snapshot.title}
                 </h2>
               </div>
             </div>
@@ -832,7 +830,7 @@ export default function HeroOverviewDashboard({
                       <col key={`${index}:${width}`} style={{ width }} />
                     ))}
                   </colgroup>
-                  <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
+                  <thead className="text-left text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
                     <tr>
                       <SortableHeader label={heroCopy.tableHeaders.hero} className="sticky left-0 z-20 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} />
@@ -1064,7 +1062,7 @@ function StagePanel({
                 <col key={key} />
               ))}
             </colgroup>
-            <thead className="font-display-italic text-left text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
+            <thead className="text-left text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
               <tr>
                 <SortableHeader
                   label={heroLabel}

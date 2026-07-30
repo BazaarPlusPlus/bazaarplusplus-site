@@ -97,12 +97,9 @@ describe('site copy', () => {
     expect(zhCopy.stats.heroes.title).toBe('英雄统计');
     expect(enCopy.stats.heroes.title).toBe('Hero stats');
     expect(zhCopy.stats.heroes.trend.winrateTrend).toBe('胜率走势与对位');
-    expect(zhCopy.stats.heroes.trend.titleLead).toBe('近期');
-    expect(zhCopy.stats.heroes.trend.titleAccent).toBe('表现');
-    expect(enCopy.stats.heroes.trend.titleLead).toBe('Recent');
-    expect(enCopy.stats.heroes.trend.titleAccent).toBe('performance');
-    expect(zhCopy.stats.heroes.snapshot.titleLead).toBe('胜率');
-    expect(zhCopy.stats.heroes.snapshot.titleAccent).toBe('榜单');
+    expect(zhCopy.stats.heroes.trend.title).toBe('近期表现');
+    expect(enCopy.stats.heroes.trend.title).toBe('Recent performance');
+    expect(zhCopy.stats.heroes.snapshot.title).toBe('胜率榜单');
     expect(zhCopy.stats.heroes.dossier.label).toBe('战斗明细');
     expect(zhCopy.stats.heroes.detailLinkLabel).toBe('在 BazaarDB 查看详细统计');
     expect(enCopy.stats.heroes.detailLinkLabel).toBe('View detailed stats on BazaarDB');

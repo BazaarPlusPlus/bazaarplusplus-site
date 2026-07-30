@@ -69,16 +69,19 @@ body::before {
   letter-spacing: -0.02em;
 }
 
+/* Latin-only italic — Newsreader has a true italic, the CJK fallback does not.
+   Apply only to text that is Latin in every locale (brand subtitle, author credit). */
 .font-display-italic {
   font-family: var(--font-display);
   font-style: italic;
   font-optical-sizing: auto;
 }
 
-/* Section eyebrow — small caps with serif italic */
+/* Section eyebrow — letterspaced serif label.
+   Upright on purpose: the CJK fallback (Songti SC) has no italic, so
+   font-style: italic here would render as a synthesized skew. */
 .eyebrow {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 500;
   font-size: 0.75rem;
   letter-spacing: 0.18em;

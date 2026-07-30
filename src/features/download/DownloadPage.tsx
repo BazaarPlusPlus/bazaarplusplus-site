@@ -132,7 +132,6 @@ export default function DownloadPage({ location }: DownloadPageContentProps) {
     <InfoPageShell
       locale={locale}
       location={location}
-      eyebrow={copy.eyebrow}
       title={copy.title}
     >
       <section className="flex flex-col gap-6">

@@ -16,7 +16,6 @@ describe('page shell footer', () => {
       <InfoPageShell
         locale="en"
         location={pageLocation('/download?lang=en')}
-        eyebrow="Download"
         title="Download BazaarPlusPlus"
       >
         <div>Download content</div>
@@ -37,7 +36,6 @@ describe('page shell footer', () => {
       <InfoPageShell
         locale="zh"
         location={pageLocation('/download')}
-        eyebrow="下载"
         title="下载 BazaarPlusPlus"
       >
         <div>下载内容</div>

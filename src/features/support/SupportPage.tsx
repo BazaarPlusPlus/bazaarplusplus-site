@@ -110,7 +110,6 @@ export default function SupportPage({ location }: SupportPageProps) {
     <InfoPageShell
       locale={locale}
       location={location}
-      eyebrow={copy.eyebrow}
       title={copy.title}
     >
       <section className="grid gap-6">

@@ -193,7 +193,6 @@ export default function TutorialPage({ location }: TutorialPageProps) {
     <InfoPageShell
       locale={locale}
       location={location}
-      eyebrow={copy.eyebrow}
       title={copy.title}
       intro={copy.intro}
     >

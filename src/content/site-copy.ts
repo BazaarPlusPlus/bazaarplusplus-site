@@ -55,16 +55,12 @@ type CommonCopy = {
     };
   };
   error: {
-    eyebrow: string;
-    titlePrefix: string;
-    titleHighlight: string;
+    title: string;
     unknownMessage: string;
     backToHeroes: string;
   };
   notFound: {
-    eyebrow: string;
-    titlePrefix: string;
-    titleHighlight: string;
+    title: string;
     backToHeroes: string;
   };
   scope: ScopeCopy;
@@ -79,15 +75,13 @@ type HeroStatsCopy = {
   detailLinkHelpTooltip: string;
   trend: {
     winrateTrend: string;
-    titleLead: string;
-    titleAccent: string;
+    title: string;
     chartAriaLabel: string;
   };
   snapshot: {
     label: string;
     noData: string;
-    titleLead: string;
-    titleAccent: string;
+    title: string;
   };
   tableHeaders: {
     hero: string;
@@ -163,7 +157,6 @@ type StatsCopy = {
 };
 
 export type DownloadPageCopy = {
-  eyebrow: string;
   title: string;
   versionLabel: string;
   versionPending: string;
@@ -186,7 +179,6 @@ export type DownloadPageCopy = {
 };
 
 export type SupportPageCopy = {
-  eyebrow: string;
   title: string;
   intro: string;
   closeLabel: string;
@@ -216,7 +208,6 @@ export type SupportPageCopy = {
 };
 
 export type TutorialPageCopy = {
-  eyebrow: string;
   title: string;
   intro: string;
   primaryActionLabel: string;
@@ -297,16 +288,12 @@ const zh: LocalizedSiteCopy = {
       },
     },
     error: {
-      eyebrow: '加载失败',
-      titlePrefix: '数据暂时',
-      titleHighlight: '不可用',
+      title: '数据暂时不可用',
       unknownMessage: '未知错误',
       backToHeroes: '← 返回英雄概览',
     },
     notFound: {
-      eyebrow: '页面未找到',
-      titlePrefix: '页面',
-      titleHighlight: '不存在',
+      title: '页面不存在',
       backToHeroes: '← 返回英雄概览',
     },
     scope: {
@@ -347,15 +334,13 @@ const zh: LocalizedSiteCopy = {
       detailLinkHelpTooltip: '了解数据如何同步到 BazaarDB',
       trend: {
         winrateTrend: '胜率走势与对位',
-        titleLead: '近期',
-        titleAccent: '表现',
+        title: '近期表现',
         chartAriaLabel: '英雄10胜率趋势图',
       },
       snapshot: {
         label: '当前快照',
         noData: '暂无数据',
-        titleLead: '胜率',
-        titleAccent: '榜单',
+        title: '胜率榜单',
       },
       tableHeaders: {
         hero: '英雄',
@@ -427,7 +412,6 @@ const zh: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: '新手指南',
     title: 'BazaarPlusPlus 官方指南',
     intro: '从下载安装到实战技巧，带你全面了解 BazaarPlusPlus 的各项核心功能，助你快速上手。',
     primaryActionLabel: '立即下载',
@@ -562,7 +546,6 @@ const zh: LocalizedSiteCopy = {
     },
   },
   download: {
-    eyebrow: '客户端下载',
     title: '下载 BazaarPlusPlus',
     versionLabel: '最新版本',
     versionPending: '正在获取最新版本…',
@@ -587,7 +570,6 @@ const zh: LocalizedSiteCopy = {
     ],
   },
   support: {
-    eyebrow: '支持项目',
     title: '支持 BazaarPlusPlus',
     intro: '你的支持会成为 BazaarPlusPlus 持续更新的动力。',
     closeLabel: '关闭',
@@ -651,16 +633,12 @@ const en: LocalizedSiteCopy = {
       },
     },
     error: {
-      eyebrow: 'A hush falls over the bazaar',
-      titlePrefix: 'The ledger is',
-      titleHighlight: 'silent',
+      title: 'Stats are temporarily unavailable',
       unknownMessage: 'Unknown error',
       backToHeroes: '← Back to hero overview',
     },
     notFound: {
-      eyebrow: 'Off the bazaar map',
-      titlePrefix: 'This page is',
-      titleHighlight: 'unwritten',
+      title: 'Page not found',
       backToHeroes: '← Back to hero overview',
     },
     scope: {
@@ -701,15 +679,13 @@ const en: LocalizedSiteCopy = {
       detailLinkHelpTooltip: 'Learn how data syncs to BazaarDB',
       trend: {
         winrateTrend: 'win rate and matchups',
-        titleLead: 'Recent',
-        titleAccent: 'performance',
+        title: 'Recent performance',
         chartAriaLabel: 'Hero 10-win rate chart',
       },
       snapshot: {
         label: 'Snapshot',
         noData: 'No data',
-        titleLead: 'Win-rate',
-        titleAccent: 'ledger',
+        title: 'Win-rate ledger',
       },
       tableHeaders: {
         hero: 'Hero',
@@ -781,7 +757,6 @@ const en: LocalizedSiteCopy = {
     },
   },
   tutorial: {
-    eyebrow: 'Getting Started',
     title: 'BazaarPlusPlus Official Guide',
     intro: 'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.',
     primaryActionLabel: 'Download Now',
@@ -920,7 +895,6 @@ const en: LocalizedSiteCopy = {
     },
   },
   download: {
-    eyebrow: 'Client downloads',
     title: 'Download BazaarPlusPlus',
     versionLabel: 'Current version',
     versionPending: 'Fetching latest version…',
@@ -945,7 +919,6 @@ const en: LocalizedSiteCopy = {
     ],
   },
   support: {
-    eyebrow: 'Support',
     title: 'Support BazaarPlusPlus',
     intro: 'Your support helps keep BazaarPlusPlus going.',
     closeLabel: 'Close',

@@ -26,11 +26,10 @@ export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-6 px-6 py-10">
       <div className="flex items-center gap-3">
-        <span className="relative flex h-10 w-10 items-center justify-center">
-          <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--color-accent)] opacity-30" />
-          <span className="relative h-3 w-3 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_18px_rgba(232,185,74,0.7)]" />
+        <span className="flex h-10 w-10 items-center justify-center">
+          <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)]" />
         </span>
-        <span className="font-display-italic text-lg tracking-[0.18em] text-[color:var(--color-text-muted)]">
+        <span className="font-display text-lg tracking-[0.18em] text-[color:var(--color-text-muted)]">
           {copy.title}
         </span>
       </div>
@@ -75,10 +74,8 @@ export function ErrorScreen({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
-      <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-        {copy.titlePrefix}{' '}
-        <span className="text-[color:var(--color-neg)]">{copy.titleHighlight}</span>
+        {copy.title}
       </h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-[color:var(--color-text-muted)]">
         {message}
@@ -99,10 +96,8 @@ export function NotFoundScreen({ location }: { location: ResolvedSpaLocation }) 
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-4 px-6 py-10">
-      <p className="eyebrow eyebrow-rule">{copy.eyebrow}</p>
       <h1 className="font-display text-5xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-        {copy.titlePrefix}{' '}
-        <span className="text-[color:var(--color-accent-bright)]">{copy.titleHighlight}</span>
+        {copy.title}
       </h1>
       <a
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)]"

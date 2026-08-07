@@ -1,4 +1,5 @@
 export const INSTALLER_BASE = 'https://bppinstaller.bazaarplusplus.com';
+export const MAINLAND_DOWNLOAD_BASE = 'https://cauyxy.lanzout.com';
 export const GITHUB_RELEASE_URL = 'https://github.com/cauyxy/BazaarPlusPlus/releases/latest';
 
 export type DownloadPlatform = 'windows' | 'mac';
@@ -41,4 +42,12 @@ export function buildDownloadUrl(platform: DownloadPlatform, version: string): s
   }
 
   return `${INSTALLER_BASE}/${version}/darwin-aarch64/installer/BazaarPlusPlus_${version}_aarch64.dmg`;
+}
+
+export function buildMainlandDownloadUrl(
+  platform: DownloadPlatform,
+  version: string
+): string {
+  const platformSlug = platform === 'windows' ? 'win' : 'mac';
+  return `${MAINLAND_DOWNLOAD_BASE}/bpp${platformSlug}${version.replaceAll('.', '')}`;
 }

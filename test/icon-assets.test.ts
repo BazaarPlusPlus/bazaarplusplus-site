@@ -17,4 +17,10 @@ describe('icon assets', () => {
 
     expect(icon.size).toBeLessThanOrEqual(10_000);
   });
+
+  test('keeps the favicon lightweight', () => {
+    const icon = statSync(resolve(projectRoot, 'public/favicon.webp'));
+
+    expect(icon.size).toBeLessThanOrEqual(5_000);
+  });
 });

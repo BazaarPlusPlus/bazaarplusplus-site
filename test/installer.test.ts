@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   GITHUB_RELEASE_URL,
   buildDownloadUrl,
+  buildMainlandDownloadUrl,
   fetchLatestVersion,
   INSTALLER_BASE,
 } from '../src/features/download/installer';
@@ -17,6 +18,18 @@ describe('buildDownloadUrl', () => {
   test('builds the mac installer url', () => {
     expect(buildDownloadUrl('mac', '3.1.1')).toBe(
       'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg'
+    );
+  });
+
+  test('builds the mainland Windows download url from the dotted version', () => {
+    expect(buildMainlandDownloadUrl('windows', '5.1.0')).toBe(
+      'https://cauyxy.lanzout.com/bppwin510'
+    );
+  });
+
+  test('builds the mainland macOS download url from the dotted version', () => {
+    expect(buildMainlandDownloadUrl('mac', '5.1.0')).toBe(
+      'https://cauyxy.lanzout.com/bppmac510'
     );
   });
 

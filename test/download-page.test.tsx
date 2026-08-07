@@ -52,6 +52,8 @@ describe('DownloadPage', () => {
 
     const winLink = await screen.findByRole('link', { name: /Download \.exe/ });
     const macLink = await screen.findByRole('link', { name: /Download \.dmg/ });
+    const winMainlandLink = screen.getByRole('link', { name: 'Windows mainland mirror' });
+    const macMainlandLink = screen.getByRole('link', { name: 'macOS mainland mirror' });
 
     expect(winLink).toHaveAttribute(
       'href',
@@ -61,6 +63,16 @@ describe('DownloadPage', () => {
       'href',
       'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg'
     );
+    expect(winMainlandLink).toHaveAttribute(
+      'href',
+      'https://cauyxy.lanzout.com/bppwin311'
+    );
+    expect(macMainlandLink).toHaveAttribute(
+      'href',
+      'https://cauyxy.lanzout.com/bppmac311'
+    );
+    expect(winMainlandLink).toHaveAttribute('target', '_blank');
+    expect(macMainlandLink).toHaveAttribute('target', '_blank');
 
     expect(screen.getAllByText(/v3\.1\.1/)).toHaveLength(2);
     expect(screen.queryByRole('heading', { level: 2, name: 'Want the preview build?' })).not.toBeInTheDocument();

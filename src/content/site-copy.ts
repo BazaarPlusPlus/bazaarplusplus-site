@@ -164,15 +164,18 @@ export type DownloadPageCopy = {
   versionFailed: string;
   releaseFallbackPrefix: string;
   releaseFallbackLink: string;
+  mainlandButtonLabel: string;
   windows: {
     title: string;
     arch: string;
     actionLabel: string;
+    mainlandActionLabel: string;
   };
   mac: {
     title: string;
     arch: string;
     actionLabel: string;
+    mainlandActionLabel: string;
   };
   noteTitle: string;
   noteParagraphs: string[];
@@ -553,15 +556,18 @@ const zh: LocalizedSiteCopy = {
     versionFailed: '暂时无法获取最新版本',
     releaseFallbackPrefix: '可以前往 ',
     releaseFallbackLink: 'GitHub 发布页',
+    mainlandButtonLabel: '大陆渠道',
     windows: {
       title: 'Windows',
       arch: 'x64 · Intel / AMD',
       actionLabel: '下载 .exe',
+      mainlandActionLabel: 'Windows 大陆渠道',
     },
     mac: {
       title: 'macOS',
       arch: 'Apple Silicon · arm64',
       actionLabel: '下载 .dmg',
+      mainlandActionLabel: 'macOS 大陆渠道',
     },
     noteTitle: '安装提示',
     noteParagraphs: [
@@ -902,15 +908,18 @@ const en: LocalizedSiteCopy = {
     versionFailed: 'Cannot reach the latest version right now',
     releaseFallbackPrefix: 'Try ',
     releaseFallbackLink: 'GitHub Release',
+    mainlandButtonLabel: 'CN mirror',
     windows: {
       title: 'Windows',
       arch: 'x64 · Intel / AMD',
       actionLabel: 'Download .exe',
+      mainlandActionLabel: 'Windows mainland mirror',
     },
     mac: {
       title: 'macOS',
       arch: 'Apple Silicon · arm64',
       actionLabel: 'Download .dmg',
+      mainlandActionLabel: 'macOS mainland mirror',
     },
     noteTitle: 'Install notes',
     noteParagraphs: [

@@ -4,6 +4,7 @@ import InfoPageShell from '../../shared/components/InfoPageShell';
 import type { ResolvedSpaLocation } from '../../app/router';
 import {
   buildDownloadUrl,
+  buildMainlandDownloadUrl,
   fetchLatestVersion,
   GITHUB_RELEASE_URL,
 } from './installer';
@@ -17,6 +18,8 @@ type DownloadCardProps = {
   copy: PlatformCopy;
   version: string | undefined;
   downloadUrl: string | undefined;
+  mainlandDownloadUrl: string | undefined;
+  mainlandButtonLabel: string;
   isLoading: boolean;
   isError: boolean;
   versionLabel: string;
@@ -29,6 +32,8 @@ function DownloadCard({
   copy,
   version,
   downloadUrl,
+  mainlandDownloadUrl,
+  mainlandButtonLabel,
   isLoading,
   isError,
   versionLabel,
@@ -36,6 +41,7 @@ function DownloadCard({
   versionUnavailable,
 }: DownloadCardProps) {
   const disabled = !downloadUrl;
+  const mainlandDisabled = !mainlandDownloadUrl;
 
   return (
     <article className="surface relative flex flex-col gap-6 p-7">
@@ -74,20 +80,40 @@ function DownloadCard({
         )}
       </div>
 
-      <a
-        href={downloadUrl ?? '#'}
-        aria-disabled={disabled}
-        tabIndex={disabled ? -1 : undefined}
-        onClick={disabled ? (event) => event.preventDefault() : undefined}
-        className={`group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium tracking-[0.04em] transition ${
-          disabled
-            ? 'pointer-events-none cursor-not-allowed bg-[color:var(--color-border-soft)] text-[color:var(--color-text-faint)]'
-            : 'bg-[color:var(--color-accent)] text-[#1a1306] shadow-[0_18px_36px_-12px_rgba(232,185,74,0.5)] hover:bg-[color:var(--color-accent-bright)]'
-        }`}
-      >
-        <span>{copy.actionLabel}</span>
-        <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
-      </a>
+      <div className="mt-auto grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-3">
+        <a
+          href={downloadUrl ?? '#'}
+          aria-disabled={disabled}
+          tabIndex={disabled ? -1 : undefined}
+          onClick={disabled ? (event) => event.preventDefault() : undefined}
+          className={`group inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 py-3 text-sm font-medium tracking-[0.04em] transition sm:px-5 ${
+            disabled
+              ? 'pointer-events-none cursor-not-allowed bg-[color:var(--color-border-soft)] text-[color:var(--color-text-faint)]'
+              : 'bg-[color:var(--color-accent)] text-[#1a1306] shadow-[0_18px_36px_-12px_rgba(232,185,74,0.5)] hover:bg-[color:var(--color-accent-bright)]'
+          }`}
+        >
+          <span>{copy.actionLabel}</span>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
+        </a>
+
+        <a
+          href={mainlandDownloadUrl ?? '#'}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={copy.mainlandActionLabel}
+          aria-disabled={mainlandDisabled}
+          tabIndex={mainlandDisabled ? -1 : undefined}
+          onClick={mainlandDisabled ? (event) => event.preventDefault() : undefined}
+          className={`group inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 py-3 text-xs font-medium tracking-[0.04em] transition ${
+            mainlandDisabled
+              ? 'pointer-events-none cursor-not-allowed border-[color:var(--color-border-soft)] text-[color:var(--color-text-faint)]'
+              : 'border-[color:var(--color-border-bright)] bg-[rgba(232,185,74,0.04)] text-[color:var(--color-accent-bright)] hover:bg-[rgba(232,185,74,0.1)]'
+          }`}
+        >
+          <span>{mainlandButtonLabel}</span>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+        </a>
+      </div>
 
     </article>
   );
@@ -127,6 +153,10 @@ export default function DownloadPage({ location }: DownloadPageContentProps) {
   const version = data?.version;
   const windowsUrl = version ? buildDownloadUrl('windows', version) : undefined;
   const macUrl = version ? buildDownloadUrl('mac', version) : undefined;
+  const windowsMainlandUrl = version
+    ? buildMainlandDownloadUrl('windows', version)
+    : undefined;
+  const macMainlandUrl = version ? buildMainlandDownloadUrl('mac', version) : undefined;
 
   return (
     <InfoPageShell
@@ -141,6 +171,8 @@ export default function DownloadPage({ location }: DownloadPageContentProps) {
             copy={copy.windows}
             version={version}
             downloadUrl={windowsUrl}
+            mainlandDownloadUrl={windowsMainlandUrl}
+            mainlandButtonLabel={copy.mainlandButtonLabel}
             isLoading={isLoading}
             isError={isError}
             versionLabel={copy.versionLabel}
@@ -152,6 +184,8 @@ export default function DownloadPage({ location }: DownloadPageContentProps) {
             copy={copy.mac}
             version={version}
             downloadUrl={macUrl}
+            mainlandDownloadUrl={macMainlandUrl}
+            mainlandButtonLabel={copy.mainlandButtonLabel}
             isLoading={isLoading}
             isError={isError}
             versionLabel={copy.versionLabel}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
 
-import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import {
   WINDOW_LABELS,
   formatInteger,
@@ -259,9 +259,6 @@ export default function HeroOverviewDashboard({
   });
 
   // --- coverage ---------------------------------------------------------------
-  const nominalDays = analysis.coverage.nominalDateCount;
-  const partialCoverage = loadedWindowDays.length < nominalDays;
-
   const maxTenWinRate = sortedRows.reduce(
     (max, row) => (row.tenWinRate != null && row.tenWinRate > max ? row.tenWinRate : max),
     0
@@ -300,88 +297,28 @@ export default function HeroOverviewDashboard({
       title={heroCopy.title}
       generatedAt={analysis.generatedAt}
       actions={
-        <>
-          <a
-            href={BAZAARDB_META_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--color-border-bright)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)] hover:text-[color:var(--color-text-base)]"
+        <a
+          href={BAZAARDB_META_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--color-border-bright)] px-4 py-2 text-sm font-medium text-[color:var(--color-accent-bright)] transition hover:border-[color:var(--color-accent)] hover:bg-[rgba(232,185,74,0.08)] hover:text-[color:var(--color-text-base)]"
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[rgba(255,245,220,0.06)]"
           >
-            <span
-              aria-hidden="true"
-              className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[rgba(255,245,220,0.06)]"
-            >
-              <img
-                src={BAZAARDB_ICON_PATH}
-                alt=""
-                className="h-full w-full object-contain"
-                decoding="async"
-              />
-            </span>
-            <span>{heroCopy.detailLinkLabel}</span>
-            <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
-          </a>
-          <a
-            href={BAZAARDB_INTEGRATION_DOC_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={heroCopy.detailLinkHelpLabel}
-            className="group relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border-soft)] text-sm font-semibold text-[color:var(--color-text-muted)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent-bright)]"
-          >
-            <span aria-hidden="true">?</span>
-            <span
-              role="tooltip"
-              className="pointer-events-none invisible absolute bottom-full right-0 z-10 mb-2 whitespace-nowrap rounded-md border border-[color:var(--color-border-bright)] bg-[color:rgba(15,12,8,0.96)] px-3 py-1.5 text-xs font-medium leading-5 text-[color:var(--color-accent-bright)] opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100"
-            >
-              {heroCopy.detailLinkHelpTooltip}
-            </span>
-          </a>
-        </>
+            <img
+              src={BAZAARDB_ICON_PATH}
+              alt=""
+              className="h-full w-full object-contain"
+              decoding="async"
+            />
+          </span>
+          <span>{heroCopy.detailLinkLabel}</span>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+        </a>
       }
-      filters={
-        availableWindows.length > 0 ? (
-          <section aria-label={copy.common.filters} className="surface px-6 py-5">
-            <div className="flex flex-wrap items-start gap-x-10 gap-y-5">
-              <div role="group" aria-label={scopeCopy.window} className="min-w-0 space-y-2.5">
-                <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.window}</p>
-                <SegmentedControl>
-                  {availableWindows.map((option) => (
-                    <SegmentedButton
-                      key={option}
-                      active={option === selectedWindow}
-                      onClick={() => selectWindow(option)}
-                    >
-                      {WINDOW_LABELS[option]}
-                    </SegmentedButton>
-                  ))}
-                </SegmentedControl>
-              </div>
-              <div role="group" aria-label={scopeCopy.segment} className="min-w-0 space-y-2.5">
-                <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.segment}</p>
-                <SegmentedControl>
-                  {availableSegments.map((option) => (
-                    <SegmentedButton
-                      key={option}
-                      active={option === selectedSegment}
-                      onClick={() => selectSegment(option)}
-                    >
-                      {scopeCopy.segmentLabels[option]}
-                    </SegmentedButton>
-                  ))}
-                </SegmentedControl>
-              </div>
-              <div className="min-w-0 basis-full self-end sm:flex sm:justify-end lg:basis-auto lg:flex-1">
-                <CoverageStrip
-                  loadedCount={loadedWindowDays.length}
-                  nominalCount={nominalDays}
-                  partial={partialCoverage}
-                  coverageCopy={coverageCopy}
-                />
-              </div>
-            </div>
-          </section>
-        ) : null
-      }
+      filters={null}
     >
       {emptyState ?? (
         <section className="grid min-w-0 gap-6">
@@ -762,17 +699,53 @@ export default function HeroOverviewDashboard({
           </section>
 
           {/* === HERO RANKING =============================================== */}
-          <section className="surface overflow-hidden">
+          <section data-testid="ranking-panel" className="surface overflow-hidden">
             <div className="border-b border-[color:var(--color-border-soft)] px-6 py-5">
-              <div>
-                <p className="eyebrow eyebrow-rule">
-                  {heroCopy.snapshot.label} · {loadedWindowDays.length > 0
-                    ? `${coverageCopy.daysLoadedPrefix}${loadedWindowDays.length}${coverageCopy.daysLoadedSeparator}${nominalDays}`
-                    : heroCopy.snapshot.noData}
-                </p>
-                <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-                  {heroCopy.snapshot.title}
-                </h2>
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                  <p className="eyebrow eyebrow-rule">{heroCopy.snapshot.label}</p>
+                  <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
+                    {heroCopy.snapshot.title}
+                  </h2>
+                </div>
+
+                {availableWindows.length > 0 ? (
+                  <div
+                    data-testid="ranking-filters"
+                    role="group"
+                    aria-label={copy.common.filters}
+                    className="flex flex-wrap items-end gap-x-8 gap-y-4"
+                  >
+                    <div role="group" aria-label={scopeCopy.window} className="min-w-0 space-y-2.5">
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.window}</p>
+                      <SegmentedControl>
+                        {availableWindows.map((option) => (
+                          <SegmentedButton
+                            key={option}
+                            active={option === selectedWindow}
+                            onClick={() => selectWindow(option)}
+                          >
+                            {WINDOW_LABELS[option]}
+                          </SegmentedButton>
+                        ))}
+                      </SegmentedControl>
+                    </div>
+                    <div role="group" aria-label={scopeCopy.segment} className="min-w-0 space-y-2.5">
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.segment}</p>
+                      <SegmentedControl>
+                        {availableSegments.map((option) => (
+                          <SegmentedButton
+                            key={option}
+                            active={option === selectedSegment}
+                            onClick={() => selectSegment(option)}
+                          >
+                            {scopeCopy.segmentLabels[option]}
+                          </SegmentedButton>
+                        ))}
+                      </SegmentedControl>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -885,41 +858,6 @@ export default function HeroOverviewDashboard({
       )}
 
     </StatsPageShell>
-  );
-}
-
-// === coverage strip ============================================================
-
-type CoverageStripProps = {
-  loadedCount: number;
-  nominalCount: number;
-  partial: boolean;
-  coverageCopy: ReturnType<typeof getSiteCopy>['stats']['heroes']['coverage'];
-};
-
-function CoverageStrip({
-  loadedCount,
-  nominalCount,
-  partial,
-  coverageCopy,
-}: CoverageStripProps) {
-  return (
-    <div
-      data-testid="coverage-strip"
-      className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-[color:var(--color-border-soft)] bg-[rgba(10,8,5,0.5)] px-3 py-2 text-[0.72rem] text-[color:var(--color-text-muted)]"
-    >
-      <span className="tnum font-semibold text-[color:var(--color-text-base)]">
-        {coverageCopy.daysLoadedPrefix}
-        {loadedCount}
-        {coverageCopy.daysLoadedSeparator}
-        {nominalCount}
-      </span>
-      {partial ? (
-        <span className="rounded-full border border-[color:var(--color-border-soft)] px-2 py-0.5 text-[0.64rem] text-[color:var(--color-accent-bright)]">
-          {coverageCopy.partialNote}
-        </span>
-      ) : null}
-    </div>
   );
 }
 

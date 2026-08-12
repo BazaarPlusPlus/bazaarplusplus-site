@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, test, vi } from 'vitest';
 
 import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
-import { BAZAARDB_ICON_PATH, BAZAARDB_INTEGRATION_DOC_URL, BAZAARDB_META_URL } from '../src/content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL } from '../src/content/site-copy';
 import HeroOverviewDashboard from '../src/features/heroes/HeroOverviewDashboard';
 import type {
   HeroMetricsDataset,
@@ -157,21 +157,23 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.queryByRole('button', { name: '高' })).not.toBeInTheDocument();
   });
 
-  test('hydrates window and segment controls and keeps BazaarDB links', () => {
+  test('hydrates window and segment controls inside the ranking panel and keeps the BazaarDB link', () => {
     renderDashboard({ url: '/heroes?lang=en&w=3d&s=legend' });
 
     const detailDataLink = screen.getByRole('link', { name: 'View detailed stats on BazaarDB' });
     expect(detailDataLink).toHaveAttribute('href', BAZAARDB_META_URL);
     expect(detailDataLink).toHaveAttribute('target', '_blank');
     expect(detailDataLink.querySelector('img')).toHaveAttribute('src', BAZAARDB_ICON_PATH);
-    expect(screen.getByRole('link', { name: 'Learn how data syncs to BazaarDB' })).toHaveAttribute(
-      'href',
-      BAZAARDB_INTEGRATION_DOC_URL
-    );
-    expect(screen.getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Legend' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'Non-Legend' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Learn how data syncs to BazaarDB' })).not.toBeInTheDocument();
+
+    const filters = within(screen.getByTestId('ranking-panel')).getByRole('group', {
+      name: 'Filters',
+    });
+    expect(within(filters).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(filters).getByRole('button', { name: 'Legend' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(filters).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(filters).getByRole('button', { name: 'Non-Legend' })).toBeInTheDocument();
+    expect(screen.queryByTestId('coverage-strip')).not.toBeInTheDocument();
   });
 
   test('one segment control drives ranking, trend, and matchups', () => {
@@ -197,13 +199,10 @@ describe('HeroOverviewDashboard', () => {
     expect(within(chart).getByText('Jun 4')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '1D' }));
     expect(onScopeChange).toHaveBeenCalledWith({ window: '1d', segment: 'all' });
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('1 of 1');
     expect(within(chart).getByText('Jun 4')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '7D' }));
     expect(onScopeChange).toHaveBeenCalledWith({ window: '7d', segment: 'all' });
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('3 of 3');
-    expect(screen.getByTestId('coverage-strip')).not.toHaveTextContent('partial coverage');
     expect(within(chart).getByText('Jun 4')).toBeInTheDocument();
     expect(within(chart).getByText('Jun 6')).toBeInTheDocument();
   });
@@ -257,8 +256,7 @@ describe('HeroOverviewDashboard', () => {
     renderDashboard({ excludeDays: ['2026-06-05'] });
 
     expect(screen.getByText('Some days are unavailable; this view includes loaded days only.')).toBeInTheDocument();
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('2 of 3');
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('partial coverage');
+    expect(screen.queryByTestId('coverage-strip')).not.toBeInTheDocument();
     expect(getRankingTable()).toBeInTheDocument();
   });
 

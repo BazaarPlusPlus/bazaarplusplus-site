@@ -63,13 +63,6 @@ export type HeroMetricsDataset = {
   coverage: DatasetCoverage;
 };
 
-export type HeroMetricsLoadProgress = {
-  completed: number;
-  total: number;
-  status: 'loading' | 'loaded' | 'failed';
-  resource: { kind: 'snapshot' };
-};
-
 export type HeroMetricsTransport = {
   load(path: string, options?: { signal?: AbortSignal }): Promise<unknown>;
 };
@@ -102,7 +95,6 @@ type HttpTransportOptions = {
 };
 
 type LoadDatasetOptions = {
-  onProgress?: (progress: HeroMetricsLoadProgress) => void;
   signal?: AbortSignal;
 };
 
@@ -473,25 +465,11 @@ export async function loadHeroMetricsDataset(
   transport: HeroMetricsTransport,
   options: LoadDatasetOptions = {}
 ): Promise<HeroMetricsDataset> {
-  const progress = {
-    completed: 0,
-    total: 1,
-    status: 'loading',
-    resource: { kind: 'snapshot' },
-  } as const;
-  options.onProgress?.(progress);
-
-  try {
-    const dataset = decodeSnapshot(
-      await transport.load(HERO_METRICS_PATH, { signal: options.signal })
-    );
-    if (dataset == null) {
-      throw new Error('Unexpected hero metrics snapshot format');
-    }
-    options.onProgress?.({ ...progress, completed: 1, status: 'loaded' });
-    return dataset;
-  } catch (error) {
-    options.onProgress?.({ ...progress, status: 'failed' });
-    throw error;
+  const dataset = decodeSnapshot(
+    await transport.load(HERO_METRICS_PATH, { signal: options.signal })
+  );
+  if (dataset == null) {
+    throw new Error('Unexpected hero metrics snapshot format');
   }
+  return dataset;
 }

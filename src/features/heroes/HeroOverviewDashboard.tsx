@@ -1,30 +1,36 @@
-import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 
-import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
+import type { Locale, ResolvedSpaLocation } from '../../app/router';
+import {
+  BAZAARDB_ICON_PATH,
+  BAZAARDB_META_URL,
+  getSiteCopy,
+} from '../../content/site-copy';
+import HeroBadge from '../../shared/components/HeroBadge';
+import {
+  SegmentedButton,
+  SegmentedControl,
+} from '../../shared/components/ScopeFilterPanel';
+import StatsPageShell from '../../shared/components/StatsPageShell';
 import {
   WINDOW_LABELS,
   formatInteger,
   formatNullablePercent,
-  formatPercent,
   formatShortDate,
 } from '../../shared/lib/dashboard';
-import { getHeroColor, getHeroShortLabel } from '../../shared/lib/heroes';
+import { getHeroShortLabel } from '../../shared/lib/heroes';
 import {
   analyzeHeroes,
   type AnalysisScope,
   type HeroMatchup,
   type MetricWindow,
 } from './hero-analysis';
-import {
-  type HeroMetricsDataset,
-  type HeroMetricsSegment,
+import type {
+  HeroMetricsDataset,
+  HeroMetricsSegment,
 } from './hero-metrics-dataset';
-import type { Locale, ResolvedSpaLocation } from '../../app/router';
-import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
-import HeroBadge from '../../shared/components/HeroBadge';
-import { SegmentedButton, SegmentedControl } from '../../shared/components/ScopeFilterPanel';
-import SortableHeader from '../../shared/components/SortableHeader';
-import StatsPageShell from '../../shared/components/StatsPageShell';
+import HeroRankingTable from './HeroRankingTable';
+import HeroTrendPanel from './HeroTrendPanel';
 
 type HeroOverviewDashboardProps = {
   locale: Locale;
@@ -33,101 +39,6 @@ type HeroOverviewDashboardProps = {
   requestedScope: AnalysisScope;
   onScopeChange: (scope: AnalysisScope) => void;
 };
-
-type RankingSortKey =
-  | 'hero'
-  | 'tenWinRate'
-  | 'runsCompleted'
-  | 'runShare'
-  | 'tenWinCount'
-  | 'avgRunDays10w'
-  | 'perfectRate'
-  | 'goldRate'
-  | 'silverRate'
-  | 'bronzeRate'
-  | 'misfortuneRate';
-
-type ChartPoint = {
-  day: string;
-  winRate: number;
-  x: number;
-  y: number;
-};
-
-type HoveredTrendPoint = ChartPoint & {
-  hero: string;
-  color: string;
-};
-
-const CHART_WIDTH = 960;
-const CHART_HEIGHT = 360;
-const CHART_PADDING = { top: 28, right: 28, bottom: 48, left: 56 };
-const POINT_TOOLTIP_WIDTH = 168;
-const POINT_TOOLTIP_HEIGHT = 56;
-const POINT_TOOLTIP_OFFSET = 18;
-const GRIDLINE_COUNT = 4;
-const HERO_COLUMN_WIDTH = '104px';
-const RANKING_COLUMN_WIDTHS = [
-  HERO_COLUMN_WIDTH,
-  '12.5%',
-  '11%',
-  '11%',
-  '10%',
-  '11%',
-  '8.7%',
-  '8.7%',
-  '8.7%',
-  '8.7%',
-  '9.7%',
-];
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
-
-function getChartX(dayIndex: number, dayCount: number) {
-  const chartInnerWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
-  if (dayCount <= 1) {
-    return CHART_PADDING.left + chartInnerWidth / 2;
-  }
-
-  return CHART_PADDING.left + (chartInnerWidth * dayIndex) / (dayCount - 1);
-}
-
-function getChartY(value: number, min: number, max: number) {
-  const chartInnerHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
-  if (max - min <= 0.0001) {
-    return CHART_PADDING.top + chartInnerHeight / 2;
-  }
-
-  const normalized = (value - min) / (max - min);
-  return CHART_PADDING.top + chartInnerHeight * (1 - normalized);
-}
-
-function getNearestChartPoint(
-  event: ReactMouseEvent<SVGElement> | ReactTouchEvent<SVGElement>,
-  points: ChartPoint[]
-): ChartPoint | undefined {
-  if (points.length === 0) {
-    return undefined;
-  }
-
-  const svg = event.currentTarget.ownerSVGElement || (event.currentTarget as SVGSVGElement);
-  const rect = svg?.getBoundingClientRect();
-  if (rect == null || rect.width <= 0) {
-    return points.at(-1);
-  }
-
-  const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
-  const mouseX = ((clientX - rect.left) / rect.width) * CHART_WIDTH;
-  return points.reduce((nearest, point) =>
-    Math.abs(point.x - mouseX) < Math.abs(nearest.x - mouseX) ? point : nearest
-  );
-}
-
-function formatDays(value: number | null): string {
-  return value == null ? '—' : value.toFixed(1);
-}
 
 export default function HeroOverviewDashboard({
   locale,
@@ -147,20 +58,11 @@ export default function HeroOverviewDashboard({
     requestedScope.segment
   );
   const [focusedHero, setFocusedHero] = useState<string | null>(null);
-  const [sortState, setSortState] = useState<SortState<RankingSortKey>>({
-    key: 'tenWinRate',
-    direction: 'desc',
-  });
-  const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
 
   useEffect(() => {
     setSelectedWindow(requestedScope.window);
     setSelectedSegment(requestedScope.segment);
   }, [requestedScope.segment, requestedScope.window]);
-
-  useEffect(() => {
-    onScopeChange(requestedScope);
-  }, [onScopeChange, requestedScope.segment, requestedScope.window]);
 
   const analysis = useMemo(
     () =>
@@ -171,10 +73,12 @@ export default function HeroOverviewDashboard({
       ),
     [dataset, focusedHero, selectedSegment, selectedWindow]
   );
-  const availableWindows = analysis.scope.availableWindows;
-  const availableSegments = analysis.scope.availableSegments;
-  const loadedWindowDays = analysis.coverage.usableDates;
-  const failedWindowDays = analysis.coverage.failedDates;
+
+  useEffect(() => {
+    if (analysis.focus.hero !== focusedHero) {
+      setFocusedHero(analysis.focus.hero);
+    }
+  }, [analysis.focus.hero, focusedHero]);
 
   const selectSegment = (segment: HeroMetricsSegment) => {
     setSelectedSegment(segment);
@@ -186,98 +90,16 @@ export default function HeroOverviewDashboard({
     onScopeChange({ window, segment: selectedSegment });
   };
 
-  const heroMetrics = analysis.ranking;
-  const sortedRows = useMemo(
-    () =>
-      sortRows(heroMetrics, sortState, {
-        hero: (row) => row.hero,
-        tenWinRate: (row) => row.tenWinRate,
-        runsCompleted: (row) => row.runsCompleted,
-        runShare: (row) => row.runShare,
-        tenWinCount: (row) => row.tenWinCount,
-        avgRunDays10w: (row) => row.avgRunDays10w,
-        perfectRate: (row) => row.perfectRate,
-        goldRate: (row) => row.goldRate,
-        silverRate: (row) => row.silverRate,
-        bronzeRate: (row) => row.bronzeRate,
-        misfortuneRate: (row) => row.misfortuneRate,
-      }),
-    [heroMetrics, sortState]
-  );
-
-  // --- trend (fixed 7d span; honors segment, ignores window) -----------------
-  const trendDayAxis = analysis.trend.dayAxis;
-  const trendSeries = analysis.trend.series;
-
-  // --- shared focused hero ----------------------------------------------------
-  useEffect(() => {
-    if (analysis.focus.hero !== focusedHero) {
-      setFocusedHero(analysis.focus.hero);
-    }
-  }, [analysis.focus.hero, focusedHero]);
-
+  const availableWindows = analysis.scope.availableWindows;
+  const availableSegments = analysis.scope.availableSegments;
+  const loadedWindowDays = analysis.coverage.usableDates;
+  const failedWindowDays = analysis.coverage.failedDates;
+  const resolvedFocusedHero = analysis.focus.hero;
   const focusedTrendSeries = analysis.focus.trend ?? undefined;
-
-  // --- chart geometry ---------------------------------------------------------
-  const trendWinRates = trendSeries.flatMap((series) =>
-    series.points.map((point) => point.winRate)
-  );
-  const minWinRate = trendWinRates.length > 0 ? Math.min(...trendWinRates) : 0;
-  const maxWinRate = trendWinRates.length > 0 ? Math.max(...trendWinRates) : 1;
-  const spread = Math.max(maxWinRate - minWinRate, 0.04);
-  const paddedMin = clamp(Math.floor(((minWinRate - spread * 0.2) * 100) / 5) * 5 / 100, 0, 0.95);
-  const paddedMax = clamp(Math.ceil(((maxWinRate + spread * 0.2) * 100) / 5) * 5 / 100, 0.05, 1);
-  const yMin = Math.min(paddedMin, maxWinRate);
-  const yMax = Math.max(paddedMax, minWinRate + 0.01);
-  const tickStep = (yMax - yMin) / GRIDLINE_COUNT;
-  const trendYAxisTicks = Array.from(
-    { length: GRIDLINE_COUNT + 1 },
-    (_, index) => yMin + tickStep * index
-  );
-  const trendTooltipX =
-    hoveredTrendPoint == null
-      ? 0
-      : clamp(
-          hoveredTrendPoint.x - POINT_TOOLTIP_WIDTH / 2,
-          CHART_PADDING.left,
-          CHART_WIDTH - CHART_PADDING.right - POINT_TOOLTIP_WIDTH
-        );
-  const trendTooltipY =
-    hoveredTrendPoint == null
-      ? 0
-      : clamp(
-          hoveredTrendPoint.y - POINT_TOOLTIP_HEIGHT - POINT_TOOLTIP_OFFSET,
-          CHART_PADDING.top,
-          CHART_HEIGHT - CHART_PADDING.bottom - POINT_TOOLTIP_HEIGHT
-        );
-
-  const toChartPoint = (point: { day: string; winRate: number }): ChartPoint => ({
-    day: point.day,
-    winRate: point.winRate,
-    x: getChartX(trendDayAxis.indexOf(point.day), trendDayAxis.length),
-    y: getChartY(point.winRate, yMin, yMax),
-  });
-
-  // --- coverage ---------------------------------------------------------------
-  const maxTenWinRate = sortedRows.reduce(
-    (max, row) => (row.tenWinRate != null && row.tenWinRate > max ? row.tenWinRate : max),
-    0
-  );
-
   const matchups = analysis.focus.matchups;
-
   const hasAnyData = dataset.days.length > 0;
-  const rankingHasRows = sortedRows.length > 0;
+  const rankingHasRows = analysis.ranking.length > 0;
 
-  function renderRateCell(value: number | null, extraClass = '') {
-    return (
-      <span className={`relative tnum ${extraClass}`} aria-label={value == null ? noValueLabel : undefined}>
-        {formatNullablePercent(value)}
-      </span>
-    );
-  }
-
-  // --- empty / degraded full-page states ---------------------------------------
   const emptyState = !hasAnyData ? (
     <section className="surface flex flex-col items-center gap-3 px-6 py-16 text-center">
       <h2 className="font-display text-2xl font-semibold text-[color:var(--color-text-base)]">
@@ -315,15 +137,19 @@ export default function HeroOverviewDashboard({
             />
           </span>
           <span>{heroCopy.detailLinkLabel}</span>
-          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
+            ↗
+          </span>
         </a>
       }
       filters={null}
     >
       {emptyState ?? (
         <section className="grid min-w-0 gap-6">
-          {/* === HERO FOCUS ================================================ */}
-          <section data-testid="hero-focus-panel" className="surface relative overflow-hidden p-4 sm:p-6">
+          <section
+            data-testid="hero-focus-panel"
+            className="surface relative overflow-hidden p-4 sm:p-6"
+          >
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
@@ -336,327 +162,26 @@ export default function HeroOverviewDashboard({
 
             <div className="relative grid min-w-0 gap-5">
               <div>
-                <div>
-                  <p className="eyebrow eyebrow-rule">{WINDOW_LABELS['7d']} {heroCopy.trend.winrateTrend}</p>
-                  <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)] sm:text-3xl">
-                    {heroCopy.trend.title}
-                  </h2>
-                </div>
+                <p className="eyebrow eyebrow-rule">
+                  {WINDOW_LABELS['7d']} {heroCopy.trend.winrateTrend}
+                </p>
+                <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)] sm:text-3xl">
+                  {heroCopy.trend.title}
+                </h2>
               </div>
 
               <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
-                <section data-testid="trend-panel" className="grid min-w-0 gap-3">
-                  <div
-                    data-testid="daily-winrate-chart"
-                    className="relative h-full min-h-[220px] min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(232,185,74,0.04),rgba(8,6,4,0.95))] sm:min-h-[280px] xl:min-h-[320px]"
-                  >
-                    <div className="h-full w-full overflow-x-auto overflow-y-hidden p-2 sm:p-3">
-                      {trendSeries.length > 0 ? (
-                  <svg
-                    viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-                    className="block h-full w-full min-w-[720px]"
-                    role="img"
-                    aria-label={heroCopy.trend.chartAriaLabel}
-                  >
-                  <defs>
-                    {focusedTrendSeries ? (
-                      <linearGradient id="focused-area" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={focusedTrendSeries.color} stopOpacity="0.35" />
-                        <stop offset="100%" stopColor={focusedTrendSeries.color} stopOpacity="0" />
-                      </linearGradient>
-                    ) : null}
-                  </defs>
+                <HeroTrendPanel
+                  locale={locale}
+                  trend={analysis.trend}
+                  focusedHero={resolvedFocusedHero}
+                  onFocusHero={setFocusedHero}
+                />
 
-                  {trendYAxisTicks.map((tick) => {
-                    const y = getChartY(tick, yMin, yMax);
-                    return (
-                      <g key={`tick-${tick.toFixed(4)}`}>
-                        <line
-                          x1={CHART_PADDING.left}
-                          y1={y}
-                          x2={CHART_WIDTH - CHART_PADDING.right}
-                          y2={y}
-                          stroke="rgba(148, 131, 95, 0.14)"
-                          strokeWidth="1"
-                          strokeDasharray="2 4"
-                        />
-                        <text
-                          x={CHART_PADDING.left - 12}
-                          y={y + 4}
-                          fill="rgba(179, 160, 121, 0.95)"
-                          fontSize="11"
-                          fontFamily="JetBrains Mono, monospace"
-                          textAnchor="end"
-                        >
-                          {formatPercent(tick)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {trendDayAxis.map((day, index) => {
-                    const x = getChartX(index, trendDayAxis.length);
-                    const isLast = index === trendDayAxis.length - 1;
-                    return (
-                      <g key={day}>
-                        <line
-                          x1={x}
-                          y1={CHART_PADDING.top}
-                          x2={x}
-                          y2={CHART_HEIGHT - CHART_PADDING.bottom}
-                          stroke="rgba(148, 131, 95, 0.06)"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={x}
-                          y={CHART_HEIGHT - 14}
-                          fill={isLast ? 'rgba(255,212,122,0.95)' : 'rgba(179, 160, 121, 0.95)'}
-                          fontSize="11"
-                          fontFamily="JetBrains Mono, monospace"
-                          fontWeight={isLast ? '600' : '400'}
-                          textAnchor="middle"
-                        >
-                          {formatShortDate(day, locale)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Focused area fill — drawn per segment beneath all lines */}
-                  {focusedTrendSeries
-                    ? focusedTrendSeries.segments.map(
-                        (segment, segmentIndex) => {
-                          const points = segment.map(toChartPoint);
-                          if (points.length === 0) return null;
-                          const pathD = `M ${points[0].x} ${CHART_HEIGHT - CHART_PADDING.bottom} L ${points
-                            .map((p) => `${p.x} ${p.y}`)
-                            .join(' L ')} L ${points.at(-1)!.x} ${CHART_HEIGHT - CHART_PADDING.bottom} Z`;
-                          return (
-                            <path
-                              key={`area-${segmentIndex}`}
-                              d={pathD}
-                              fill="url(#focused-area)"
-                            />
-                          );
-                        }
-                      )
-                    : null}
-
-                  {trendSeries.map((heroSeries) => {
-                    const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
-                    const allPoints: ChartPoint[] = heroSeries.points.map(toChartPoint);
-                    const segments = heroSeries.segments.map(
-                      (segment) => segment.map(toChartPoint)
-                    );
-                    const showTrendPoint = (point: ChartPoint | undefined) => {
-                      if (point == null) return;
-                      setFocusedHero(heroSeries.hero);
-                      setHoveredTrendPoint({
-                        ...point,
-                        hero: heroSeries.hero,
-                        color: heroSeries.color,
-                      });
-                    };
-                    const clearTrendPoint = () => setHoveredTrendPoint(null);
-
-                    return (
-                      <g
-                        key={heroSeries.hero}
-                        data-testid="daily-winrate-line"
-                        data-hero={heroSeries.hero}
-                        data-selected={isFocused ? 'true' : 'false'}
-                        className="transition-opacity duration-200"
-                      >
-                        {segments.map((segmentPoints, segmentIndex) => (
-                          <polyline
-                            key={`line-${segmentIndex}`}
-                            fill="none"
-                            stroke={heroSeries.color}
-                            strokeOpacity={isFocused ? '1' : '0.18'}
-                            strokeWidth={isFocused ? '3' : '2'}
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                            points={segmentPoints.map((p) => `${p.x},${p.y}`).join(' ')}
-                            style={isFocused ? { filter: `drop-shadow(0 0 6px ${heroSeries.color}88)` } : undefined}
-                          />
-                        ))}
-                        {segments.map((segmentPoints, segmentIndex) => (
-                          <polyline
-                            key={`hover-${segmentIndex}`}
-                            fill="none"
-                            stroke="transparent"
-                            strokeWidth="22"
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                            points={segmentPoints.map((p) => `${p.x},${p.y}`).join(' ')}
-                            style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-                            aria-hidden="true"
-                            onMouseEnter={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
-                            onMouseMove={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
-                            onTouchStart={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
-                            onTouchMove={(event) => showTrendPoint(getNearestChartPoint(event, allPoints))}
-                            onMouseLeave={clearTrendPoint}
-                            onTouchEnd={clearTrendPoint}
-                            onTouchCancel={clearTrendPoint}
-                            onClick={() => setFocusedHero(heroSeries.hero)}
-                          />
-                        ))}
-                        {allPoints.map((point, index) => (
-                          <circle
-                            key={`${heroSeries.hero}-${index}`}
-                            cx={point.x}
-                            cy={point.y}
-                            r={isFocused ? '4.5' : '3'}
-                            fill={heroSeries.color}
-                            fillOpacity={isFocused ? '1' : '0.4'}
-                            stroke="rgba(12,10,7,0.95)"
-                            strokeWidth="2"
-                            onMouseEnter={() => showTrendPoint(point)}
-                            onMouseLeave={clearTrendPoint}
-                            onFocus={() => showTrendPoint(point)}
-                            onBlur={clearTrendPoint}
-                            tabIndex={0}
-                            aria-label={`${heroSeries.hero} ${formatShortDate(point.day, locale)} ${formatPercent(point.winRate)}`}
-                          />
-                        ))}
-                      </g>
-                    );
-                  })}
-
-                  {hoveredTrendPoint ? (
-                    <g data-testid="trend-point-tooltip" pointerEvents="none">
-                      <line
-                        x1={hoveredTrendPoint.x}
-                        y1={hoveredTrendPoint.y}
-                        x2={hoveredTrendPoint.x}
-                        y2={CHART_HEIGHT - CHART_PADDING.bottom}
-                        stroke={hoveredTrendPoint.color}
-                        strokeOpacity="0.4"
-                        strokeWidth="1"
-                        strokeDasharray="2 3"
-                      />
-                      <circle
-                        cx={hoveredTrendPoint.x}
-                        cy={hoveredTrendPoint.y}
-                        r="8"
-                        fill="none"
-                        stroke={hoveredTrendPoint.color}
-                        strokeWidth="2"
-                        strokeOpacity="0.6"
-                      />
-                      <rect
-                        x={trendTooltipX}
-                        y={trendTooltipY}
-                        width={POINT_TOOLTIP_WIDTH}
-                        height={POINT_TOOLTIP_HEIGHT}
-                        rx="10"
-                        fill="rgba(15,12,8,0.97)"
-                        stroke={hoveredTrendPoint.color}
-                        strokeOpacity="0.55"
-                        strokeWidth="1"
-                      />
-                      <rect
-                        x={trendTooltipX + 10}
-                        y={trendTooltipY + 12}
-                        width="3"
-                        height="32"
-                        fill={hoveredTrendPoint.color}
-                        rx="1.5"
-                      />
-                      <text
-                        x={trendTooltipX + 22}
-                        y={trendTooltipY + 22}
-                        fill="rgba(241,230,205,0.96)"
-                        fontSize="12"
-                        fontWeight="600"
-                        fontFamily="IBM Plex Sans, sans-serif"
-                      >
-                        {hoveredTrendPoint.hero}
-                      </text>
-                      <text
-                        x={trendTooltipX + 22}
-                        y={trendTooltipY + 38}
-                        fill="rgba(148,131,95,0.95)"
-                        fontSize="10"
-                        fontFamily="JetBrains Mono, monospace"
-                        letterSpacing="0.06em"
-                      >
-                        {formatShortDate(hoveredTrendPoint.day, locale)}
-                      </text>
-                      <text
-                        x={trendTooltipX + POINT_TOOLTIP_WIDTH - 14}
-                        y={trendTooltipY + 35}
-                        fill="rgba(255,212,122,1)"
-                        fontSize="18"
-                        fontWeight="700"
-                        fontFamily="JetBrains Mono, monospace"
-                        textAnchor="end"
-                      >
-                        {formatPercent(hoveredTrendPoint.winRate)}
-                      </text>
-                    </g>
-                  ) : null}
-                </svg>
-                    ) : (
-                      <div className="flex h-full min-h-[220px] items-center justify-center text-sm text-[color:var(--color-text-muted)]">
-                        {heroCopy.snapshot.noData}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                  {focusedTrendSeries != null && focusedTrendSeries.nullPointCount > 0 ? (
-                    <p className="text-[0.72rem] leading-5 text-[color:var(--color-text-faint)]">
-                      {coverageCopy.noTrendValue}
-                    </p>
-                  ) : null}
-
-                  <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 2xl:grid-cols-7">
-                    {trendSeries.map((heroSeries) => {
-                      const isFocused = heroSeries.hero === focusedTrendSeries?.hero;
-                      return (
-                        <button
-                          key={heroSeries.hero}
-                          type="button"
-                          data-selected={isFocused ? 'true' : 'false'}
-                          onMouseEnter={() => setFocusedHero(heroSeries.hero)}
-                          onFocus={() => setFocusedHero(heroSeries.hero)}
-                          onClick={() => setFocusedHero(heroSeries.hero)}
-                          className={`group inline-flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition ${
-                            isFocused
-                              ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
-                              : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
-                          }`}
-                          aria-label={`${heroSeries.hero} ${formatNullablePercent(heroSeries.latestWinRate)}`}
-                          title={heroSeries.hero}
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span
-                              className="h-4 w-1 shrink-0 rounded-sm"
-                              style={{
-                                backgroundColor: heroSeries.color,
-                                boxShadow: isFocused ? `0 0 10px ${heroSeries.color}aa` : `0 0 6px ${heroSeries.color}55`,
-                              }}
-                              aria-hidden="true"
-                            />
-                            <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-text-base)]">
-                              {getHeroShortLabel(heroSeries.hero)}
-                            </span>
-                          </span>
-                          <span
-                            className={`tnum text-[0.74rem] font-semibold ${
-                              isFocused ? 'text-[color:var(--color-accent-bright)]' : 'text-[color:var(--color-text-muted)]'
-                            }`}
-                          >
-                            {formatNullablePercent(heroSeries.latestWinRate)}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                <section data-testid="matchup-panel" className="min-w-0 rounded-2xl border border-[color:var(--color-border-soft)] bg-[rgba(10,8,5,0.58)] p-4 sm:p-5">
+                <section
+                  data-testid="matchup-panel"
+                  className="min-w-0 rounded-2xl border border-[color:var(--color-border-soft)] bg-[rgba(10,8,5,0.58)] p-4 sm:p-5"
+                >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="font-display text-lg font-semibold text-[color:var(--color-text-base)]">
                       {heroCopy.matchups.title}
@@ -679,7 +204,8 @@ export default function HeroOverviewDashboard({
                           {focusedTrendSeries.hero}
                         </span>
                         <span className="tnum shrink-0 text-[0.68rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                          {getHeroShortLabel(focusedTrendSeries.hero)} · {WINDOW_LABELS[selectedWindow]}
+                          {getHeroShortLabel(focusedTrendSeries.hero)} ·{' '}
+                          {WINDOW_LABELS[selectedWindow]}
                         </span>
                       </div>
                     ) : null}
@@ -698,7 +224,6 @@ export default function HeroOverviewDashboard({
             </div>
           </section>
 
-          {/* === HERO RANKING =============================================== */}
           <section data-testid="ranking-panel" className="surface overflow-hidden">
             <div className="border-b border-[color:var(--color-border-soft)] px-6 py-5">
               <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -716,8 +241,14 @@ export default function HeroOverviewDashboard({
                     aria-label={copy.common.filters}
                     className="flex flex-wrap items-end gap-x-8 gap-y-4"
                   >
-                    <div role="group" aria-label={scopeCopy.window} className="min-w-0 space-y-2.5">
-                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.window}</p>
+                    <div
+                      role="group"
+                      aria-label={scopeCopy.window}
+                      className="min-w-0 space-y-2.5"
+                    >
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">
+                        {scopeCopy.window}
+                      </p>
                       <SegmentedControl>
                         {availableWindows.map((option) => (
                           <SegmentedButton
@@ -730,8 +261,14 @@ export default function HeroOverviewDashboard({
                         ))}
                       </SegmentedControl>
                     </div>
-                    <div role="group" aria-label={scopeCopy.segment} className="min-w-0 space-y-2.5">
-                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.segment}</p>
+                    <div
+                      role="group"
+                      aria-label={scopeCopy.segment}
+                      className="min-w-0 space-y-2.5"
+                    >
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">
+                        {scopeCopy.segment}
+                      </p>
                       <SegmentedControl>
                         {availableSegments.map((option) => (
                           <SegmentedButton
@@ -764,99 +301,29 @@ export default function HeroOverviewDashboard({
             ) : null}
 
             {rankingHasRows ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[840px] table-fixed border-collapse">
-                  <colgroup>
-                    {RANKING_COLUMN_WIDTHS.map((width, index) => (
-                      <col key={`${index}:${width}`} style={{ width }} />
-                    ))}
-                  </colgroup>
-                  <thead className="text-left text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                    <tr>
-                      <SortableHeader label={heroCopy.tableHeaders.hero} className="sticky left-0 z-20 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-3.5" activeDirection={sortState.key === 'hero' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'hero', 'asc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.winRate} className="px-5 py-3.5" activeDirection={sortState.key === 'tenWinRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinRate', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.runs} className="px-3 py-3.5" activeDirection={sortState.key === 'runsCompleted' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runsCompleted', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.runShare} className="px-3 py-3.5" activeDirection={sortState.key === 'runShare' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'runShare', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.wins10w} className="px-3 py-3.5" activeDirection={sortState.key === 'tenWinCount' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'tenWinCount', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.avgDays} className="px-3 py-3.5" activeDirection={sortState.key === 'avgRunDays10w' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'avgRunDays10w', 'asc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.perfect} className="px-3 py-3.5" activeDirection={sortState.key === 'perfectRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'perfectRate', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
-                      <SortableHeader label={heroCopy.tableHeaders.misfortune} className="px-3 py-3.5" activeDirection={sortState.key === 'misfortuneRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'misfortuneRate', 'desc'))} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedRows.map((row) => {
-                      const heroColor = getHeroColor(row.hero);
-                      const isSelected = row.hero === focusedHero;
-                      const rateRatio =
-                        row.tenWinRate != null && maxTenWinRate > 0
-                          ? row.tenWinRate / maxTenWinRate
-                          : 0;
-                      return (
-                        <tr
-                          key={row.hero}
-                          className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-base)]"
-                          style={{ '--hero-color': heroColor } as React.CSSProperties}
-                        >
-                          <td className="sticky left-0 z-10 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-4">
-                            <button
-                              type="button"
-                              data-selected={isSelected ? 'true' : 'false'}
-                              onClick={() => setFocusedHero(row.hero)}
-                              className="inline-flex items-center bg-transparent p-0 text-left transition"
-                            >
-                              <HeroBadge hero={row.hero} selected={isSelected} size="sm" />
-                            </button>
-                          </td>
-                          <td
-                            className="databar relative px-5 py-4 tnum text-[color:var(--color-accent-bright)]"
-                            style={{ '--bar-width': `${rateRatio * 100}%` } as React.CSSProperties}
-                          >
-                            {renderRateCell(row.tenWinRate)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
-                            {formatInteger(row.runsCompleted, locale)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-muted)]">
-                            {renderRateCell(row.runShare)}
-                          </td>
-                          <td className="px-3 py-4 tnum text-[color:var(--color-text-base)]">
-                            {formatInteger(row.tenWinCount, locale)}
-                          </td>
-                          <td
-                            className="px-3 py-4 tnum text-[color:var(--color-text-muted)]"
-                            aria-label={row.avgRunDays10w == null ? noValueLabel : undefined}
-                          >
-                            {formatDays(row.avgRunDays10w)}
-                          </td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.perfectRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.goldRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.silverRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.bronzeRate)}</td>
-                          <td className="px-3 py-4 tnum">{renderRateCell(row.misfortuneRate)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <HeroRankingTable
+                locale={locale}
+                rows={analysis.ranking}
+                focusedHero={resolvedFocusedHero}
+                onFocusHero={setFocusedHero}
+              />
             ) : (
               <div className="px-6 py-12 text-center">
                 <h3 className="font-display text-xl font-semibold text-[color:var(--color-text-base)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.title : heroCopy.segmentEmpty.title}
+                  {loadedWindowDays.length === 0
+                    ? heroCopy.unavailable.title
+                    : heroCopy.segmentEmpty.title}
                 </h3>
                 <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.body : heroCopy.segmentEmpty.body}
+                  {loadedWindowDays.length === 0
+                    ? heroCopy.unavailable.body
+                    : heroCopy.segmentEmpty.body}
                 </p>
               </div>
             )}
           </section>
-
         </section>
       )}
-
     </StatsPageShell>
   );
 }
@@ -877,23 +344,34 @@ function MatchupList({
   className?: string;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>;
+    return (
+      <p className="text-sm text-[color:var(--color-text-muted)]">
+        {matchupCopy.empty}
+      </p>
+    );
   }
 
   return (
     <ul data-testid="matchup-list" className={className}>
       {rows.map((row) => (
-        <li key={row.opponentHero} className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
+        <li
+          key={row.opponentHero}
+          className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5"
+        >
           <HeroBadge hero={row.opponentHero} size="sm" />
           <span
             className="databar databar-pos relative block h-6 rounded-sm"
-            style={{
-              '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
-            } as React.CSSProperties}
+            style={
+              {
+                '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
+              } as CSSProperties
+            }
           >
             <span
               className="absolute inset-y-0 left-2 flex items-center gap-2 tnum text-[0.78rem] text-[color:var(--color-text-base)]"
-              aria-label={row.isLowSample || row.winRate == null ? noValueLabel : undefined}
+              aria-label={
+                row.isLowSample || row.winRate == null ? noValueLabel : undefined
+              }
             >
               {row.isLowSample ? '—' : formatNullablePercent(row.winRate)}
               {row.isLowSample ? (

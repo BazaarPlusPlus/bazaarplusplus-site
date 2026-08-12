@@ -146,14 +146,12 @@ function getRankingTable() {
 }
 
 describe('HeroOverviewDashboard', () => {
-  test('reports normalized scope and removes the retired rating-tier query from behavior', async () => {
+  test('consumes normalized scope without owning URL canonicalization', () => {
     const { onScopeChange } = renderDashboard({
       url: '/heroes?lang=zh&w=invalid&t=high&s=all',
     });
 
-    await waitFor(() =>
-      expect(onScopeChange).toHaveBeenCalledWith({ window: '1d', segment: 'all' })
-    );
+    expect(onScopeChange).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: '高' })).not.toBeInTheDocument();
   });
 

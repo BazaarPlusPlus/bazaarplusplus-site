@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import DownloadPage from '../src/features/download/DownloadPage';
+import type { InstallerManifestTransport } from '../src/features/download/installer';
 import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
 
 function downloadLocation() {
@@ -25,27 +26,25 @@ function renderWithClient(ui: ReactNode): QueryClient {
   return client;
 }
 
+function makeTransport(
+  result: { payload: unknown } | { error: Error }
+): InstallerManifestTransport {
+  return {
+    load:
+      'payload' in result
+        ? vi.fn().mockResolvedValue(result.payload)
+        : vi.fn().mockRejectedValue(result.error),
+  };
+}
+
 describe('DownloadPage', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  test('renders both platform cards and shows version + download urls when fetch succeeds', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ version: '3.1.1' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
+  test('renders both platform cards from one resolved latest installer', async () => {
+    renderWithClient(
+      <DownloadPage
+        location={downloadLocation()}
+        transport={makeTransport({ payload: { version: '3.1.1' } })}
+      />
     );
-
-    renderWithClient(<DownloadPage location={downloadLocation()} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Windows' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'macOS' })).toBeInTheDocument();
@@ -81,13 +80,13 @@ describe('DownloadPage', () => {
     expect(screen.queryByText(/deleting the entire The Bazaar directory/)).not.toBeInTheDocument();
   });
 
-  test('shows fallback message and GitHub release link when fetch fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
+  test('shows fallback message and GitHub release link when the manifest fails', async () => {
+    renderWithClient(
+      <DownloadPage
+        location={downloadLocation()}
+        transport={makeTransport({ error: new Error('unavailable') })}
+      />
     );
-
-    renderWithClient(<DownloadPage location={downloadLocation()} />);
 
     await waitFor(() =>
       expect(screen.getByText(/Cannot reach the latest version right now/)).toBeInTheDocument()
@@ -102,5 +101,4 @@ describe('DownloadPage', () => {
     const winButton = screen.getByRole('link', { name: /Download \.exe/ });
     expect(winButton).toHaveAttribute('aria-disabled', 'true');
   });
-
 });

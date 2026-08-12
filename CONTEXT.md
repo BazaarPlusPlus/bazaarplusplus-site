@@ -1,21 +1,10 @@
-# BazaarPlusPlus Site
+# Hero Analysis Language
 
-本上下文定义 BazaarPlusPlus 网站中英雄统计与分析所使用的统一领域语言。
+在代码、文档和分析文案中统一使用以下概念：
 
-## Language
-
-**Hero Analysis（英雄分析）**:
-从英雄统计数据中得到的排行、趋势和对局结论；该概念独立于具体页面布局。
-_Avoid_: Hero read model, dashboard data
-
-**Hero Metrics Dataset（英雄指标数据集）**:
-一组可用于英雄分析的逐日原始统计数据，并明确哪些日期可用；它不绑定具体 schema 版本或传输格式。
-_Avoid_: analyzer-v4 payload, dashboard data
-
-**Analysis Scope（分析范围）**:
-一次英雄分析所采用的时间窗口与英雄分段组合；英雄分段包括全部、传奇和非传奇。它描述哪些数据参与分析，而不是数据如何展示或写入 URL。
-_Avoid_: filters, query params
-
-**Dataset Coverage（数据集覆盖）**:
-预期日期与实际可用日期之间的关系；缺失日期必须明确呈现，绝不按零值数据处理。
-_Avoid_: load count, completeness flag
+| 概念 | 含义 | 避免使用 |
+| --- | --- | --- |
+| **Hero Analysis（英雄分析）** | 从英雄统计数据中得到的排行、趋势和对局结论，与页面布局无关。 | Hero read model、dashboard data |
+| **Hero Metrics Dataset（英雄指标数据集）** | 可供分析的逐日原始统计及其可用日期，与 schema 版本和传输格式无关。 | analyzer payload、dashboard data |
+| **Analysis Scope（分析范围）** | 参与一次分析的时间窗口与英雄分段（全部、传奇、非传奇），与 UI 和 URL 表示无关。 | filters、query params |
+| **Dataset Coverage（数据集覆盖）** | 预期日期与可用/失败日期的关系；失败日期保持可见，不转成零值。 | load count、completeness flag |

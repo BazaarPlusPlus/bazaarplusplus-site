@@ -19,7 +19,7 @@ export const HERO_MAPPING: Record<HeroName, { shortLabel: string; color: string 
   Karnok: { shortLabel: 'KAR', color: '#3b889c' },
   Pygmalien: { shortLabel: 'PYG', color: '#2767c0' },
   Vanessa: { shortLabel: 'VAN', color: '#c02121' },
-  TheDragons: { shortLabel: 'DRA', color: '#9db7f3' },
+  TheDragons: { shortLabel: 'DRA', color: '#2dd2d0' },
 };
 
 const HERO_COLORS: Record<HeroName, string> = Object.fromEntries(

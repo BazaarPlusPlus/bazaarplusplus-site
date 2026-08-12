@@ -1,22 +1,19 @@
 import { getHeroColor, HEROES } from '../../shared/lib/heroes';
 import {
-  GAME_DAY_BUCKETS,
-  RATING_TIER_ORDER,
-  type RatingTier,
-  type GameDayBucket,
+  HERO_METRICS_SEGMENTS,
   type DatasetCoverage,
   type HeroBattleCounts as BattleCounts,
   type HeroMetricsDataset,
   type HeroMetricsDay,
-  type HeroMetricsPublishedDay,
   type HeroMetricsRow,
+  type HeroMetricsSegment,
 } from './hero-metrics-dataset';
 
 export type MetricWindow = '1d' | '3d' | '7d';
 
 export type AnalysisScope = {
   window: MetricWindow;
-  tier: RatingTier;
+  segment: HeroMetricsSegment;
 };
 
 export type HeroRanking = {
@@ -49,11 +46,6 @@ export type HeroTrend = {
   nullPointCount: number;
 };
 
-export type HeroStage = {
-  hero: string;
-  rates: Partial<Record<GameDayBucket, number | null>>;
-};
-
 export type HeroMatchup = {
   opponentHero: string;
   decided: number;
@@ -67,10 +59,8 @@ export type HeroAnalysis = {
   generatedAt: string;
   scope: {
     requested: AnalysisScope;
-    effective: AnalysisScope;
     availableWindows: MetricWindow[];
-    availableTiers: RatingTier[];
-    tierFellBack: boolean;
+    availableSegments: HeroMetricsSegment[];
   };
   coverage: DatasetCoverage & { nominalDateCount: number };
   ranking: HeroRanking[];
@@ -78,7 +68,6 @@ export type HeroAnalysis = {
     dayAxis: string[];
     series: HeroTrend[];
   };
-  stages: HeroStage[];
   focus: {
     hero: string | null;
     ranking: HeroRanking | null;
@@ -98,7 +87,6 @@ type MergedHeroRow = {
   bronze: number;
   tenWinDaysKnownCount: number;
   tenWinDaysSumDays: number;
-  battleDays: Partial<Record<GameDayBucket, BattleCounts>>;
   matchups: Map<string, BattleCounts>;
 };
 
@@ -118,62 +106,27 @@ function rateOrNull(successes: number, attempts: number): number | null {
   return attempts > 0 ? successes / attempts : null;
 }
 
-function selectDays(
-  days: HeroMetricsPublishedDay[],
-  window: MetricWindow,
-  latestCompleteDay: string
-): HeroMetricsPublishedDay[] {
-  return [...days]
-    .filter((ref) => ref.day <= latestCompleteDay)
-    .sort((left, right) => left.day.localeCompare(right.day))
+function selectDates(dates: string[], window: MetricWindow, windowEnd: string): string[] {
+  return [...dates]
+    .filter((day) => day <= windowEnd)
+    .sort((left, right) => left.localeCompare(right))
     .slice(-WINDOW_DAY_COUNT[window]);
-}
-
-function getAvailableTiers(days: HeroMetricsDay[]): RatingTier[] {
-  const tiers = new Set<RatingTier>();
-  for (const payload of days) {
-    for (const row of payload.rows) {
-      if (isCanonicalHero(row.hero)) {
-        tiers.add(row.rating_tier);
-      }
-    }
-  }
-
-  return RATING_TIER_ORDER.filter((tier) => tiers.has(tier));
 }
 
 function collectRows(
   payloads: HeroMetricsDay[],
-  selectedDays: HeroMetricsPublishedDay[],
-  tier: RatingTier
+  selectedDates: string[],
+  segment: HeroMetricsSegment
 ): HeroMetricsRow[] {
-  const wantedDates = new Set(selectedDays.map((ref) => ref.day));
+  const wantedDates = new Set(selectedDates);
   return payloads
     .filter((payload) => wantedDates.has(payload.day))
     .flatMap((payload) =>
-      payload.rows.filter((row) => row.rating_tier === tier && isCanonicalHero(row.hero))
+      payload.rows.filter(
+        (row) =>
+          (segment === 'all' || row.segment === segment) && isCanonicalHero(row.hero)
+      )
     );
-}
-
-function addBattleDays(
-  target: Partial<Record<GameDayBucket, BattleCounts>>,
-  source: Partial<Record<GameDayBucket, BattleCounts>>
-) {
-  for (const bucket of GAME_DAY_BUCKETS) {
-    const counts = source[bucket];
-    if (!counts) {
-      continue;
-    }
-
-    const existing = target[bucket];
-    if (existing) {
-      existing.decided += counts.decided;
-      existing.wins += counts.wins;
-      existing.losses += counts.losses;
-    } else {
-      target[bucket] = { ...counts };
-    }
-  }
 }
 
 function mergeRows(rows: HeroMetricsRow[]): Map<string, MergedHeroRow> {
@@ -197,7 +150,6 @@ function mergeRows(rows: HeroMetricsRow[]): Map<string, MergedHeroRow> {
         bronze: 0,
         tenWinDaysKnownCount: 0,
         tenWinDaysSumDays: 0,
-        battleDays: {},
         matchups: new Map(),
       };
       merged.set(row.hero, entry);
@@ -212,7 +164,6 @@ function mergeRows(rows: HeroMetricsRow[]): Map<string, MergedHeroRow> {
     entry.bronze += row.outcomes.bronze;
     entry.tenWinDaysKnownCount += row.ten_win_days.known_count;
     entry.tenWinDaysSumDays += row.ten_win_days.sum_days;
-    addBattleDays(entry.battleDays, row.battle_days);
 
     for (const matchup of row.matchups) {
       if (!isCanonicalHero(matchup.opponent_hero)) {
@@ -253,10 +204,8 @@ function deriveRanking(merged: Map<string, MergedHeroRow>): HeroRanking[] {
 
   return rows
     .map((row) => {
-      const misfortune = Math.max(
-        row.scoredRuns - (row.perfect + row.gold + row.silver + row.bronze),
-        0
-      );
+      const misfortune =
+        row.scoredRuns - (row.perfect + row.gold + row.silver + row.bronze);
       return {
         hero: row.hero,
         runsCompleted: row.runsCompleted,
@@ -306,31 +255,30 @@ function segmentTrendPoints(points: HeroTrendPoint[], dayAxis: string[]): HeroTr
 
 function deriveTrend(
   payloads: HeroMetricsDay[],
-  selectedDays: HeroMetricsPublishedDay[],
-  tier: RatingTier
+  selectedDates: string[],
+  segment: HeroMetricsSegment
 ): HeroTrend[] {
   const payloadByDay = new Map(payloads.map((payload) => [payload.day, payload]));
-  const orderedDays = [...selectedDays].sort((left, right) => left.day.localeCompare(right.day));
-  const dayAxis = orderedDays.map((ref) => ref.day);
+  const orderedDates = [...selectedDates].sort((left, right) => left.localeCompare(right));
   const pointsByHero = new Map<string, HeroTrendPoint[]>();
   const nullCountByHero = new Map<string, number>();
 
-  for (const dayRef of orderedDays) {
-    const payload = payloadByDay.get(dayRef.day);
+  for (const day of orderedDates) {
+    const payload = payloadByDay.get(day);
     if (!payload) {
       continue;
     }
-    for (const row of payload.rows) {
-      if (row.rating_tier !== tier || !isCanonicalHero(row.hero)) {
-        continue;
-      }
-      const winRate = rateOrNull(row.runs.ten_win, row.runs.completed);
+    const dailyRows = payload.rows.filter(
+      (row) => (segment === 'all' || row.segment === segment) && isCanonicalHero(row.hero)
+    );
+    for (const row of mergeRows(dailyRows).values()) {
+      const winRate = rateOrNull(row.tenWinCount, row.runsCompleted);
       if (winRate == null) {
         nullCountByHero.set(row.hero, (nullCountByHero.get(row.hero) ?? 0) + 1);
         continue;
       }
       const points = pointsByHero.get(row.hero) ?? [];
-      points.push({ day: payload.day, winRate });
+      points.push({ day, winRate });
       pointsByHero.set(row.hero, points);
     }
   }
@@ -340,7 +288,7 @@ function deriveTrend(
       hero,
       color: getHeroColor(hero),
       points,
-      segments: segmentTrendPoints(points, dayAxis),
+      segments: segmentTrendPoints(points, orderedDates),
       latestWinRate: points.at(-1)?.winRate ?? null,
       firstWinRate: points[0]?.winRate ?? null,
       nullPointCount: nullCountByHero.get(hero) ?? 0,
@@ -350,22 +298,6 @@ function deriveTrend(
         compareNullableDescending(left.latestWinRate, right.latestWinRate) ||
         left.hero.localeCompare(right.hero)
     );
-}
-
-function deriveStages(
-  ranking: HeroRanking[],
-  merged: Map<string, MergedHeroRow>
-): HeroStage[] {
-  return ranking.map((row) => {
-    const rates: Partial<Record<GameDayBucket, number | null>> = {};
-    for (const bucket of GAME_DAY_BUCKETS) {
-      const counts = merged.get(row.hero)?.battleDays[bucket];
-      if (counts) {
-        rates[bucket] = rateOrNull(counts.wins, counts.decided);
-      }
-    }
-    return { hero: row.hero, rates };
-  });
 }
 
 function compareMatchups(left: HeroMatchup, right: HeroMatchup): number {
@@ -400,27 +332,20 @@ export function analyzeHeroes(
   requestedScope: AnalysisScope,
   requestedFocus: string | null
 ): HeroAnalysis {
-  const selectedDays = selectDays(
-    dataset.publishedDays,
+  const selectedDates = selectDates(
+    dataset.coverage.requestedDates,
     requestedScope.window,
-    dataset.latestCompleteDay
+    dataset.window.end
   );
-  const selectedDateSet = new Set(selectedDays.map((ref) => ref.day));
+  const selectedDateSet = new Set(selectedDates);
   const usableDates = dataset.coverage.usableDates.filter((day) => selectedDateSet.has(day));
   const failedDates = dataset.coverage.failedDates.filter((day) => selectedDateSet.has(day));
-  const requestedRows = collectRows(dataset.days, selectedDays, requestedScope.tier);
-  const allRows = collectRows(dataset.days, selectedDays, 'all');
-  const tierFellBack =
-    requestedScope.tier !== 'all' && requestedRows.length === 0 && allRows.length > 0;
-  const effectiveScope: AnalysisScope = {
-    window: requestedScope.window,
-    tier: tierFellBack ? 'all' : requestedScope.tier,
-  };
-  const merged = mergeRows(tierFellBack ? allRows : requestedRows);
+  const merged = mergeRows(
+    collectRows(dataset.days, selectedDates, requestedScope.segment)
+  );
   const ranking = deriveRanking(merged);
-  const stages = deriveStages(ranking, merged);
-  const trendDays = selectDays(dataset.publishedDays, '7d', dataset.latestCompleteDay);
-  const trendSeries = deriveTrend(dataset.days, trendDays, effectiveScope.tier);
+  const trendDates = selectDates(dataset.coverage.requestedDates, '7d', dataset.window.end);
+  const trendSeries = deriveTrend(dataset.days, trendDates, requestedScope.segment);
   const focusHero = ranking.some((row) => row.hero === requestedFocus)
     ? requestedFocus
     : ranking[0]?.hero ?? null;
@@ -429,23 +354,21 @@ export function analyzeHeroes(
     generatedAt: dataset.generatedAt,
     scope: {
       requested: requestedScope,
-      effective: effectiveScope,
       availableWindows: dataset.coverage.usableDates.length > 0 ? [...METRIC_WINDOW_OPTIONS] : [],
-      availableTiers: getAvailableTiers(dataset.days),
-      tierFellBack,
+      availableSegments:
+        dataset.coverage.usableDates.length > 0 ? [...HERO_METRICS_SEGMENTS] : [],
     },
     coverage: {
-      requestedDates: selectedDays.map((ref) => ref.day),
+      requestedDates: selectedDates,
       usableDates,
       failedDates,
-      nominalDateCount: WINDOW_DAY_COUNT[requestedScope.window],
+      nominalDateCount: selectedDates.length,
     },
     ranking,
     trend: {
-      dayAxis: trendDays.map((ref) => ref.day),
+      dayAxis: trendDates,
       series: trendSeries,
     },
-    stages,
     focus: {
       hero: focusHero,
       ranking: ranking.find((row) => row.hero === focusHero) ?? null,

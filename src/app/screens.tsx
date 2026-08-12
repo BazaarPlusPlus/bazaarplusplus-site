@@ -9,11 +9,7 @@ type LoadingScreenProps = {
 
 function renderProgressLabel(progress: HeroMetricsLoadProgress, locale: Locale): string {
   const copy = getSiteCopy(locale).common.loading;
-  const resource =
-    progress.resource.kind === 'manifest'
-      ? copy.resources.manifest
-      : `${copy.resources.dailyPrefix}${progress.resource.date}`;
-  return `${copy.statusLabels[progress.status]} ${resource}`;
+  return `${copy.statusLabels[progress.status]} ${copy.resources.snapshot}`;
 }
 
 export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {

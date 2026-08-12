@@ -53,18 +53,18 @@ describe('deep SPA location interface', () => {
   test('parses locale and Analysis Scope defaults from one resolved model', () => {
     expect(setup('https://example.test/heroes').location.current()).toMatchObject({
       locale: 'zh',
-      scope: { window: '1d', tier: 'all' },
+      scope: { window: '1d', segment: 'all' },
     });
     expect(
-      setup('https://example.test/heroes?lang=en&w=7d&t=high').location.current()
-    ).toMatchObject({ locale: 'en', scope: { window: '7d', tier: 'high' } });
+      setup('https://example.test/heroes?lang=en&w=7d&s=legend').location.current()
+    ).toMatchObject({ locale: 'en', scope: { window: '7d', segment: 'legend' } });
     expect(
-      setup('https://example.test/heroes?lang=ja&w=30d&t=platinum').location.current()
-    ).toMatchObject({ locale: 'zh', scope: { window: '1d', tier: 'all' } });
+      setup('https://example.test/heroes?lang=ja&w=30d&s=platinum').location.current()
+    ).toMatchObject({ locale: 'zh', scope: { window: '1d', segment: 'all' } });
   });
 
   test('builds route links from the route catalog with default query values omitted', () => {
-    const current = setup('https://example.test/heroes?lang=en&w=3d&t=high').location.current();
+    const current = setup('https://example.test/heroes?lang=en&w=3d&s=legend').location.current();
 
     expect(current.navigation.homeHref).toBe('/?lang=en');
     expect(current.navigation.heroesHref).toBe('/heroes?lang=en');
@@ -78,21 +78,21 @@ describe('deep SPA location interface', () => {
 
   test('locale hrefs preserve path, scope, unrelated query values, and hash', () => {
     const en = setup(
-      'https://example.test/heroes?w=3d&t=high&keep=yes&lang=en#trend'
+      'https://example.test/heroes?w=3d&s=legend&keep=yes&lang=en#trend'
     ).location.current();
     const zh = setup('https://example.test/heroes?w=7d&keep=yes#trend').location.current();
 
-    expect(en.navigation.localeHrefs.zh).toBe('/heroes?w=3d&t=high&keep=yes#trend');
+    expect(en.navigation.localeHrefs.zh).toBe('/heroes?w=3d&s=legend&keep=yes#trend');
     expect(zh.navigation.localeHrefs.en).toBe('/heroes?w=7d&keep=yes&lang=en#trend');
   });
 
   test('scope changes use replace, omit defaults, preserve supported current values, and add no history entry', () => {
     const { memory, location } = setup(
-      'https://example.test/heroes?keep=yes&lang=en&w=3d&t=mid#trend'
+      'https://example.test/heroes?keep=yes&lang=en&w=3d&s=non_legend#trend'
     );
     const initialLength = memory.entries.length;
 
-    location.replaceScope({ window: '1d', tier: 'all' });
+    location.replaceScope({ window: '1d', segment: 'all' });
 
     expect(memory.entries).toHaveLength(initialLength);
     expect(memory.actions).toEqual([
@@ -100,13 +100,13 @@ describe('deep SPA location interface', () => {
     ]);
     expect(location.current()).toMatchObject({
       locale: 'en',
-      scope: { window: '1d', tier: 'all' },
+      scope: { window: '1d', segment: 'all' },
     });
   });
 
   test('normalizes explicit and invalid scope defaults through replace semantics', () => {
     const { memory, location } = setup(
-      'https://example.test/heroes?lang=zh&w=invalid&t=all&keep=yes'
+      'https://example.test/heroes?lang=zh&w=invalid&s=all&t=high&keep=yes'
     );
 
     location.replaceScope(location.current().scope);

@@ -43,7 +43,7 @@ describe('SiteHeader', () => {
   });
 
   test('language toggle highlights current locale and links to other locale preserving path + query', () => {
-    renderHeader('/heroes?w=3d&t=high&lang=en');
+    renderHeader('/heroes?w=3d&s=legend&lang=en');
 
     const group = screen.getByRole('group', { name: 'Language' });
 
@@ -51,7 +51,7 @@ describe('SiteHeader', () => {
     expect(enSegment).toHaveTextContent('EN');
 
     const zhLink = screen.getByRole('link', { name: '中' });
-    expect(zhLink).toHaveAttribute('href', '/heroes?w=3d&t=high');
+    expect(zhLink).toHaveAttribute('href', '/heroes?w=3d&s=legend');
     expect(zhLink).toHaveAttribute('hrefLang', 'zh');
   });
 

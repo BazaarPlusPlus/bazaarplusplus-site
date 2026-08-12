@@ -8,24 +8,17 @@ import {
 } from '../src/features/heroes/hero-metrics-dataset';
 
 describe('createHeroMetricsHttpTransport', () => {
-  test('loads unknown JSON from the default base and preserves manifest-owned daily paths', async () => {
+  test('loads unknown JSON from the default base at the v5 hero snapshot path', async () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       json: async () => ({ unknown: true }),
     })) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({ fetchImpl });
 
-    await expect(transport.load('analyzer-v4/manifest.json')).resolves.toEqual({ unknown: true });
-    await transport.load('analyzer-v4/web/2026-06-07.json');
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ unknown: true });
 
-    expect(fetchImpl).toHaveBeenNthCalledWith(
-      1,
-      'https://bpp-metrics.bazaarplusplus.com/analyzer-v4/manifest.json',
-      expect.objectContaining({ signal: expect.any(AbortSignal) })
-    );
-    expect(fetchImpl).toHaveBeenNthCalledWith(
-      2,
-      'https://bpp-metrics.bazaarplusplus.com/analyzer-v4/web/2026-06-07.json',
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://bpp-metrics.bazaarplusplus.com/analyzer-v5/heroes/latest.json',
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
   });
@@ -37,10 +30,10 @@ describe('createHeroMetricsHttpTransport', () => {
       fetchImpl,
     });
 
-    await transport.load('analyzer-v4/manifest.json');
+    await transport.load('analyzer-v5/heroes/latest.json');
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://metrics.example.com/root/analyzer-v4/manifest.json',
+      'https://metrics.example.com/root/analyzer-v5/heroes/latest.json',
       expect.any(Object)
     );
   });
@@ -56,7 +49,7 @@ describe('createHeroMetricsHttpTransport', () => {
       requestRetryDelayMs: 0,
     });
 
-    await expect(transport.load('analyzer-v4/manifest.json')).resolves.toEqual({ recovered: true });
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ recovered: true });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -71,7 +64,7 @@ describe('createHeroMetricsHttpTransport', () => {
       requestRetryDelayMs: 0,
     });
 
-    await expect(transport.load('analyzer-v4/manifest.json')).resolves.toEqual({ recovered: true });
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ recovered: true });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -83,14 +76,14 @@ describe('createHeroMetricsHttpTransport', () => {
       requestRetryDelayMs: 0,
     });
 
-    const error = await transport.load('analyzer-v4/web/2026-06-07.json').catch((reason) => reason);
+    const error = await transport.load('analyzer-v5/heroes/latest.json').catch((reason) => reason);
 
     expect(error).toBeInstanceOf(HeroMetricsTransportError);
     if (!(error instanceof HeroMetricsTransportError)) {
       throw error;
     }
     expect(error).toMatchObject({ status: 404, kind: 'http' });
-    expect(error.message).toMatch(/Failed to fetch .*2026-06-07\.json: 404/);
+    expect(error.message).toMatch(/Failed to fetch .*latest\.json: 404/);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
@@ -106,14 +99,14 @@ describe('createHeroMetricsHttpTransport', () => {
       requestRetries: 0,
     });
 
-    const error = await transport.load('analyzer-v4/manifest.json').catch((reason) => reason);
+    const error = await transport.load('analyzer-v5/heroes/latest.json').catch((reason) => reason);
 
     expect(error).toBeInstanceOf(HeroMetricsTransportError);
     if (!(error instanceof HeroMetricsTransportError)) {
       throw error;
     }
     expect(error).toMatchObject({ kind: 'timeout' });
-    expect(error.message).toMatch(/Timed out fetching .*manifest\.json/);
+    expect(error.message).toMatch(/Timed out fetching .*latest\.json/);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
@@ -129,7 +122,7 @@ describe('createHeroMetricsHttpTransport', () => {
       requestRetries: 2,
       requestRetryDelayMs: 0,
     });
-    const request = transport.load('analyzer-v4/manifest.json', { signal: controller.signal });
+    const request = transport.load('analyzer-v5/heroes/latest.json', { signal: controller.signal });
 
     controller.abort(new DOMException('caller aborted', 'AbortError'));
 

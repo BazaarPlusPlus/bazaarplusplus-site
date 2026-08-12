@@ -1,4 +1,4 @@
-import type { RatingTier } from '../features/heroes/hero-metrics-dataset';
+import type { HeroMetricsSegment } from '../features/heroes/hero-metrics-dataset';
 import type {
   Locale,
   PrimaryNavigationPage,
@@ -16,10 +16,10 @@ type PageTitleCopy = Record<PageTitleKey, string>;
 
 type ScopeCopy = {
   window: string;
-  tier: string;
+  segment: string;
   hero: string;
   allHero: string;
-  tierLabels: Record<RatingTier, string>;
+  segmentLabels: Record<HeroMetricsSegment, string>;
 };
 
 type CommonCopy = {
@@ -50,8 +50,7 @@ type CommonCopy = {
       failed: string;
     };
     resources: {
-      manifest: string;
-      dailyPrefix: string;
+      snapshot: string;
     };
   };
   error: {
@@ -93,27 +92,9 @@ type HeroStatsCopy = {
     gold: string;
     silver: string;
     bronze: string;
+    misfortune: string;
     runShare: string;
     avgDays: string;
-  };
-  dossier: {
-    label: string;
-  };
-  stage: {
-    title: string;
-    day_1: string;
-    day_2: string;
-    day_3: string;
-    day_4: string;
-    day_5: string;
-    day_6: string;
-    day_7: string;
-    day_8: string;
-    day_9: string;
-    day_10: string;
-    day_11: string;
-    day_12: string;
-    day_13_plus: string;
   };
   matchups: {
     title: string;
@@ -136,17 +117,12 @@ type HeroStatsCopy = {
     syncedPrefix: string;
     someDaysUnavailable: string;
     noTrendValue: string;
-    tierFallbackNote: string;
   };
   unavailable: {
     title: string;
     body: string;
   };
-  comingSoon: {
-    title: string;
-    body: string;
-  };
-  tierEmpty: {
+  segmentEmpty: {
     title: string;
     body: string;
   };
@@ -286,8 +262,7 @@ const zh: LocalizedSiteCopy = {
         failed: '加载失败',
       },
       resources: {
-        manifest: 'manifest',
-        dailyPrefix: 'web_daily/',
+        snapshot: 'heroes/latest.json',
       },
     },
     error: {
@@ -301,14 +276,13 @@ const zh: LocalizedSiteCopy = {
     },
     scope: {
       window: '时间窗口',
-      tier: '分段',
+      segment: '分段',
       hero: '英雄',
       allHero: '全部',
-      tierLabels: {
+      segmentLabels: {
         all: '全部',
-        low: '低',
-        mid: '中',
-        high: '高',
+        legend: '传奇',
+        non_legend: '非传奇',
       },
     },
     noValueLabel: '暂无数值',
@@ -355,27 +329,9 @@ const zh: LocalizedSiteCopy = {
         gold: '黄金',
         silver: '白银',
         bronze: '青铜',
+        misfortune: '不幸',
         runShare: '局数占比',
         avgDays: '平均天数',
-      },
-      dossier: {
-        label: '战斗明细',
-      },
-      stage: {
-        title: '战斗胜率',
-        day_1: '第 1 天',
-        day_2: '第 2 天',
-        day_3: '第 3 天',
-        day_4: '第 4 天',
-        day_5: '第 5 天',
-        day_6: '第 6 天',
-        day_7: '第 7 天',
-        day_8: '第 8 天',
-        day_9: '第 9 天',
-        day_10: '第 10 天',
-        day_11: '第 11 天',
-        day_12: '第 12 天',
-        day_13_plus: '第 13 天起',
       },
       matchups: {
         title: '对位胜率',
@@ -398,17 +354,12 @@ const zh: LocalizedSiteCopy = {
         syncedPrefix: '同步于 ',
         someDaysUnavailable: '部分日期暂不可用，当前结果只包含已加载日期。',
         noTrendValue: '部分日期没有可计算的趋势点。',
-        tierFallbackNote: '所选分段在此窗口暂无数据，已自动切回“全部”。',
       },
       unavailable: {
         title: '快照暂不可用',
-        body: '所选窗口内的快照文件加载失败，请稍后刷新重试。',
+        body: '英雄指标快照暂不可用，请稍后刷新重试。',
       },
-      comingSoon: {
-        title: '数据即将上线',
-        body: '统计数据还在准备中，请稍后再来看看。',
-      },
-      tierEmpty: {
+      segmentEmpty: {
         title: '该分段暂无数据',
         body: '当前窗口内此分段没有记录，试试其他分段。',
       },
@@ -634,8 +585,7 @@ const en: LocalizedSiteCopy = {
         failed: 'Failed',
       },
       resources: {
-        manifest: 'manifest',
-        dailyPrefix: 'web_daily/',
+        snapshot: 'heroes/latest.json',
       },
     },
     error: {
@@ -649,14 +599,13 @@ const en: LocalizedSiteCopy = {
     },
     scope: {
       window: 'Window',
-      tier: 'Tier',
+      segment: 'Segment',
       hero: 'Hero',
       allHero: 'All',
-      tierLabels: {
+      segmentLabels: {
         all: 'All',
-        low: 'Low',
-        mid: 'Mid',
-        high: 'High',
+        legend: 'Legend',
+        non_legend: 'Non-Legend',
       },
     },
     noValueLabel: 'No value',
@@ -703,27 +652,9 @@ const en: LocalizedSiteCopy = {
         gold: 'Gold',
         silver: 'Silver',
         bronze: 'Bronze',
+        misfortune: 'Misfortune',
         runShare: 'Run share',
         avgDays: 'Avg days',
-      },
-      dossier: {
-        label: 'Battle detail',
-      },
-      stage: {
-        title: 'Battle win rate',
-        day_1: 'Day 1',
-        day_2: 'Day 2',
-        day_3: 'Day 3',
-        day_4: 'Day 4',
-        day_5: 'Day 5',
-        day_6: 'Day 6',
-        day_7: 'Day 7',
-        day_8: 'Day 8',
-        day_9: 'Day 9',
-        day_10: 'Day 10',
-        day_11: 'Day 11',
-        day_12: 'Day 12',
-        day_13_plus: 'Day 13+',
       },
       matchups: {
         title: 'Matchups',
@@ -746,19 +677,14 @@ const en: LocalizedSiteCopy = {
         syncedPrefix: 'synced ',
         someDaysUnavailable: 'Some days are unavailable; this view includes loaded days only.',
         noTrendValue: 'Some days have no calculable trend point.',
-        tierFallbackNote: 'The selected tier has no data in this window, so it reverted to All.',
       },
       unavailable: {
         title: 'Snapshot unavailable',
-        body: 'The snapshot files for this window failed to load. Refresh to try again.',
+        body: 'The hero metrics snapshot is unavailable. Refresh to try again.',
       },
-      comingSoon: {
-        title: 'Data coming soon',
-        body: 'The stats are still being gathered — check back soon.',
-      },
-      tierEmpty: {
-        title: 'No data in this tier',
-        body: 'No runs recorded for this tier in the window. Try another tier.',
+      segmentEmpty: {
+        title: 'No data in this segment',
+        body: 'No runs were recorded for this segment in the window. Try another segment.',
       },
     },
   },

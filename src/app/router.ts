@@ -1,5 +1,5 @@
 import type { AnalysisScope, MetricWindow } from '../features/heroes/hero-analysis';
-import type { RatingTier } from '../features/heroes/hero-metrics-dataset';
+import type { HeroMetricsSegment } from '../features/heroes/hero-metrics-dataset';
 
 export type Locale = 'en' | 'zh';
 
@@ -103,8 +103,8 @@ function parseMetricWindow(value: string | null): MetricWindow {
   return value === '3d' || value === '7d' ? value : '1d';
 }
 
-function parseRatingTier(value: string | null): RatingTier {
-  return value === 'low' || value === 'mid' || value === 'high' ? value : 'all';
+function parseHeroMetricsSegment(value: string | null): HeroMetricsSegment {
+  return value === 'legend' || value === 'non_legend' ? value : 'all';
 }
 
 function resolveRoute(pathname: string): ResolvedSpaLocation['route'] {
@@ -161,7 +161,7 @@ function resolveLocation(raw: RawSpaLocation): ResolvedSpaLocation {
     locale,
     scope: {
       window: parseMetricWindow(search.get('w')),
-      tier: parseRatingTier(search.get('t')),
+      segment: parseHeroMetricsSegment(search.get('s')),
     },
     canonicalHref: canonicalPath ? `${canonicalPath}${raw.search}` : null,
     navigation: {
@@ -187,10 +187,11 @@ function buildScopeHref(location: ResolvedSpaLocation, scope: AnalysisScope): st
   } else {
     search.set('w', scope.window);
   }
-  if (scope.tier === 'all') {
-    search.delete('t');
+  search.delete('t');
+  if (scope.segment === 'all') {
+    search.delete('s');
   } else {
-    search.set('t', scope.tier);
+    search.set('s', scope.segment);
   }
   if (location.locale === DEFAULT_LOCALE) {
     search.delete('lang');

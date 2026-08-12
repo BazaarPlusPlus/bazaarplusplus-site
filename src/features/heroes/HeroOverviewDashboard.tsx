@@ -13,15 +13,11 @@ import {
   analyzeHeroes,
   type AnalysisScope,
   type HeroMatchup,
-  type HeroRanking,
-  type HeroStage,
   type MetricWindow,
 } from './hero-analysis';
 import {
-  GAME_DAY_BUCKETS,
-  type GameDayBucket,
   type HeroMetricsDataset,
-  type RatingTier,
+  type HeroMetricsSegment,
 } from './hero-metrics-dataset';
 import type { Locale, ResolvedSpaLocation } from '../../app/router';
 import { sortRows, toggleSort, type SortState } from '../../shared/lib/table-sorting';
@@ -48,9 +44,8 @@ type RankingSortKey =
   | 'perfectRate'
   | 'goldRate'
   | 'silverRate'
-  | 'bronzeRate';
-
-type StageSortKey = 'hero' | GameDayBucket;
+  | 'bronzeRate'
+  | 'misfortuneRate';
 
 type ChartPoint = {
   day: string;
@@ -71,20 +66,19 @@ const POINT_TOOLTIP_WIDTH = 168;
 const POINT_TOOLTIP_HEIGHT = 56;
 const POINT_TOOLTIP_OFFSET = 18;
 const GRIDLINE_COUNT = 4;
-const HERO_COLUMN_WIDTH_PX = 104;
-const HERO_COLUMN_WIDTH = `${HERO_COLUMN_WIDTH_PX}px`;
-const STAGE_COLUMN_WIDTH_PX = 112;
+const HERO_COLUMN_WIDTH = '104px';
 const RANKING_COLUMN_WIDTHS = [
   HERO_COLUMN_WIDTH,
-  '13.5%',
-  '12.25%',
-  '12.25%',
+  '12.5%',
   '11%',
-  '12.25%',
-  '9.75%',
-  '9.75%',
-  '9.75%',
-  '9.5%',
+  '11%',
+  '10%',
+  '11%',
+  '8.7%',
+  '8.7%',
+  '8.7%',
+  '8.7%',
+  '9.7%',
 ];
 
 function clamp(value: number, min: number, max: number): number {
@@ -149,59 +143,47 @@ export default function HeroOverviewDashboard({
   const noValueLabel = copy.common.noValueLabel;
 
   const [selectedWindow, setSelectedWindow] = useState<MetricWindow>(requestedScope.window);
-  const [selectedTier, setSelectedTier] = useState<RatingTier>(requestedScope.tier);
+  const [selectedSegment, setSelectedSegment] = useState<HeroMetricsSegment>(
+    requestedScope.segment
+  );
   const [focusedHero, setFocusedHero] = useState<string | null>(null);
   const [sortState, setSortState] = useState<SortState<RankingSortKey>>({
     key: 'tenWinRate',
     direction: 'desc',
   });
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<HoveredTrendPoint | null>(null);
-  const [tierFellBack, setTierFellBack] = useState(false);
 
   useEffect(() => {
     setSelectedWindow(requestedScope.window);
-    setSelectedTier(requestedScope.tier);
-  }, [requestedScope.tier, requestedScope.window]);
+    setSelectedSegment(requestedScope.segment);
+  }, [requestedScope.segment, requestedScope.window]);
 
   useEffect(() => {
     onScopeChange(requestedScope);
-  }, [onScopeChange, requestedScope.tier, requestedScope.window]);
+  }, [onScopeChange, requestedScope.segment, requestedScope.window]);
 
   const analysis = useMemo(
-    () => analyzeHeroes(dataset, { window: selectedWindow, tier: selectedTier }, focusedHero),
-    [dataset, focusedHero, selectedTier, selectedWindow]
+    () =>
+      analyzeHeroes(
+        dataset,
+        { window: selectedWindow, segment: selectedSegment },
+        focusedHero
+      ),
+    [dataset, focusedHero, selectedSegment, selectedWindow]
   );
   const availableWindows = analysis.scope.availableWindows;
-  const availableTiers = analysis.scope.availableTiers;
+  const availableSegments = analysis.scope.availableSegments;
   const loadedWindowDays = analysis.coverage.usableDates;
   const failedWindowDays = analysis.coverage.failedDates;
 
-  // A tier emptied by a window change falls back to the explicit all row (§9).
-  useEffect(() => {
-    if (analysis.scope.tierFellBack) {
-      setSelectedTier(analysis.scope.effective.tier);
-      setTierFellBack(true);
-      onScopeChange({
-        window: selectedWindow,
-        tier: analysis.scope.effective.tier,
-      });
-    }
-  }, [
-    analysis.scope.effective.tier,
-    analysis.scope.tierFellBack,
-    onScopeChange,
-    selectedWindow,
-  ]);
-
-  const selectTier = (tier: RatingTier) => {
-    setTierFellBack(false);
-    setSelectedTier(tier);
-    onScopeChange({ window: selectedWindow, tier });
+  const selectSegment = (segment: HeroMetricsSegment) => {
+    setSelectedSegment(segment);
+    onScopeChange({ window: selectedWindow, segment });
   };
 
   const selectWindow = (window: MetricWindow) => {
     setSelectedWindow(window);
-    onScopeChange({ window, tier: selectedTier });
+    onScopeChange({ window, segment: selectedSegment });
   };
 
   const heroMetrics = analysis.ranking;
@@ -218,11 +200,12 @@ export default function HeroOverviewDashboard({
         goldRate: (row) => row.goldRate,
         silverRate: (row) => row.silverRate,
         bronzeRate: (row) => row.bronzeRate,
+        misfortuneRate: (row) => row.misfortuneRate,
       }),
     [heroMetrics, sortState]
   );
 
-  // --- trend (fixed 7d span; honors tier, ignores window) --------------------
+  // --- trend (fixed 7d span; honors segment, ignores window) -----------------
   const trendDayAxis = analysis.trend.dayAxis;
   const trendSeries = analysis.trend.series;
 
@@ -234,7 +217,6 @@ export default function HeroOverviewDashboard({
   }, [analysis.focus.hero, focusedHero]);
 
   const focusedTrendSeries = analysis.focus.trend ?? undefined;
-  const focusedMetrics = analysis.focus.ranking ?? undefined;
 
   // --- chart geometry ---------------------------------------------------------
   const trendWinRates = trendSeries.flatMap((series) =>
@@ -288,12 +270,7 @@ export default function HeroOverviewDashboard({
   const matchups = analysis.focus.matchups;
 
   const hasAnyData = dataset.days.length > 0;
-  const noDaysPublished = dataset.coverage.requestedDates.length === 0;
   const rankingHasRows = sortedRows.length > 0;
-
-  const dossierContextLabel = `${WINDOW_LABELS[selectedWindow]}${coverageCopy.windowSuffix} · ${
-    scopeCopy.tierLabels[selectedTier]
-  }`;
 
   function renderRateCell(value: number | null, extraClass = '') {
     return (
@@ -307,10 +284,10 @@ export default function HeroOverviewDashboard({
   const emptyState = !hasAnyData ? (
     <section className="surface flex flex-col items-center gap-3 px-6 py-16 text-center">
       <h2 className="font-display text-2xl font-semibold text-[color:var(--color-text-base)]">
-        {noDaysPublished ? heroCopy.comingSoon.title : heroCopy.unavailable.title}
+        {heroCopy.unavailable.title}
       </h2>
       <p className="max-w-md text-sm leading-6 text-[color:var(--color-text-muted)]">
-        {noDaysPublished ? heroCopy.comingSoon.body : heroCopy.unavailable.body}
+        {heroCopy.unavailable.body}
       </p>
     </section>
   ) : null;
@@ -379,16 +356,16 @@ export default function HeroOverviewDashboard({
                   ))}
                 </SegmentedControl>
               </div>
-              <div role="group" aria-label={scopeCopy.tier} className="min-w-0 space-y-2.5">
-                <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.tier}</p>
+              <div role="group" aria-label={scopeCopy.segment} className="min-w-0 space-y-2.5">
+                <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.segment}</p>
                 <SegmentedControl>
-                  {availableTiers.map((option) => (
+                  {availableSegments.map((option) => (
                     <SegmentedButton
                       key={option}
-                      active={option === selectedTier}
-                      onClick={() => selectTier(option)}
+                      active={option === selectedSegment}
+                      onClick={() => selectSegment(option)}
                     >
-                      {scopeCopy.tierLabels[option]}
+                      {scopeCopy.segmentLabels[option]}
                     </SegmentedButton>
                   ))}
                 </SegmentedControl>
@@ -402,15 +379,6 @@ export default function HeroOverviewDashboard({
                 />
               </div>
             </div>
-            {tierFellBack ? (
-              <p
-                role="status"
-                data-testid="tier-fallback-note"
-                className="mt-4 border-t border-[color:var(--color-border-soft)] pt-3 text-[0.74rem] text-[color:var(--color-accent-bright)]"
-              >
-                {coverageCopy.tierFallbackNote}
-              </p>
-            ) : null}
           </section>
         ) : null
       }
@@ -774,7 +742,7 @@ export default function HeroOverviewDashboard({
                           {focusedTrendSeries.hero}
                         </span>
                         <span className="tnum shrink-0 text-[0.68rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                          {getHeroShortLabel(focusedTrendSeries.hero)} · {WINDOW_LABELS['7d']}
+                          {getHeroShortLabel(focusedTrendSeries.hero)} · {WINDOW_LABELS[selectedWindow]}
                         </span>
                       </div>
                     ) : null}
@@ -842,6 +810,7 @@ export default function HeroOverviewDashboard({
                       <SortableHeader label={heroCopy.tableHeaders.gold} className="px-3 py-3.5" activeDirection={sortState.key === 'goldRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'goldRate', 'desc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.silver} className="px-3 py-3.5" activeDirection={sortState.key === 'silverRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'silverRate', 'desc'))} />
                       <SortableHeader label={heroCopy.tableHeaders.bronze} className="px-3 py-3.5" activeDirection={sortState.key === 'bronzeRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'bronzeRate', 'desc'))} />
+                      <SortableHeader label={heroCopy.tableHeaders.misfortune} className="px-3 py-3.5" activeDirection={sortState.key === 'misfortuneRate' ? sortState.direction : undefined} onToggle={() => setSortState((current) => toggleSort(current, 'misfortuneRate', 'desc'))} />
                     </tr>
                   </thead>
                   <tbody>
@@ -893,6 +862,7 @@ export default function HeroOverviewDashboard({
                           <td className="px-3 py-4 tnum">{renderRateCell(row.goldRate)}</td>
                           <td className="px-3 py-4 tnum">{renderRateCell(row.silverRate)}</td>
                           <td className="px-3 py-4 tnum">{renderRateCell(row.bronzeRate)}</td>
+                          <td className="px-3 py-4 tnum">{renderRateCell(row.misfortuneRate)}</td>
                         </tr>
                       );
                     })}
@@ -902,38 +872,15 @@ export default function HeroOverviewDashboard({
             ) : (
               <div className="px-6 py-12 text-center">
                 <h3 className="font-display text-xl font-semibold text-[color:var(--color-text-base)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.title : heroCopy.tierEmpty.title}
+                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.title : heroCopy.segmentEmpty.title}
                 </h3>
                 <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
-                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.body : heroCopy.tierEmpty.body}
+                  {loadedWindowDays.length === 0 ? heroCopy.unavailable.body : heroCopy.segmentEmpty.body}
                 </p>
               </div>
             )}
           </section>
 
-          {/* === PER-HERO DOSSIER ========================================== */}
-          {rankingHasRows && focusedHero != null && focusedMetrics != null ? (
-            <section data-testid="hero-dossier" className="grid min-w-0 gap-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="eyebrow eyebrow-rule">{heroCopy.dossier.label}</p>
-                <span className="tnum text-[0.72rem] uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
-                  {dossierContextLabel}
-                </span>
-              </div>
-
-              <StagePanel
-                focusedHero={focusedHero}
-                stages={analysis.stages}
-                rows={sortedRows}
-                locale={locale}
-                heroLabel={heroCopy.tableHeaders.hero}
-                stageCopy={heroCopy.stage}
-                noDataLabel={heroCopy.snapshot.noData}
-                noValueLabel={noValueLabel}
-                onSelectHero={setFocusedHero}
-              />
-            </section>
-          ) : null}
         </section>
       )}
 
@@ -973,160 +920,6 @@ function CoverageStrip({
         </span>
       ) : null}
     </div>
-  );
-}
-
-// === dossier panels ============================================================
-
-type StageCopy = ReturnType<typeof getSiteCopy>['stats']['heroes']['stage'];
-
-function StagePanel({
-  focusedHero,
-  stages,
-  rows,
-  locale,
-  heroLabel,
-  stageCopy,
-  noDataLabel,
-  noValueLabel,
-  onSelectHero,
-}: {
-  focusedHero: string | null;
-  stages: HeroStage[];
-  rows: HeroRanking[];
-  locale: Locale;
-  heroLabel: string;
-  stageCopy: StageCopy;
-  noDataLabel: string;
-  noValueLabel: string;
-  onSelectHero: (hero: string) => void;
-}) {
-  const [stageSortState, setStageSortState] = useState<SortState<StageSortKey> | null>(null);
-
-  const visibleStageKeys = GAME_DAY_BUCKETS;
-  const stageByHero = useMemo(
-    () => new Map(stages.map((stage) => [stage.hero, stage])),
-    [stages]
-  );
-
-  const hasAnyStageData = rows.some((row) => {
-    const rates = stageByHero.get(row.hero)?.rates;
-    return visibleStageKeys.some((key) => rates?.[key] != null);
-  });
-  const sortedStageRows = useMemo(() => {
-    const activeStageSortState =
-      stageSortState != null &&
-      (stageSortState.key === 'hero' || visibleStageKeys.includes(stageSortState.key))
-        ? stageSortState
-        : null;
-
-    if (activeStageSortState == null) {
-      return rows;
-    }
-
-    const sortAccessors = {
-      hero: (row) => row.hero,
-    } as Record<StageSortKey, (row: HeroRanking) => string | number | null | undefined> &
-      Record<string, ((row: HeroRanking) => string | number | null | undefined) | undefined>;
-
-    for (const key of visibleStageKeys) {
-      sortAccessors[key] = (row) => stageByHero.get(row.hero)?.rates[key];
-    }
-
-    return sortRows(rows, activeStageSortState, sortAccessors);
-  }, [rows, stageByHero, stageSortState, visibleStageKeys]);
-  const stageTableMinWidth = HERO_COLUMN_WIDTH_PX + visibleStageKeys.length * STAGE_COLUMN_WIDTH_PX;
-  const handleStageSort = (key: StageSortKey, initialDirection: 'asc' | 'desc') => {
-    setStageSortState((current) =>
-      current == null ? { key, direction: initialDirection } : toggleSort(current, key, initialDirection)
-    );
-  };
-
-  return (
-    <section data-testid="stage-panel" className="surface overflow-hidden">
-      <div className="border-b border-[color:var(--color-border-soft)] px-6 py-5">
-        <h2 className="font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)]">
-          {stageCopy.title}
-        </h2>
-      </div>
-
-      {hasAnyStageData ? (
-        <div className="overflow-x-auto">
-          <table
-            className="w-full min-w-[360px] table-fixed border-collapse text-sm"
-            style={{ minWidth: stageTableMinWidth }}
-          >
-            <colgroup>
-              <col style={{ width: HERO_COLUMN_WIDTH }} />
-              {visibleStageKeys.map((key) => (
-                <col key={key} />
-              ))}
-            </colgroup>
-            <thead className="text-left text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-              <tr>
-                <SortableHeader
-                  label={heroLabel}
-                  className="sticky left-0 z-20 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-3.5"
-                  activeDirection={stageSortState?.key === 'hero' ? stageSortState.direction : undefined}
-                  onToggle={() => handleStageSort('hero', 'asc')}
-                />
-                {visibleStageKeys.map((key) => (
-                  <SortableHeader
-                    key={key}
-                    label={stageCopy[key]}
-                    className="px-3 py-3.5"
-                    activeDirection={stageSortState?.key === key ? stageSortState.direction : undefined}
-                    onToggle={() => handleStageSort(key, 'desc')}
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedStageRows.map((row) => {
-                const rates = stageByHero.get(row.hero)?.rates;
-                const heroColor = getHeroColor(row.hero);
-                return (
-                  <tr
-                    key={row.hero}
-                    className="metric-row hero-rail border-t border-[color:var(--color-border-soft)] text-[color:var(--color-text-base)]"
-                    data-selected={row.hero === focusedHero ? 'true' : 'false'}
-                    style={{ '--hero-color': heroColor } as React.CSSProperties}
-                  >
-                    <td className="sticky left-0 z-10 border-r border-[color:var(--color-border-soft)] bg-[color:var(--color-bg-card)] px-5 py-4">
-                      <button
-                        type="button"
-                        data-selected={row.hero === focusedHero ? 'true' : 'false'}
-                        onClick={() => onSelectHero(row.hero)}
-                        className="inline-flex items-center bg-transparent p-0 text-left transition"
-                      >
-                        <HeroBadge hero={row.hero} selected={row.hero === focusedHero} size="sm" />
-                      </button>
-                    </td>
-                    {visibleStageKeys.map((key) => {
-                      const rate = rates?.[key];
-                      return (
-                        <td
-                          key={key}
-                          className="databar relative px-3 py-4 tnum text-[color:var(--color-text-base)]"
-                          style={{ '--bar-width': `${(rate ?? 0) * 100}%` } as React.CSSProperties}
-                          aria-label={rate == null ? noValueLabel : undefined}
-                        >
-                          <span className="relative">{formatNullablePercent(rate ?? null)}</span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="px-6 py-12 text-center">
-          <p className="text-sm text-[color:var(--color-text-muted)]">{noDataLabel}</p>
-        </div>
-      )}
-    </section>
   );
 }
 

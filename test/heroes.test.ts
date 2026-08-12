@@ -27,7 +27,7 @@ describe('hero mapping', () => {
       Karnok: { shortLabel: 'KAR', color: '#3b889c' },
       Pygmalien: { shortLabel: 'PYG', color: '#2767c0' },
       Vanessa: { shortLabel: 'VAN', color: '#c02121' },
-      TheDragons: { shortLabel: 'DRA', color: '#394961' },
+      TheDragons: { shortLabel: 'DRA', color: '#9db7f3' },
     });
     expect(getHeroShortLabel('Karnok')).toBe('KAR');
     expect(getHeroColor('Karnok')).toBe('#3b889c');

@@ -1,30 +1,14 @@
-export type RatingTier = 'all' | 'low' | 'mid' | 'high';
+import { HEROES } from '../../shared/lib/heroes';
 
-export const RATING_TIER_ORDER: RatingTier[] = ['all', 'low', 'mid', 'high'];
+export type HeroMetricsStoredSegment = 'legend' | 'non_legend';
 
-export const GAME_DAY_BUCKETS = [
-  'day_1',
-  'day_2',
-  'day_3',
-  'day_4',
-  'day_5',
-  'day_6',
-  'day_7',
-  'day_8',
-  'day_9',
-  'day_10',
-  'day_11',
-  'day_12',
-  'day_13_plus',
-] as const;
+export type HeroMetricsSegment = 'all' | HeroMetricsStoredSegment;
 
-export type GameDayBucket = (typeof GAME_DAY_BUCKETS)[number];
-
-export type HeroMetricsPublishedDay = {
-  day: string;
-  path: string;
-  row_count: number;
-};
+export const HERO_METRICS_SEGMENTS: HeroMetricsSegment[] = [
+  'all',
+  'legend',
+  'non_legend',
+];
 
 export type HeroBattleCounts = {
   decided: number;
@@ -38,7 +22,7 @@ export type HeroMetricsMatchup = HeroBattleCounts & {
 
 export type HeroMetricsRow = {
   hero: string;
-  rating_tier: RatingTier;
+  segment: HeroMetricsStoredSegment;
   runs: {
     completed: number;
     scored: number;
@@ -54,15 +38,11 @@ export type HeroMetricsRow = {
     known_count: number;
     sum_days: number;
   };
-  battle_days: Partial<Record<GameDayBucket, HeroBattleCounts>>;
   matchups: HeroMetricsMatchup[];
 };
 
 export type HeroMetricsDay = {
-  schema_version: '2';
-  kind: 'hero_web_daily';
   day: string;
-  generated_at: string;
   rows: HeroMetricsRow[];
 };
 
@@ -74,8 +54,11 @@ export type DatasetCoverage = {
 
 export type HeroMetricsDataset = {
   generatedAt: string;
-  latestCompleteDay: string;
-  publishedDays: HeroMetricsPublishedDay[];
+  window: {
+    start: string;
+    end: string;
+    days: number;
+  };
   days: HeroMetricsDay[];
   coverage: DatasetCoverage;
 };
@@ -84,7 +67,7 @@ export type HeroMetricsLoadProgress = {
   completed: number;
   total: number;
   status: 'loading' | 'loaded' | 'failed';
-  resource: { kind: 'manifest' } | { kind: 'daily'; date: string };
+  resource: { kind: 'snapshot' };
 };
 
 export type HeroMetricsTransport = {
@@ -121,13 +104,6 @@ type HttpTransportOptions = {
 type LoadDatasetOptions = {
   onProgress?: (progress: HeroMetricsLoadProgress) => void;
   signal?: AbortSignal;
-  concurrency?: number;
-};
-
-type DecodedManifest = {
-  generatedAt: string;
-  latestCompleteDay: string;
-  publishedDays: HeroMetricsPublishedDay[];
 };
 
 const DEFAULT_METRICS_BASE_URL =
@@ -135,9 +111,10 @@ const DEFAULT_METRICS_BASE_URL =
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
 const DEFAULT_REQUEST_RETRIES = 2;
 const DEFAULT_REQUEST_RETRY_DELAY_MS = 250;
-const DEFAULT_PAYLOAD_CONCURRENCY = 6;
-const MANIFEST_PATH = 'analyzer-v4/manifest.json';
-const RATING_TIERS = new Set<string>(['all', 'low', 'mid', 'high']);
+const HERO_METRICS_PATH = 'analyzer-v5/heroes/latest.json';
+const STORED_SEGMENTS = new Set<string>(['legend', 'non_legend']);
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const UTC_DAY_MS = 24 * 60 * 60 * 1_000;
 
 function normalizeBaseUrl(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;
@@ -288,35 +265,35 @@ function asCounter(value: unknown): number | null {
     : null;
 }
 
-function decodeManifest(value: unknown): DecodedManifest | null {
-  const manifest = asRecord(value);
-  const web = asRecord(manifest?.web);
-  const generatedAt = asNonEmptyString(manifest?.generated_at);
-  const latestCompleteDay = asNonEmptyString(manifest?.latest_complete_day);
-  if (
-    manifest?.schema_version !== '2' ||
-    manifest.namespace !== 'analyzer-v4' ||
-    generatedAt == null ||
-    latestCompleteDay == null ||
-    web?.schema_version !== '2' ||
-    !Array.isArray(web.days)
-  ) {
+function asIsoDate(value: unknown): string | null {
+  if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) {
+    return null;
+  }
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+function asUtcTimestamp(value: unknown): string | null {
+  return typeof value === 'string' &&
+    /(?:Z|\+00:00)$/.test(value) &&
+    Number.isFinite(Date.parse(value))
+    ? value
+    : null;
+}
+
+function enumerateDates(start: string, end: string): string[] | null {
+  const startTimestamp = Date.parse(`${start}T00:00:00Z`);
+  const endTimestamp = Date.parse(`${end}T00:00:00Z`);
+  if (endTimestamp < startTimestamp) {
     return null;
   }
 
-  const publishedDays: HeroMetricsPublishedDay[] = [];
-  for (const valueDay of web.days) {
-    const day = asRecord(valueDay);
-    const dayValue = asNonEmptyString(day?.day);
-    const path = asNonEmptyString(day?.path);
-    const rowCount = asCounter(day?.row_count);
-    if (dayValue == null || path == null || rowCount == null) {
-      return null;
-    }
-    publishedDays.push({ day: dayValue, path, row_count: rowCount });
-  }
-
-  return { generatedAt, latestCompleteDay, publishedDays };
+  return Array.from(
+    { length: Math.floor((endTimestamp - startTimestamp) / UTC_DAY_MS) + 1 },
+    (_, index) => new Date(startTimestamp + index * UTC_DAY_MS).toISOString().slice(0, 10)
+  );
 }
 
 function decodeBattleCounts(value: unknown): HeroBattleCounts | null {
@@ -324,7 +301,7 @@ function decodeBattleCounts(value: unknown): HeroBattleCounts | null {
   const decided = asCounter(counts?.decided);
   const wins = asCounter(counts?.wins);
   const losses = asCounter(counts?.losses);
-  return decided == null || wins == null || losses == null
+  return decided == null || wins == null || losses == null || decided !== wins + losses
     ? null
     : { decided, wins, losses };
 }
@@ -334,17 +311,15 @@ function decodeRow(value: unknown): HeroMetricsRow | null {
   const runs = asRecord(row?.runs);
   const outcomes = asRecord(row?.outcomes);
   const tenWinDays = asRecord(row?.ten_win_days);
-  const battleDaysValue = asRecord(row?.battle_days);
   const hero = asNonEmptyString(row?.hero);
-  const tier = row?.rating_tier;
+  const segment = row?.segment;
   if (
     hero == null ||
-    typeof tier !== 'string' ||
-    !RATING_TIERS.has(tier) ||
+    typeof segment !== 'string' ||
+    !STORED_SEGMENTS.has(segment) ||
     runs == null ||
     outcomes == null ||
     tenWinDays == null ||
-    battleDaysValue == null ||
     !Array.isArray(row?.matchups)
   ) {
     return null;
@@ -368,21 +343,14 @@ function decodeRow(value: unknown): HeroMetricsRow | null {
     silver == null ||
     bronze == null ||
     knownCount == null ||
-    sumDays == null
+    sumDays == null ||
+    scored > completed ||
+    tenWin !== perfect + gold ||
+    perfect + gold + silver + bronze > scored ||
+    knownCount > tenWin ||
+    (knownCount === 0 && sumDays !== 0)
   ) {
     return null;
-  }
-
-  const battleDays: Partial<Record<GameDayBucket, HeroBattleCounts>> = {};
-  for (const bucket of GAME_DAY_BUCKETS) {
-    if (!(bucket in battleDaysValue)) {
-      continue;
-    }
-    const counts = decodeBattleCounts(battleDaysValue[bucket]);
-    if (counts == null) {
-      return null;
-    }
-    battleDays[bucket] = counts;
   }
 
   const matchups: HeroMetricsMatchup[] = [];
@@ -398,202 +366,132 @@ function decodeRow(value: unknown): HeroMetricsRow | null {
 
   return {
     hero,
-    rating_tier: tier as RatingTier,
+    segment: segment as HeroMetricsStoredSegment,
     runs: { completed, scored, ten_win: tenWin },
     outcomes: { perfect, gold, silver, bronze },
     ten_win_days: { known_count: knownCount, sum_days: sumDays },
-    battle_days: battleDays,
     matchups,
   };
 }
 
 function decodeDay(value: unknown, expectedDay: string): HeroMetricsDay | null {
   const payload = asRecord(value);
-  const day = asNonEmptyString(payload?.day);
-  const generatedAt = asNonEmptyString(payload?.generated_at);
-  if (
-    payload?.schema_version !== '2' ||
-    payload.kind !== 'hero_web_daily' ||
-    day !== expectedDay ||
-    generatedAt == null ||
-    !Array.isArray(payload.rows)
-  ) {
+  if (payload?.day !== expectedDay || !Array.isArray(payload.rows)) {
     return null;
   }
 
   const rows: HeroMetricsRow[] = [];
+  const rowKeys = new Set<string>();
   for (const valueRow of payload.rows) {
     const row = decodeRow(valueRow);
     if (row == null) {
       return null;
     }
+    const rowKey = `${row.hero}\0${row.segment}`;
+    if (rowKeys.has(rowKey)) {
+      return null;
+    }
+    rowKeys.add(rowKey);
     rows.push(row);
   }
-  return {
-    schema_version: '2',
-    kind: 'hero_web_daily',
-    day,
-    generated_at: generatedAt,
-    rows,
-  };
-}
 
-function selectRequestedDays(manifest: DecodedManifest): HeroMetricsPublishedDay[] {
-  return [...manifest.publishedDays]
-    .filter((ref) => ref.day <= manifest.latestCompleteDay)
-    .sort((left, right) => left.day.localeCompare(right.day))
-    .slice(-7);
-}
-
-function normalizeConcurrency(value: number | undefined): number {
-  if (!value || !Number.isFinite(value)) {
-    return DEFAULT_PAYLOAD_CONCURRENCY;
+  for (const hero of HEROES) {
+    for (const segment of STORED_SEGMENTS) {
+      if (!rowKeys.has(`${hero}\0${segment}`)) {
+        return null;
+      }
+    }
   }
-  return Math.max(1, Math.floor(value));
+
+  return { day: expectedDay, rows };
 }
 
-async function loadDaily(
-  transport: HeroMetricsTransport,
-  ref: HeroMetricsPublishedDay,
-  signal?: AbortSignal
-): Promise<HeroMetricsDay> {
-  async function fetchOnce() {
-    const value = await transport.load(ref.path, { signal });
-    const decoded = decodeDay(value, ref.day);
+function decodeSnapshot(value: unknown): HeroMetricsDataset | null {
+  const payload = asRecord(value);
+  const window = asRecord(payload?.window);
+  const generatedAt = asUtcTimestamp(payload?.generated_at);
+  const start = asIsoDate(window?.start);
+  const end = asIsoDate(window?.end);
+  const dayCount = asCounter(window?.days);
+  if (
+    payload?.schema_version !== 1 ||
+    payload.kind !== 'hero_metrics' ||
+    generatedAt == null ||
+    start == null ||
+    end == null ||
+    dayCount == null ||
+    dayCount === 0 ||
+    !Array.isArray(payload.days)
+  ) {
+    return null;
+  }
+
+  const requestedDates = enumerateDates(start, end);
+  if (requestedDates == null || requestedDates.length !== dayCount) {
+    return null;
+  }
+
+  const requestedDateSet = new Set(requestedDates);
+  const valuesByDay = new Map<string, unknown>();
+  const duplicateDays = new Set<string>();
+  for (const valueDay of payload.days) {
+    const dayValue = asIsoDate(asRecord(valueDay)?.day);
+    if (dayValue == null || !requestedDateSet.has(dayValue)) {
+      return null;
+    }
+    if (valuesByDay.has(dayValue)) {
+      duplicateDays.add(dayValue);
+    } else {
+      valuesByDay.set(dayValue, valueDay);
+    }
+  }
+
+  const days: HeroMetricsDay[] = [];
+  const failedDates: string[] = [];
+  for (const day of requestedDates) {
+    const decoded = duplicateDays.has(day) ? null : decodeDay(valuesByDay.get(day), day);
     if (decoded == null) {
-      throw new Error(`Unexpected web daily payload for ${ref.day}`);
+      failedDates.push(day);
+    } else {
+      days.push(decoded);
     }
-    return decoded;
   }
 
-  try {
-    return await fetchOnce();
-  } catch (error) {
-    if (
-      error instanceof HeroMetricsTransportError &&
-      error.status === 404 &&
-      !signal?.aborted
-    ) {
-      return fetchOnce();
-    }
-    throw error;
-  }
+  return {
+    generatedAt,
+    window: { start, end, days: dayCount },
+    days,
+    coverage: {
+      requestedDates,
+      usableDates: days.map((day) => day.day),
+      failedDates,
+    },
+  };
 }
 
 export async function loadHeroMetricsDataset(
   transport: HeroMetricsTransport,
   options: LoadDatasetOptions = {}
 ): Promise<HeroMetricsDataset> {
-  const report = options.onProgress;
-  report?.({
+  const progress = {
     completed: 0,
     total: 1,
     status: 'loading',
-    resource: { kind: 'manifest' },
-  });
+    resource: { kind: 'snapshot' },
+  } as const;
+  options.onProgress?.(progress);
 
-  let manifest: DecodedManifest | null;
   try {
-    manifest = decodeManifest(await transport.load(MANIFEST_PATH, { signal: options.signal }));
-    if (manifest == null) {
-      throw new Error('Unexpected metrics manifest format');
+    const dataset = decodeSnapshot(
+      await transport.load(HERO_METRICS_PATH, { signal: options.signal })
+    );
+    if (dataset == null) {
+      throw new Error('Unexpected hero metrics snapshot format');
     }
+    options.onProgress?.({ ...progress, completed: 1, status: 'loaded' });
+    return dataset;
   } catch (error) {
-    report?.({
-      completed: 0,
-      total: 1,
-      status: 'failed',
-      resource: { kind: 'manifest' },
-    });
+    options.onProgress?.({ ...progress, status: 'failed' });
     throw error;
   }
-
-  const requestedDays = selectRequestedDays(manifest);
-  const total = requestedDays.length + 1;
-  let completed = 1;
-  report?.({
-    completed,
-    total,
-    status: 'loaded',
-    resource: { kind: 'manifest' },
-  });
-
-  const results: Array<HeroMetricsDay | Error | undefined> = new Array(requestedDays.length);
-  let nextIndex = 0;
-  async function worker() {
-    while (nextIndex < requestedDays.length) {
-      if (options.signal?.aborted) {
-        throw getAbortError(options.signal);
-      }
-      const index = nextIndex;
-      nextIndex += 1;
-      const ref = requestedDays[index]!;
-      report?.({
-        completed,
-        total,
-        status: 'loading',
-        resource: { kind: 'daily', date: ref.day },
-      });
-      try {
-        const day = await loadDaily(transport, ref, options.signal);
-        results[index] = day;
-        completed += 1;
-        report?.({
-          completed,
-          total,
-          status: 'loaded',
-          resource: { kind: 'daily', date: ref.day },
-        });
-      } catch (error) {
-        if (options.signal?.aborted) {
-          report?.({
-            completed,
-            total,
-            status: 'failed',
-            resource: { kind: 'daily', date: ref.day },
-          });
-          throw getAbortError(options.signal);
-        }
-        results[index] = error instanceof Error ? error : new Error(String(error));
-        report?.({
-          completed,
-          total,
-          status: 'failed',
-          resource: { kind: 'daily', date: ref.day },
-        });
-      }
-    }
-  }
-
-  const workerCount = Math.min(
-    requestedDays.length,
-    normalizeConcurrency(options.concurrency)
-  );
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  if (options.signal?.aborted) {
-    throw getAbortError(options.signal);
-  }
-
-  const days: HeroMetricsDay[] = [];
-  const failedDates: string[] = [];
-  results.forEach((result, index) => {
-    if (result && !(result instanceof Error)) {
-      days.push(result);
-    } else {
-      failedDates.push(requestedDays[index]!.day);
-    }
-  });
-  days.sort((left, right) => left.day.localeCompare(right.day));
-
-  return {
-    generatedAt: manifest.generatedAt,
-    latestCompleteDay: manifest.latestCompleteDay,
-    publishedDays: manifest.publishedDays,
-    days,
-    coverage: {
-      requestedDates: requestedDays.map((ref) => ref.day),
-      usableDates: days.map((day) => day.day),
-      failedDates,
-    },
-  };
 }

@@ -12,8 +12,8 @@ This site renders the BazaarPlusPlus public website, including support, stable i
 2. The deep SPA location module in `src/app/router.ts` resolves the browser location through the production browser adapter. It owns the route catalog, aliases, locale and Analysis Scope parsing, localized hrefs, query defaults, click eligibility, and push/replace/popstate behavior.
 3. `src/app/App.tsx` renders from the resolved location model and keeps the document title and language synchronized. The `/heroes` route stays lazily loaded, enforced by `test/app-code-splitting.test.tsx`.
 4. `src/app/route-pages.tsx` uses React Query for runtime fetching and caching. It calls the Hero Metrics Dataset ingestion interface directly and forwards semantic progress to presentation.
-5. The deep ingestion implementation in `src/features/heroes/hero-metrics-dataset.ts` loads and decodes the manifest plus at most seven daily payloads. Its depth includes structured transport failures, timeout/retry behavior, bounded concurrency, compatibility, per-date degradation, Dataset Coverage, and semantic progress.
-6. The pure Hero Analysis interface in `src/features/heroes/hero-analysis.ts` accepts a validated Hero Metrics Dataset, requested Analysis Scope, and focused hero. It owns window/tier selection and fallback, canonical-hero filtering, additive merging, ranking, trends and gap segments, stages, matchups, focus fallback, and selected-window Dataset Coverage.
+5. The deep ingestion implementation in `src/features/heroes/hero-metrics-dataset.ts` loads and decodes one mutable hero snapshot. Its depth includes structured transport failures, timeout/retry behavior, contract validation, per-date degradation inside the snapshot, Dataset Coverage, and semantic progress.
+6. The pure Hero Analysis interface in `src/features/heroes/hero-analysis.ts` accepts a validated Hero Metrics Dataset, requested Analysis Scope, and focused hero. It owns window/segment selection, derivation of the `all` segment, canonical-hero filtering, additive merging, ranking, trends and gap segments, matchups, focus fallback, and selected-window Dataset Coverage.
 7. `HeroOverviewDashboard` crosses that one analysis seam and owns presentation state such as table sorting, focus interaction, hover state, and SVG geometry. It does not know remote payload transport, decoding, merge sequencing, or browser history.
 
 ## Routes and URL contract
@@ -33,20 +33,19 @@ Query defaults omit the default value and serialize everything else explicitly:
 
 - Chinese is the default locale and omits `lang`; English uses `lang=en`.
 - The `1d` metric window omits `w`; `3d` and `7d` serialize explicitly.
-- The `all` rating tier omits `t`; other tiers serialize explicitly.
+- The `all` hero segment omits `s`; `legend` and `non_legend` serialize explicitly.
 
 Analysis Scope changes replace the current history entry. Normal internal navigation, including language links, pushes. Locale links preserve the current path, query scope, and hash.
 
 ## Hero Metrics Dataset
 
-The production HTTP adapter reads from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`:
+The production HTTP adapter reads `analyzer-v5/heroes/latest.json` from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
 
-- `analyzer-v4/manifest.json`
-- each manifest-owned `analyzer-v4/web/<day>.json` path
+The adapter returns unknown JSON or a structured transport failure. Decoding occurs only inside ingestion. Unknown additive fields and non-canonical heroes remain compatible. The payload stores only `legend` and `non_legend`; analysis derives `all` by adding the two segments field by field. Missing dates and dates with invalid required counters remain visible in Dataset Coverage and are never zero-filled. An invalid snapshot envelope fails the page.
 
-The adapter returns unknown JSON or a structured transport failure. Decoding occurs only inside ingestion. Unknown additive fields, supported optional fields, sparse battle-day maps, and non-canonical heroes remain compatible. Missing or invalid required counters invalidate the entire date; they are never dropped or zero-filled. An invalid manifest fails the page, while an invalid daily payload degrades Dataset Coverage and leaves other valid dates usable.
+The snapshot's inclusive `window.end` is authoritative for window selection and freshness; consumers do not infer completeness from the wall clock.
 
-Daily HTTP 404 responses are not transport-retried. Ingestion performs exactly one explicit daily refetch for publication lag. Retryable transport statuses are 408, 429, and 5xx.
+Retryable transport statuses are 408, 429, and 5xx.
 
 ## Module seams
 
@@ -60,9 +59,8 @@ These deep modules keep policy changes local: transport and compatibility policy
 ## Performance invariants
 
 - React Query uses five-minute `staleTime`, 30-minute `gcTime`, one retry, and no refetch on window focus (`src/shared/lib/query-client.ts`).
-- Ingestion fetches one manifest plus at most seven daily payloads.
-- Daily payload concurrency defaults to six.
-- A failed date does not increase requests for other dates; only a structured daily 404 receives one explicit refetch.
+- Ingestion fetches exactly one mutable snapshot object.
+- The snapshot contains the seven daily entries used by the 1D, 3D, and 7D analysis windows.
 
 ## Deployment
 

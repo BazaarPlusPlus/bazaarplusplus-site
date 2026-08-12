@@ -50,15 +50,14 @@ describe('site copy', () => {
       failed: '加载失败',
     });
     expect(zhCopy.common.loading.resources).toEqual({
-      manifest: 'manifest',
-      dailyPrefix: 'web_daily/',
+      snapshot: 'heroes/latest.json',
     });
     expect(enCopy.common.loading.statusLabels).toEqual({
       loading: 'Loading',
       loaded: 'Loaded',
       failed: 'Failed',
     });
-    expect(zhCopy.common.scope.tierLabels.high).toBe('高');
+    expect(zhCopy.common.scope.segmentLabels.legend).toBe('传奇');
     expect(zhCopy.secondaryNav.tutorial).toBe('教程');
     expect(zhCopy.tutorial.intro).toBe(
       '从下载安装到实战技巧，带你全面了解 BazaarPlusPlus 的各项核心功能，助你快速上手。'
@@ -91,7 +90,7 @@ describe('site copy', () => {
     ]);
     expect(zhCopy.tutorial.quickStart.groups[1]?.note).toBe('在游戏“设置” -> “游玩设置”中重绑 Ctrl / Shift 预览键位');
 
-    expect(enCopy.common.scope.tierLabels.high).toBe('High');
+    expect(enCopy.common.scope.segmentLabels.non_legend).toBe('Non-Legend');
     expect(zhCopy.stats.heroes.eyebrow).toBe('BazaarPlusPlus');
     expect(enCopy.stats.heroes.eyebrow).toBe('Bazaar Almanac');
     expect(zhCopy.stats.heroes.title).toBe('英雄统计');
@@ -100,7 +99,6 @@ describe('site copy', () => {
     expect(zhCopy.stats.heroes.trend.title).toBe('近期表现');
     expect(enCopy.stats.heroes.trend.title).toBe('Recent performance');
     expect(zhCopy.stats.heroes.snapshot.title).toBe('胜率榜单');
-    expect(zhCopy.stats.heroes.dossier.label).toBe('战斗明细');
     expect(zhCopy.stats.heroes.detailLinkLabel).toBe('在 BazaarDB 查看详细统计');
     expect(enCopy.stats.heroes.detailLinkLabel).toBe('View detailed stats on BazaarDB');
     expect(enCopy.stats.heroes.tableHeaders.winRate).toBe('10W rate');
@@ -108,10 +106,8 @@ describe('site copy', () => {
     expect(zhCopy.stats.heroes.matchups.selectedHeroLabel).toBe('当前英雄');
     expect(enCopy.stats.heroes.matchups.selectedHeroLabel).toBe('Selected hero');
     expect(zhCopy.stats.heroes.coverage.daysLoadedSeparator).toBe('/');
-    expect(zhCopy.stats.heroes.stage.title).toBe('战斗胜率');
-    expect(enCopy.stats.heroes.stage.title).toBe('Battle win rate');
-    expect(zhCopy.stats.heroes.stage.day_13_plus).toBe('第 13 天起');
-    expect(enCopy.stats.heroes.stage.day_13_plus).toBe('Day 13+');
+    expect(zhCopy.stats.heroes.tableHeaders.misfortune).toBe('不幸');
+    expect(enCopy.stats.heroes.tableHeaders.misfortune).toBe('Misfortune');
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
     expect(enCopy.tutorial.intro).toBe(
       'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.'

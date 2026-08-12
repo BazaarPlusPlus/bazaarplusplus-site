@@ -1,59 +1,66 @@
 import { getSiteCopy } from '../content/site-copy';
-import type { HeroMetricsLoadProgress } from '../features/heroes/hero-metrics-dataset';
-import type { Locale, ResolvedSpaLocation } from './router';
+import SiteHeader from '../shared/components/SiteHeader';
+import type { ResolvedSpaLocation } from './router';
 
 type LoadingScreenProps = {
-  locale?: Locale;
-  progress?: HeroMetricsLoadProgress;
+  location: ResolvedSpaLocation;
 };
 
-function renderProgressLabel(progress: HeroMetricsLoadProgress, locale: Locale): string {
-  const copy = getSiteCopy(locale).common.loading;
-  return `${copy.statusLabels[progress.status]} ${copy.resources.snapshot}`;
-}
-
-export function LoadingScreen({ locale = 'en', progress }: LoadingScreenProps) {
-  const copy = getSiteCopy(locale).common.loading;
-  const progressPercent =
-    progress && progress.total > 0
-      ? Math.min(100, Math.round((progress.completed / progress.total) * 100))
-      : undefined;
+export function LoadingScreen({ location }: LoadingScreenProps) {
+  const copy = getSiteCopy(location.locale);
+  const loadingCopy = copy.common.loading;
+  const heroCopy = copy.stats.heroes;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-6 px-6 py-10">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center">
-          <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)]" />
-        </span>
-        <span className="font-display text-lg tracking-[0.18em] text-[color:var(--color-text-muted)]">
-          {copy.title}
-        </span>
-      </div>
-      <div className="grid w-64 gap-2">
-        <div className="flex items-center justify-between gap-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[color:var(--color-text-faint)]">
-          <span>{progress ? copy.dataLabel : copy.connectingLabel}</span>
-          {progress ? <span className="tnum">{progress.completed} / {progress.total}</span> : null}
-        </div>
-        <div
-          role="progressbar"
-          aria-label={copy.progressAriaLabel}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progressPercent}
-          className="h-[3px] overflow-hidden rounded-full bg-[color:var(--color-border-soft)]"
+    <div className="relative min-h-screen">
+      <SiteHeader location={location} />
+
+      <main
+        aria-busy="true"
+        className="relative mx-auto flex min-w-0 w-full max-w-[1440px] flex-col gap-10 px-6 py-8 sm:w-[calc(100%-5rem)] sm:px-10 sm:py-10 2xl:px-12"
+      >
+        <section>
+          <p className="eyebrow eyebrow-rule">{heroCopy.eyebrow}</p>
+          <h1 className="mt-3 font-display text-[2.2rem] font-semibold leading-[1.05] tracking-[-0.025em] text-[color:var(--color-text-base)] sm:text-[2.7rem]">
+            {heroCopy.title}
+          </h1>
+        </section>
+
+        <section
+          aria-live="polite"
+          className="surface relative flex min-h-[360px] items-center justify-center overflow-hidden px-6 py-14 sm:min-h-[420px] sm:px-10"
         >
           <div
-            className={progress ? 'h-full rounded-full bg-[color:var(--color-accent)] transition-[width] duration-300' : 'shimmer h-full w-full'}
-            style={progressPercent != null ? { width: `${progressPercent}%` } : undefined}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_20%,rgba(232,185,74,0.10),transparent_58%)]"
           />
-        </div>
-        {progress ? (
-          <p className="truncate text-center text-xs text-[color:var(--color-text-muted)]">
-            {renderProgressLabel(progress, locale)}
-          </p>
-        ) : null}
-      </div>
-    </main>
+
+          <div className="relative flex w-full max-w-xl flex-col items-center text-center">
+            <div aria-hidden="true" className="relative mb-7 flex h-16 w-16 items-center justify-center">
+              <span className="absolute inset-0 rounded-full border border-[color:var(--color-border-bright)] opacity-60 motion-safe:animate-pulse" />
+              <span className="absolute inset-2 rounded-full border border-[color:var(--color-border-soft)]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_24px_rgba(232,185,74,0.75)]" />
+            </div>
+
+            <p className="eyebrow">{heroCopy.snapshot.label}</p>
+            <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-[color:var(--color-text-base)] sm:text-3xl">
+              {loadingCopy.title}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)]">
+              {loadingCopy.body}
+            </p>
+
+            <div
+              role="progressbar"
+              aria-label={loadingCopy.progressAriaLabel}
+              className="mt-8 h-1 w-full max-w-sm overflow-hidden rounded-full bg-[color:var(--color-border-soft)]"
+            >
+              <div className="shimmer h-full w-full rounded-full" />
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
 

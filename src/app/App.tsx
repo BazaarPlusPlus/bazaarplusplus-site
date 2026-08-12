@@ -66,7 +66,7 @@ export default function App() {
 
   if (location.route.page === 'heroes') {
     return (
-      <Suspense fallback={<LoadingScreen locale={location.locale} />}>
+      <Suspense fallback={<LoadingScreen location={location} />}>
         <HeroOverviewPage
           transport={transport}
           location={location}

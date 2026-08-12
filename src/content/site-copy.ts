@@ -41,17 +41,8 @@ type CommonCopy = {
   };
   loading: {
     title: string;
-    dataLabel: string;
-    connectingLabel: string;
+    body: string;
     progressAriaLabel: string;
-    statusLabels: {
-      loading: string;
-      loaded: string;
-      failed: string;
-    };
-    resources: {
-      snapshot: string;
-    };
   };
   error: {
     title: string;
@@ -70,8 +61,6 @@ type HeroStatsCopy = {
   eyebrow: string;
   title: string;
   detailLinkLabel: string;
-  detailLinkHelpLabel: string;
-  detailLinkHelpTooltip: string;
   trend: {
     winrateTrend: string;
     title: string;
@@ -111,9 +100,6 @@ type HeroStatsCopy = {
   };
   coverage: {
     windowSuffix: string;
-    daysLoadedPrefix: string;
-    daysLoadedSeparator: string;
-    partialNote: string;
     syncedPrefix: string;
     someDaysUnavailable: string;
     noTrendValue: string;
@@ -252,18 +238,9 @@ const zh: LocalizedSiteCopy = {
       by: 'by',
     },
     loading: {
-      title: '正在加载 BazaarPlusPlus 数据…',
-      dataLabel: '正在加载数据',
-      connectingLabel: '正在连接数据源',
-      progressAriaLabel: '数据加载进度',
-      statusLabels: {
-        loading: '正在加载',
-        loaded: '已加载',
-        failed: '加载失败',
-      },
-      resources: {
-        snapshot: 'heroes/latest.json',
-      },
+      title: '正在准备英雄统计',
+      body: '正在读取最新数据快照，请稍候。',
+      progressAriaLabel: '正在加载英雄统计',
     },
     error: {
       title: '数据暂时不可用',
@@ -307,8 +284,6 @@ const zh: LocalizedSiteCopy = {
       eyebrow: 'BazaarPlusPlus',
       title: '英雄统计',
       detailLinkLabel: '在 BazaarDB 查看详细统计',
-      detailLinkHelpLabel: '了解数据如何同步到 BazaarDB',
-      detailLinkHelpTooltip: '了解数据如何同步到 BazaarDB',
       trend: {
         winrateTrend: '胜率走势与对位',
         title: '近期表现',
@@ -329,7 +304,7 @@ const zh: LocalizedSiteCopy = {
         gold: '黄金',
         silver: '白银',
         bronze: '青铜',
-        misfortune: '不幸',
+        misfortune: '惨淡',
         runShare: '局数占比',
         avgDays: '平均天数',
       },
@@ -348,9 +323,6 @@ const zh: LocalizedSiteCopy = {
       },
       coverage: {
         windowSuffix: ' 窗口',
-        daysLoadedPrefix: '已加载 ',
-        daysLoadedSeparator: '/',
-        partialNote: '覆盖不完整',
         syncedPrefix: '同步于 ',
         someDaysUnavailable: '部分日期暂不可用，当前结果只包含已加载日期。',
         noTrendValue: '部分日期没有可计算的趋势点。',
@@ -575,18 +547,9 @@ const en: LocalizedSiteCopy = {
       by: 'by',
     },
     loading: {
-      title: 'tallying the bazaar…',
-      dataLabel: 'Loading data',
-      connectingLabel: 'Connecting',
-      progressAriaLabel: 'Data loading progress',
-      statusLabels: {
-        loading: 'Loading',
-        loaded: 'Loaded',
-        failed: 'Failed',
-      },
-      resources: {
-        snapshot: 'heroes/latest.json',
-      },
+      title: 'Preparing hero stats',
+      body: 'Reading the latest data snapshot. This should only take a moment.',
+      progressAriaLabel: 'Loading hero stats',
     },
     error: {
       title: 'Stats are temporarily unavailable',
@@ -630,8 +593,6 @@ const en: LocalizedSiteCopy = {
       eyebrow: 'Bazaar Almanac',
       title: 'Hero stats',
       detailLinkLabel: 'View detailed stats on BazaarDB',
-      detailLinkHelpLabel: 'Learn how data syncs to BazaarDB',
-      detailLinkHelpTooltip: 'Learn how data syncs to BazaarDB',
       trend: {
         winrateTrend: 'win rate and matchups',
         title: 'Recent performance',
@@ -671,9 +632,6 @@ const en: LocalizedSiteCopy = {
       },
       coverage: {
         windowSuffix: ' window',
-        daysLoadedPrefix: '',
-        daysLoadedSeparator: ' of ',
-        partialNote: 'partial coverage',
         syncedPrefix: 'synced ',
         someDaysUnavailable: 'Some days are unavailable; this view includes loaded days only.',
         noTrendValue: 'Some days have no calculable trend point.',
@@ -896,5 +854,3 @@ export function getPageTitle(page: PageTitleKey, locale: Locale): string {
 export const KOFI_URL = 'https://ko-fi.com/cauyxy';
 export const BAZAARDB_META_URL = 'https://bazaardb.gg/run/meta?utm_source=bazaarplusplus';
 export const BAZAARDB_ICON_PATH = '/bazaardb-icon.ico';
-export const BAZAARDB_INTEGRATION_DOC_URL =
-  'https://bpp-static.bazaarplusplus.com/bazaardb-snapshot-integration.pdf';

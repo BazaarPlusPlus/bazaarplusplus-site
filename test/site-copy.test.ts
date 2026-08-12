@@ -43,19 +43,15 @@ describe('site copy', () => {
     const enCopy = getSiteCopy('en');
 
     expect(zhCopy.common.footer).toEqual(enCopy.common.footer);
-    expect(zhCopy.common.loading.title).toBe('正在加载 BazaarPlusPlus 数据…');
-    expect(zhCopy.common.loading.statusLabels).toEqual({
-      loading: '正在加载',
-      loaded: '已加载',
-      failed: '加载失败',
+    expect(zhCopy.common.loading).toEqual({
+      title: '正在准备英雄统计',
+      body: '正在读取最新数据快照，请稍候。',
+      progressAriaLabel: '正在加载英雄统计',
     });
-    expect(zhCopy.common.loading.resources).toEqual({
-      snapshot: 'heroes/latest.json',
-    });
-    expect(enCopy.common.loading.statusLabels).toEqual({
-      loading: 'Loading',
-      loaded: 'Loaded',
-      failed: 'Failed',
+    expect(enCopy.common.loading).toEqual({
+      title: 'Preparing hero stats',
+      body: 'Reading the latest data snapshot. This should only take a moment.',
+      progressAriaLabel: 'Loading hero stats',
     });
     expect(zhCopy.common.scope.segmentLabels.legend).toBe('传奇');
     expect(zhCopy.secondaryNav.tutorial).toBe('教程');
@@ -105,8 +101,7 @@ describe('site copy', () => {
     expect(zhCopy.stats.heroes.matchups.title).toBe('对位胜率');
     expect(zhCopy.stats.heroes.matchups.selectedHeroLabel).toBe('当前英雄');
     expect(enCopy.stats.heroes.matchups.selectedHeroLabel).toBe('Selected hero');
-    expect(zhCopy.stats.heroes.coverage.daysLoadedSeparator).toBe('/');
-    expect(zhCopy.stats.heroes.tableHeaders.misfortune).toBe('不幸');
+    expect(zhCopy.stats.heroes.tableHeaders.misfortune).toBe('惨淡');
     expect(enCopy.stats.heroes.tableHeaders.misfortune).toBe('Misfortune');
     expect(enCopy.secondaryNav.tutorial).toBe('Tutorial');
     expect(enCopy.tutorial.intro).toBe(

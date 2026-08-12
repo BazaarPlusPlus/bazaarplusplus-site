@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import HeroOverviewDashboard from '../features/heroes/HeroOverviewDashboard';
@@ -6,7 +5,6 @@ import type { HeroMetricsDataset } from '../features/heroes/hero-metrics-dataset
 import type { AnalysisScope } from '../features/heroes/hero-analysis';
 import {
   loadHeroMetricsDataset,
-  type HeroMetricsLoadProgress,
   type HeroMetricsTransport,
 } from '../features/heroes/hero-metrics-dataset';
 import { ErrorScreen, LoadingScreen } from './screens';
@@ -29,14 +27,13 @@ function usePageQuery<T>(
 }
 
 export function HeroOverviewPage({ transport, location, onScopeChange }: RoutePageProps) {
-  const [progress, setProgress] = useState<HeroMetricsLoadProgress | undefined>();
   const { data, error, isLoading } = usePageQuery(
     ['hero-overview'],
-    (signal) => loadHeroMetricsDataset(transport, { onProgress: setProgress, signal })
+    (signal) => loadHeroMetricsDataset(transport, { signal })
   );
 
   if (isLoading) {
-    return <LoadingScreen locale={location.locale} progress={progress} />;
+    return <LoadingScreen location={location} />;
   }
 
   if (!data) {

@@ -4,7 +4,6 @@ import { describe, expect, test, vi } from 'vitest';
 
 import {
   loadHeroMetricsDataset,
-  type HeroMetricsLoadProgress,
   type HeroMetricsTransport,
 } from '../src/features/heroes/hero-metrics-dataset';
 import { HEROES } from '../src/shared/lib/heroes';
@@ -78,13 +77,10 @@ function makeTransport(
 }
 
 describe('loadHeroMetricsDataset', () => {
-  test('loads and decodes only analyzer-v5/heroes/latest.json with snapshot progress', async () => {
-    const progress: HeroMetricsLoadProgress[] = [];
+  test('loads and decodes only analyzer-v5/heroes/latest.json', async () => {
     const transport = makeTransport();
 
-    const dataset = await loadHeroMetricsDataset(transport, {
-      onProgress: (event) => progress.push(event),
-    });
+    const dataset = await loadHeroMetricsDataset(transport);
 
     expect(transport.load).toHaveBeenCalledTimes(1);
     expect(transport.load).toHaveBeenCalledWith('analyzer-v5/heroes/latest.json', {
@@ -100,10 +96,6 @@ describe('loadHeroMetricsDataset', () => {
       },
     });
     expect(dataset.days.map((day) => day.day)).toEqual(DATES);
-    expect(progress).toEqual([
-      { completed: 0, total: 1, status: 'loading', resource: { kind: 'snapshot' } },
-      { completed: 1, total: 1, status: 'loaded', resource: { kind: 'snapshot' } },
-    ]);
   });
 
   test.each([1, 5, 7])(
@@ -276,9 +268,8 @@ describe('loadHeroMetricsDataset', () => {
     ).rejects.toThrow('Unexpected hero metrics snapshot format');
   });
 
-  test('passes caller abort to the one snapshot request and reports failure', async () => {
+  test('passes caller abort to the one snapshot request', async () => {
     const controller = new AbortController();
-    const progress: HeroMetricsLoadProgress[] = [];
     const transport = makeTransport(async (_path, signal) => {
       expect(signal).toBe(controller.signal);
       controller.abort(new DOMException('caller aborted', 'AbortError'));
@@ -288,14 +279,7 @@ describe('loadHeroMetricsDataset', () => {
     await expect(
       loadHeroMetricsDataset(transport, {
         signal: controller.signal,
-        onProgress: (event) => progress.push(event),
       })
     ).rejects.toThrow(/caller aborted/i);
-    expect(progress.at(-1)).toEqual({
-      completed: 0,
-      total: 1,
-      status: 'failed',
-      resource: { kind: 'snapshot' },
-    });
   });
 });

@@ -190,7 +190,7 @@ describe('HeroOverviewDashboard', () => {
     expect(screen.getByTestId('matchup-list')).toHaveTextContent('Stelle');
   });
 
-  test('switches 1D/3D windows and shows coverage without changing the seven-day trend axis', () => {
+  test('uses the actual three-day snapshot for 7D coverage and trend without inventing four days', () => {
     const { onScopeChange } = renderDashboard();
     const chart = screen.getByTestId('daily-winrate-chart');
 
@@ -202,8 +202,10 @@ describe('HeroOverviewDashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '7D' }));
     expect(onScopeChange).toHaveBeenCalledWith({ window: '7d', segment: 'all' });
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('3 of 7');
-    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('partial coverage');
+    expect(screen.getByTestId('coverage-strip')).toHaveTextContent('3 of 3');
+    expect(screen.getByTestId('coverage-strip')).not.toHaveTextContent('partial coverage');
+    expect(within(chart).getByText('Jun 4')).toBeInTheDocument();
+    expect(within(chart).getByText('Jun 6')).toBeInTheDocument();
   });
 
   test('renders daily trend gaps, excludes non-canonical heroes, and keeps tooltips working', () => {

@@ -362,7 +362,7 @@ export function analyzeHeroes(
       requestedDates: selectedDates,
       usableDates,
       failedDates,
-      nominalDateCount: WINDOW_DAY_COUNT[requestedScope.window],
+      nominalDateCount: selectedDates.length,
     },
     ranking,
     trend: {

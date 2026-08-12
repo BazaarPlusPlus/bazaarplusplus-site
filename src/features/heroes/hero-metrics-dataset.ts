@@ -421,35 +421,35 @@ function decodeSnapshot(value: unknown): HeroMetricsDataset | null {
     end == null ||
     dayCount == null ||
     dayCount === 0 ||
+    dayCount > 7 ||
     !Array.isArray(payload.days)
   ) {
     return null;
   }
 
   const requestedDates = enumerateDates(start, end);
-  if (requestedDates == null || requestedDates.length !== dayCount) {
+  if (
+    requestedDates == null ||
+    requestedDates.length !== dayCount ||
+    payload.days.length !== dayCount
+  ) {
     return null;
   }
 
-  const requestedDateSet = new Set(requestedDates);
+  const newestFirstDates = [...requestedDates].reverse();
   const valuesByDay = new Map<string, unknown>();
-  const duplicateDays = new Set<string>();
-  for (const valueDay of payload.days) {
+  for (const [index, valueDay] of payload.days.entries()) {
     const dayValue = asIsoDate(asRecord(valueDay)?.day);
-    if (dayValue == null || !requestedDateSet.has(dayValue)) {
+    if (dayValue !== newestFirstDates[index]) {
       return null;
     }
-    if (valuesByDay.has(dayValue)) {
-      duplicateDays.add(dayValue);
-    } else {
-      valuesByDay.set(dayValue, valueDay);
-    }
+    valuesByDay.set(dayValue, valueDay);
   }
 
   const days: HeroMetricsDay[] = [];
   const failedDates: string[] = [];
   for (const day of requestedDates) {
-    const decoded = duplicateDays.has(day) ? null : decodeDay(valuesByDay.get(day), day);
+    const decoded = decodeDay(valuesByDay.get(day), day);
     if (decoded == null) {
       failedDates.push(day);
     } else {

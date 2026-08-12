@@ -41,7 +41,7 @@ Analysis Scope changes replace the current history entry. Normal internal naviga
 
 The production HTTP adapter reads `analyzer-v5/heroes/latest.json` from `VITE_METRICS_BASE` or `https://bpp-metrics.bazaarplusplus.com`.
 
-The adapter returns unknown JSON or a structured transport failure. Decoding occurs only inside ingestion. Unknown additive fields and non-canonical heroes remain compatible. The payload stores only `legend` and `non_legend`; analysis derives `all` by adding the two segments field by field. Missing dates and dates with invalid required counters remain visible in Dataset Coverage and are never zero-filled. An invalid snapshot envelope fails the page.
+The adapter returns unknown JSON or a structured transport failure. Decoding occurs only inside ingestion. A snapshot contains 1–7 contiguous daily entries in newest-first order, exactly matching its inclusive window. Unknown additive fields and non-canonical heroes remain compatible. The payload stores only `legend` and `non_legend`; analysis derives `all` by adding the two segments field by field. Dates with invalid required counters remain visible in Dataset Coverage and are never zero-filled. An invalid snapshot envelope fails the page.
 
 The snapshot's inclusive `window.end` is authoritative for window selection and freshness; consumers do not infer completeness from the wall clock.
 
@@ -60,7 +60,7 @@ These deep modules keep policy changes local: transport and compatibility policy
 
 - React Query uses five-minute `staleTime`, 30-minute `gcTime`, one retry, and no refetch on window focus (`src/shared/lib/query-client.ts`).
 - Ingestion fetches exactly one mutable snapshot object.
-- The snapshot contains the seven daily entries used by the 1D, 3D, and 7D analysis windows.
+- The snapshot contains 1–7 daily entries. Each analysis window uses at most its requested 1, 3, or 7 latest entries, so a growing snapshot never invents earlier missing dates.
 
 ## Deployment
 

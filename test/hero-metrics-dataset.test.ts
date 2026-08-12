@@ -50,12 +50,19 @@ function makeDay(day: string, overrides = [makeRow()]) {
   return { day, rows };
 }
 
-function makeSnapshot(days: unknown[] = DATES.map((day) => makeDay(day))) {
+function makeSnapshot(
+  days: unknown[] = [...DATES].reverse().map((day) => makeDay(day)),
+  windowDates: string[] = DATES
+) {
   return {
     schema_version: 1,
     kind: 'hero_metrics',
     generated_at: '2026-06-08T09:00:00Z',
-    window: { start: DATES[0], end: DATES.at(-1), days: 7 },
+    window: {
+      start: windowDates[0],
+      end: windowDates.at(-1),
+      days: windowDates.length,
+    },
     days,
   };
 }
@@ -99,9 +106,32 @@ describe('loadHeroMetricsDataset', () => {
     ]);
   });
 
+  test.each([1, 5, 7])(
+    'accepts a %i-day newest-first snapshot and preserves its actual window',
+    async (dayCount) => {
+      const windowDates = DATES.slice(-dayCount);
+      const snapshotDays = [...windowDates].reverse().map((day) => makeDay(day));
+
+      const dataset = await loadHeroMetricsDataset(
+        makeTransport(async () => makeSnapshot(snapshotDays, windowDates))
+      );
+
+      expect(dataset.window).toEqual({
+        start: windowDates[0],
+        end: windowDates.at(-1),
+        days: dayCount,
+      });
+      expect(dataset.coverage).toEqual({
+        requestedDates: windowDates,
+        usableDates: windowDates,
+        failedDates: [],
+      });
+      expect(dataset.days.map((day) => day.day)).toEqual(windowDates);
+    }
+  );
+
   test('accepts additive fields and non-canonical heroes without decoding battle_days', async () => {
     const snapshot = makeSnapshot([
-      ...DATES.slice(0, -1).map((day) => makeDay(day)),
       makeDay('2026-06-07', [
         makeRow({
           hero: 'Common',
@@ -119,6 +149,7 @@ describe('loadHeroMetricsDataset', () => {
           additive_row_field: true,
         }),
       ]),
+      ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
     ]);
     Object.assign(snapshot, { additive_snapshot_field: true });
     const transport = makeTransport(async () => snapshot);
@@ -140,6 +171,8 @@ describe('loadHeroMetricsDataset', () => {
     ['generated timestamp', { generated_at: 'not-a-timestamp' }],
     ['window start', { window: { start: 'bad', end: '2026-06-07', days: 7 } }],
     ['window day count', { window: { start: '2026-06-01', end: '2026-06-07', days: 6 } }],
+    ['zero-day window', { window: { start: '2026-06-07', end: '2026-06-07', days: 0 } }],
+    ['eight-day window', { window: { start: '2026-05-31', end: '2026-06-07', days: 8 } }],
     ['days array', { days: null }],
   ])('fails the page for an invalid snapshot %s', async (_label, override) => {
     const transport = makeTransport(async () => ({ ...makeSnapshot(), ...override }));
@@ -149,23 +182,48 @@ describe('loadHeroMetricsDataset', () => {
     );
   });
 
-  test('surfaces missing and invalid dates in Dataset Coverage without zero-filling them', async () => {
+  test('requires the days array length to equal window.days', async () => {
+    const fiveDates = DATES.slice(-5);
+    const transport = makeTransport(async () =>
+      makeSnapshot(
+        [...fiveDates].reverse().slice(1).map((day) => makeDay(day)),
+        fiveDates
+      )
+    );
+
+    await expect(loadHeroMetricsDataset(transport)).rejects.toThrow(
+      'Unexpected hero metrics snapshot format'
+    );
+  });
+
+  test('requires snapshot entries in newest-first order', async () => {
+    const fiveDates = DATES.slice(-5);
+    const transport = makeTransport(async () =>
+      makeSnapshot(fiveDates.map((day) => makeDay(day)), fiveDates)
+    );
+
+    await expect(loadHeroMetricsDataset(transport)).rejects.toThrow(
+      'Unexpected hero metrics snapshot format'
+    );
+  });
+
+  test('surfaces an invalid date in Dataset Coverage without zero-filling it', async () => {
     const transport = makeTransport(async () =>
       makeSnapshot([
-        ...DATES.slice(0, 5).map((day) => makeDay(day)),
         makeDay('2026-06-07', [
           makeRow({ runs: { completed: -1, scored: 0, ten_win: 0 } }),
         ]),
+        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
       ])
     );
 
     const dataset = await loadHeroMetricsDataset(transport);
 
-    expect(dataset.days.map((day) => day.day)).toEqual(DATES.slice(0, 5));
+    expect(dataset.days.map((day) => day.day)).toEqual(DATES.slice(0, -1));
     expect(dataset.coverage).toEqual({
       requestedDates: DATES,
-      usableDates: DATES.slice(0, 5),
-      failedDates: ['2026-06-06', '2026-06-07'],
+      usableDates: DATES.slice(0, -1),
+      failedDates: ['2026-06-07'],
     });
   });
 
@@ -184,8 +242,8 @@ describe('loadHeroMetricsDataset', () => {
   ])('marks a date failed for an invalid row %s', async (_label, rowOverride) => {
     const transport = makeTransport(async () =>
       makeSnapshot([
-        ...DATES.slice(0, -1).map((day) => makeDay(day)),
         makeDay('2026-06-07', [makeRow(rowOverride)]),
+        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
       ])
     );
 
@@ -202,8 +260,8 @@ describe('loadHeroMetricsDataset', () => {
     );
     const transport = makeTransport(async () =>
       makeSnapshot([
-        ...DATES.slice(0, -1).map((day) => makeDay(day)),
         incompleteDay,
+        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
       ])
     );
 
@@ -212,15 +270,10 @@ describe('loadHeroMetricsDataset', () => {
     expect(dataset.coverage.failedDates).toEqual(['2026-06-07']);
   });
 
-  test('treats an empty days array as explicit missing coverage', async () => {
-    const dataset = await loadHeroMetricsDataset(makeTransport(async () => makeSnapshot([])));
-
-    expect(dataset.days).toEqual([]);
-    expect(dataset.coverage).toEqual({
-      requestedDates: DATES,
-      usableDates: [],
-      failedDates: DATES,
-    });
+  test('rejects an empty days array instead of inventing missing coverage', async () => {
+    await expect(
+      loadHeroMetricsDataset(makeTransport(async () => makeSnapshot([])))
+    ).rejects.toThrow('Unexpected hero metrics snapshot format');
   });
 
   test('passes caller abort to the one snapshot request and reports failure', async () => {

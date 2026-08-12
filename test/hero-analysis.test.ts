@@ -63,9 +63,18 @@ describe('analyzeHeroes', () => {
     const dates = Array.from({ length: 7 }, (_, index) => `2026-06-0${index + 1}`);
     const dataset = makeDataset(
       dates,
-      dates.map((day, index) =>
-        makeDay(day, [makeCountedRow('Vanessa', (index + 1) * 10, index + 1)])
-      )
+      dates.map((day, index) => {
+        const row = makeCountedRow('Vanessa', (index + 1) * 10, index + 1);
+        row.matchups = [
+          {
+            opponent_hero: 'Mak',
+            decided: 20,
+            wins: 8 + index,
+            losses: 12 - index,
+          },
+        ];
+        return makeDay(day, [row]);
+      })
     );
 
     const oneDay = analyzeHeroes(dataset, { window: '1d', segment: 'legend' }, null);
@@ -75,6 +84,12 @@ describe('analyzeHeroes', () => {
     expect(oneDay.ranking[0]).toMatchObject({ runsCompleted: 70, tenWinCount: 7 });
     expect(threeDay.ranking[0]).toMatchObject({ runsCompleted: 180, tenWinCount: 18 });
     expect(sevenDay.ranking[0]).toMatchObject({ runsCompleted: 280, tenWinCount: 28 });
+    expect(sevenDay.focus.matchups[0]).toMatchObject({
+      opponentHero: 'Mak',
+      decided: 140,
+      wins: 77,
+      losses: 63,
+    });
     expect(threeDay.coverage).toEqual({
       requestedDates: dates.slice(-3),
       usableDates: dates.slice(-3),
@@ -83,6 +98,51 @@ describe('analyzeHeroes', () => {
     });
     expect(threeDay.scope.availableWindows).toEqual(['1d', '3d', '7d']);
     expect(threeDay.scope.availableSegments).toEqual(['all', 'legend', 'non_legend']);
+    expect(sevenDay.coverage.nominalDateCount).toBe(7);
+    expect(sevenDay.trend.dayAxis).toEqual(dates);
+    expect(sevenDay.trend.series[0]?.points).toHaveLength(7);
+  });
+
+  test('uses all five available days for 7D and only the latest three for 3D', () => {
+    const dates = ['2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06', '2026-06-07'];
+    const dataset = makeDataset(
+      dates,
+      dates.map((day, index) => {
+        const row = makeCountedRow('Vanessa', (index + 1) * 10, index + 1);
+        row.matchups = [
+          {
+            opponent_hero: 'Mak',
+            decided: 20,
+            wins: 8 + index,
+            losses: 12 - index,
+          },
+        ];
+        return makeDay(day, [row]);
+      })
+    );
+
+    const threeDay = analyzeHeroes(dataset, { window: '3d', segment: 'legend' }, 'Vanessa');
+    const sevenDay = analyzeHeroes(dataset, { window: '7d', segment: 'legend' }, 'Vanessa');
+
+    expect(threeDay.ranking[0]).toMatchObject({ runsCompleted: 120, tenWinCount: 12 });
+    expect(threeDay.focus.matchups[0]).toMatchObject({ decided: 60, wins: 33, losses: 27 });
+    expect(threeDay.coverage).toEqual({
+      requestedDates: dates.slice(-3),
+      usableDates: dates.slice(-3),
+      failedDates: [],
+      nominalDateCount: 3,
+    });
+
+    expect(sevenDay.ranking[0]).toMatchObject({ runsCompleted: 150, tenWinCount: 15 });
+    expect(sevenDay.focus.matchups[0]).toMatchObject({ decided: 100, wins: 50, losses: 50 });
+    expect(sevenDay.coverage).toEqual({
+      requestedDates: dates,
+      usableDates: dates,
+      failedDates: [],
+      nominalDateCount: 5,
+    });
+    expect(sevenDay.trend.dayAxis).toEqual(dates);
+    expect(sevenDay.trend.series[0]?.points).toHaveLength(5);
   });
 
   test('derives all by summing legend and non_legend counters, outcomes, and matchups', () => {
@@ -115,8 +175,8 @@ describe('analyzeHeroes', () => {
       ]
     );
 
-    const all = analyzeHeroes(dataset, { window: '1d', segment: 'all' }, 'Vanessa');
-    const legend = analyzeHeroes(dataset, { window: '1d', segment: 'legend' }, 'Vanessa');
+    const all = analyzeHeroes(dataset, { window: '7d', segment: 'all' }, 'Vanessa');
+    const legend = analyzeHeroes(dataset, { window: '3d', segment: 'legend' }, 'Vanessa');
     const vanessa = all.ranking.find((row) => row.hero === 'Vanessa')!;
 
     expect(vanessa).toMatchObject({
@@ -142,6 +202,16 @@ describe('analyzeHeroes', () => {
         winRate: 0.52,
         isLowSample: false,
       },
+    ]);
+    expect(all.coverage).toEqual({
+      requestedDates: ['2026-06-07'],
+      usableDates: ['2026-06-07'],
+      failedDates: [],
+      nominalDateCount: 1,
+    });
+    expect(all.trend.dayAxis).toEqual(['2026-06-07']);
+    expect(all.trend.series.find((series) => series.hero === 'Vanessa')?.points).toEqual([
+      { day: '2026-06-07', winRate: 0.3 },
     ]);
   });
 

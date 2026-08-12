@@ -1,105 +1,80 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import {
+  createInstallerManifestHttpTransport,
   GITHUB_RELEASE_URL,
-  buildDownloadUrl,
-  buildMainlandDownloadUrl,
-  fetchLatestVersion,
   INSTALLER_BASE,
+  loadLatestInstaller,
+  type InstallerManifestTransport,
 } from '../src/features/download/installer';
 
-describe('buildDownloadUrl', () => {
-  test('builds the windows installer url', () => {
-    expect(buildDownloadUrl('windows', '3.1.1')).toBe(
-      'https://bppinstaller.bazaarplusplus.com/3.1.1/windows-x86_64/installer/BazaarPlusPlus_3.1.1_x64-setup.exe'
+function makeTransport(payload: unknown): InstallerManifestTransport {
+  return { load: vi.fn().mockResolvedValue(payload) };
+}
+
+describe('latest installer interface', () => {
+  test('turns one manifest into complete platform and source downloads', async () => {
+    const installer = await loadLatestInstaller(makeTransport({ version: '3.1.1' }));
+
+    expect(installer).toEqual({
+      version: '3.1.1',
+      downloads: {
+        windows: {
+          downloadUrl:
+            'https://bppinstaller.bazaarplusplus.com/3.1.1/windows-x86_64/installer/BazaarPlusPlus_3.1.1_x64-setup.exe',
+          mainlandDownloadUrl: 'https://cauyxy.lanzout.com/bppwin311',
+        },
+        mac: {
+          downloadUrl:
+            'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg',
+          mainlandDownloadUrl: 'https://cauyxy.lanzout.com/bppmac311',
+        },
+      },
+    });
+    expect(GITHUB_RELEASE_URL).toBe(
+      'https://github.com/cauyxy/BazaarPlusPlus/releases/latest'
     );
   });
 
-  test('builds the mac installer url', () => {
-    expect(buildDownloadUrl('mac', '3.1.1')).toBe(
-      'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg'
-    );
-  });
+  test.each([{ ver: '3.1.1' }, { version: '' }, null])(
+    'rejects an invalid manifest %#',
+    async (payload) => {
+      await expect(loadLatestInstaller(makeTransport(payload))).rejects.toThrow(/version/i);
+    }
+  );
 
-  test('builds the mainland Windows download url from the dotted version', () => {
-    expect(buildMainlandDownloadUrl('windows', '5.1.0')).toBe(
-      'https://cauyxy.lanzout.com/bppwin510'
-    );
-  });
+  test('passes cancellation through the transport seam', async () => {
+    const transport = makeTransport({ version: '3.1.1' });
+    const controller = new AbortController();
 
-  test('builds the mainland macOS download url from the dotted version', () => {
-    expect(buildMainlandDownloadUrl('mac', '5.1.0')).toBe(
-      'https://cauyxy.lanzout.com/bppmac510'
-    );
-  });
+    await loadLatestInstaller(transport, { signal: controller.signal });
 
-  test('uses the documented installer base', () => {
-    expect(INSTALLER_BASE).toBe('https://bppinstaller.bazaarplusplus.com');
-    expect(GITHUB_RELEASE_URL).toBe('https://github.com/cauyxy/BazaarPlusPlus/releases/latest');
+    expect(transport.load).toHaveBeenCalledWith({ signal: controller.signal });
   });
 });
 
-describe('fetchLatestVersion', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  test('returns the version from a valid response', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+describe('installer manifest HTTP adapter', () => {
+  test('loads unknown JSON from the production manifest location', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ version: '3.1.1' }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
       })
     );
-    vi.stubGlobal('fetch', fetchMock);
+    const transport = createInstallerManifestHttpTransport({ fetchImpl });
 
-    await expect(fetchLatestVersion()).resolves.toEqual({ version: '3.1.1' });
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://bppinstaller.bazaarplusplus.com/latest.json',
-      expect.objectContaining({
-        headers: { Accept: 'application/json' },
-      })
+    await expect(transport.load()).resolves.toEqual({ version: '3.1.1' });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `${INSTALLER_BASE}/latest.json`,
+      expect.objectContaining({ headers: { Accept: 'application/json' } })
     );
   });
 
-  test('throws when the response is not ok', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
-    );
+  test('reports a failed manifest response', async () => {
+    const transport = createInstallerManifestHttpTransport({
+      fetchImpl: vi.fn().mockResolvedValue(new Response('boom', { status: 503 })),
+    });
 
-    await expect(fetchLatestVersion()).rejects.toThrow(/503/);
-  });
-
-  test('throws when the response is missing a version string', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ ver: '3.1.1' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
-    );
-
-    await expect(fetchLatestVersion()).rejects.toThrow(/version/i);
-  });
-
-  test('throws when the version is empty', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ version: '' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
-    );
-
-    await expect(fetchLatestVersion()).rejects.toThrow(/version/i);
+    await expect(transport.load()).rejects.toThrow(/503/);
   });
 });

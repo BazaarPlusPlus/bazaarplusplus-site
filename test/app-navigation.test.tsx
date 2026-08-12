@@ -61,6 +61,25 @@ describe('App SPA navigation integration', () => {
     ).toBeInTheDocument();
   });
 
+  test('canonicalizes Hero scope without waiting for the Hero Metrics Dataset', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})));
+    window.history.replaceState(
+      {},
+      '',
+      '/heroes?lang=zh&w=invalid&t=high&s=all&keep=yes'
+    );
+    const replace = vi.spyOn(window.history, 'replaceState');
+    render(
+      <Providers>
+        <App />
+      </Providers>
+    );
+
+    await waitFor(() => expect(window.location.href).toContain('/heroes?keep=yes'));
+
+    expect(replace).toHaveBeenCalledWith({}, '', '/heroes?keep=yes');
+  });
+
   test('popstate refreshes locale, document metadata, and rendered copy', async () => {
     window.history.replaceState({}, '', '/tutorial?lang=en');
     render(

@@ -104,16 +104,31 @@ describe('deep SPA location interface', () => {
     });
   });
 
-  test('normalizes explicit and invalid scope defaults through replace semantics', () => {
+  test('exposes explicit, invalid, and retired Hero scope values as one canonical href', () => {
     const { memory, location } = setup(
       'https://example.test/heroes?lang=zh&w=invalid&s=all&t=high&keep=yes'
     );
 
-    location.replaceScope(location.current().scope);
+    expect(location.current()).toMatchObject({
+      scope: { window: '1d', segment: 'all' },
+      canonicalHref: '/heroes?keep=yes',
+    });
+    location.canonicalize();
 
     expect(memory.actions).toEqual([
       { mode: 'replace', href: '/heroes?keep=yes' },
     ]);
+  });
+
+  test('does not rewrite unrelated Hero query encoding when scope is already canonical', () => {
+    const { memory, location } = setup(
+      'https://example.test/heroes?campaign=two%20words&w=3d'
+    );
+
+    expect(location.current().canonicalHref).toBeNull();
+    location.canonicalize();
+
+    expect(memory.actions).toEqual([]);
   });
 
   test('normal internal navigation uses push semantics', () => {

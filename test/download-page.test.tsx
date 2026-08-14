@@ -62,21 +62,19 @@ describe('DownloadPage', () => {
       'href',
       'https://bppinstaller.bazaarplusplus.com/3.1.1/darwin-aarch64/installer/BazaarPlusPlus_3.1.1_aarch64.dmg'
     );
-    expect(winMainlandLink).toHaveAttribute(
-      'href',
-      'https://cauyxy.lanzout.com/bppwin311'
-    );
-    expect(macMainlandLink).toHaveAttribute(
-      'href',
-      'https://cauyxy.lanzout.com/bppmac311'
-    );
+    expect(winMainlandLink).toHaveAttribute('href', 'https://cauyxy.lanzout.com/bppwin311');
+    expect(macMainlandLink).toHaveAttribute('href', 'https://cauyxy.lanzout.com/bppmac311');
     expect(winMainlandLink).toHaveAttribute('target', '_blank');
     expect(macMainlandLink).toHaveAttribute('target', '_blank');
 
     expect(screen.getAllByText(/v3\.1\.1/)).toHaveLength(2);
-    expect(screen.queryByRole('heading', { level: 2, name: 'Want the preview build?' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { level: 2, name: 'Want the preview build?' })
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Open Preview downloads/ })).not.toBeInTheDocument();
-    expect(screen.getByText(/check the troubleshooting notes or reinstall the game and BazaarPlusPlus/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/check the troubleshooting notes or reinstall the game and BazaarPlusPlus/)
+    ).toBeInTheDocument();
     expect(screen.queryByText(/deleting the entire The Bazaar directory/)).not.toBeInTheDocument();
   });
 

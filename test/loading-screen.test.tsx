@@ -27,8 +27,12 @@ describe('LoadingScreen', () => {
   test('localizes the stable loading state in English', () => {
     render(<LoadingScreen location={loadingLocation('/heroes?lang=en')} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Preparing hero stats' })).toBeInTheDocument();
-    expect(screen.getByText('Reading the latest data snapshot. This should only take a moment.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Preparing hero stats' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Reading the latest data snapshot. This should only take a moment.')
+    ).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: 'Loading hero stats' })).toBeInTheDocument();
   });
 });

@@ -31,9 +31,7 @@ describe('latest installer interface', () => {
         },
       },
     });
-    expect(GITHUB_RELEASE_URL).toBe(
-      'https://github.com/cauyxy/BazaarPlusPlus/releases/latest'
-    );
+    expect(GITHUB_RELEASE_URL).toBe('https://github.com/cauyxy/BazaarPlusPlus/releases/latest');
   });
 
   test.each([{ ver: '3.1.1' }, { version: '' }, null])(

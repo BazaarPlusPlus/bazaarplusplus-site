@@ -1,17 +1,8 @@
-import {
-  Fragment,
-  useMemo,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from 'react';
+import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
 import type { Locale } from '../../app/router';
 import { getSiteCopy } from '../../content/site-copy';
-import {
-  formatInteger,
-  formatNullablePercent,
-} from '../../shared/lib/dashboard';
+import { formatInteger, formatNullablePercent } from '../../shared/lib/dashboard';
 import { getHeroColor } from '../../shared/lib/heroes';
 import HeroBadge from '../../shared/components/HeroBadge';
 import type { HeroRanking } from './hero-analysis';
@@ -181,9 +172,7 @@ const RANKING_COLUMNS: RankingColumn[] = [
     headerClassName: 'px-3 py-3.5',
     value: (row) => row[key],
     renderCell: (row, context) => (
-      <td className="px-3 py-4 tnum">
-        {renderRate(row[key], context.noValueLabel)}
-      </td>
+      <td className="px-3 py-4 tnum">{renderRate(row[key], context.noValueLabel)}</td>
     ),
   })),
 ];
@@ -252,9 +241,7 @@ function SortableHeader({
         <span
           aria-hidden="true"
           className={`flex flex-col leading-[0.6] text-[0.6rem] transition ${
-            isActive
-              ? 'text-[color:var(--color-accent)]'
-              : 'text-[color:var(--color-text-faint)]'
+            isActive ? 'text-[color:var(--color-accent)]' : 'text-[color:var(--color-text-faint)]'
           }`}
         >
           <span
@@ -306,8 +293,7 @@ export default function HeroRankingTable({
     [rows, sort.direction, sort.key]
   );
   const maxTenWinRate = rows.reduce(
-    (max, row) =>
-      row.tenWinRate != null && row.tenWinRate > max ? row.tenWinRate : max,
+    (max, row) => (row.tenWinRate != null && row.tenWinRate > max ? row.tenWinRate : max),
     0
   );
   const context: ColumnContext = {

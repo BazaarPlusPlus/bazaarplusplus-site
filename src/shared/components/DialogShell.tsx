@@ -31,7 +31,8 @@ export default function DialogShell({
       return;
     }
 
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     cardRef.current?.focus();
 
     function handleKey(event: KeyboardEvent) {
@@ -78,7 +79,9 @@ export default function DialogShell({
           onClick={onClose}
           className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-border-soft)] text-[color:var(--color-text-muted)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent-bright)]"
         >
-          <span aria-hidden="true" className="text-xl leading-none">×</span>
+          <span aria-hidden="true" className="text-xl leading-none">
+            ×
+          </span>
         </button>
         {children}
       </div>

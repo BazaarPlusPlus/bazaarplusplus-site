@@ -25,7 +25,9 @@ describe('orderSupportersForDisplay', () => {
       { name: 'D', tier: 2 },
     ];
 
-    const tiers = orderSupportersForDisplay(supporters, fixedRandom([0, 0, 0, 0])).map((s) => s.tier);
+    const tiers = orderSupportersForDisplay(supporters, fixedRandom([0, 0, 0, 0])).map(
+      (s) => s.tier
+    );
 
     expect(tiers).toEqual([4, 3, 2, 1]);
   });
@@ -97,28 +99,27 @@ describe('loadSupporters', () => {
   test('drops malformed entries instead of throwing', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify([
-            { name: 'good', tier: 4 },
-            { name: 'no-tier' },
-            null,
-            { tier: 3 },
-            'string-entry',
-          ]),
-          { status: 200, headers: { 'content-type': 'application/json' } }
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify([
+              { name: 'good', tier: 4 },
+              { name: 'no-tier' },
+              null,
+              { tier: 3 },
+              'string-entry',
+            ]),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          )
         )
-      )
     );
 
     expect(await loadSupporters()).toEqual([{ name: 'good', tier: 4 }]);
   });
 
   test('throws on non-2xx response', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 503 }))
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 503 })));
 
     await expect(loadSupporters()).rejects.toThrow(/503/);
   });

@@ -123,8 +123,7 @@ function collectRows(
     .filter((payload) => wantedDates.has(payload.day))
     .flatMap((payload) =>
       payload.rows.filter(
-        (row) =>
-          (segment === 'all' || row.segment === segment) && isCanonicalHero(row.hero)
+        (row) => (segment === 'all' || row.segment === segment) && isCanonicalHero(row.hero)
       )
     );
 }
@@ -204,8 +203,7 @@ function deriveRanking(merged: Map<string, MergedHeroRow>): HeroRanking[] {
 
   return rows
     .map((row) => {
-      const misfortune =
-        row.scoredRuns - (row.perfect + row.gold + row.silver + row.bronze);
+      const misfortune = row.scoredRuns - (row.perfect + row.gold + row.silver + row.bronze);
       return {
         hero: row.hero,
         runsCompleted: row.runsCompleted,
@@ -340,23 +338,20 @@ export function analyzeHeroes(
   const selectedDateSet = new Set(selectedDates);
   const usableDates = dataset.coverage.usableDates.filter((day) => selectedDateSet.has(day));
   const failedDates = dataset.coverage.failedDates.filter((day) => selectedDateSet.has(day));
-  const merged = mergeRows(
-    collectRows(dataset.days, selectedDates, requestedScope.segment)
-  );
+  const merged = mergeRows(collectRows(dataset.days, selectedDates, requestedScope.segment));
   const ranking = deriveRanking(merged);
   const trendDates = selectDates(dataset.coverage.requestedDates, '7d', dataset.window.end);
   const trendSeries = deriveTrend(dataset.days, trendDates, requestedScope.segment);
   const focusHero = ranking.some((row) => row.hero === requestedFocus)
     ? requestedFocus
-    : ranking[0]?.hero ?? null;
+    : (ranking[0]?.hero ?? null);
 
   return {
     generatedAt: dataset.generatedAt,
     scope: {
       requested: requestedScope,
       availableWindows: dataset.coverage.usableDates.length > 0 ? [...METRIC_WINDOW_OPTIONS] : [],
-      availableSegments:
-        dataset.coverage.usableDates.length > 0 ? [...HERO_METRICS_SEGMENTS] : [],
+      availableSegments: dataset.coverage.usableDates.length > 0 ? [...HERO_METRICS_SEGMENTS] : [],
     },
     coverage: {
       requestedDates: selectedDates,

@@ -1,11 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import {
-  HEROES,
-  HERO_MAPPING,
-  getHeroColor,
-  getHeroShortLabel,
-} from '../src/shared/lib/heroes';
+import { HEROES, HERO_MAPPING, getHeroColor, getHeroShortLabel } from '../src/shared/lib/heroes';
 
 describe('hero mapping', () => {
   test('keeps the canonical hero short labels and colors together', () => {

@@ -8,9 +8,7 @@ import type { Supporter } from '../src/features/support/supporters-data';
 import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
 
 function supportLocation(locale: 'en' | 'zh') {
-  const memory = createMemorySpaLocationAdapter(
-    locale === 'en' ? '/support?lang=en' : '/support'
-  );
+  const memory = createMemorySpaLocationAdapter(locale === 'en' ? '/support?lang=en' : '/support');
   return createSpaLocation(memory.adapter).current();
 }
 
@@ -77,7 +75,10 @@ describe('SupportPage', () => {
     expect(screen.getByText('Global')).toBeInTheDocument();
     expect(screen.getByText('Buy BazaarPlusPlus a drink on Ko-fi.')).toBeInTheDocument();
     expect(screen.queryByText('在 Ko-fi 上请 BazaarPlusPlus 喝一杯。')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open Ko-fi/ })).toHaveAttribute('href', 'https://ko-fi.com/cauyxy');
+    expect(screen.getByRole('link', { name: /Open Ko-fi/ })).toHaveAttribute(
+      'href',
+      'https://ko-fi.com/cauyxy'
+    );
   });
 
   test('opens and closes the WeChat modal', () => {
@@ -122,7 +123,9 @@ describe('SupportPage', () => {
 
     expect(screen.getByText('Roll call')).toBeInTheDocument();
     expect(
-      screen.getByText('Thanks for backing BazaarPlusPlus. Your support keeps the project moving further')
+      screen.getByText(
+        'Thanks for backing BazaarPlusPlus. Your support keeps the project moving further'
+      )
     ).toBeInTheDocument();
     expect(
       screen.getByText('And thanks to everyone who supported BazaarPlusPlus without leaving a name')

@@ -2,10 +2,7 @@
 
 import { describe, expect, test, vi } from 'vitest';
 
-import {
-  createMemorySpaLocationAdapter,
-  createSpaLocation,
-} from '../src/app/router';
+import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
 
 function setup(href: string) {
   const memory = createMemorySpaLocationAdapter(href);
@@ -95,9 +92,7 @@ describe('deep SPA location interface', () => {
     location.replaceScope({ window: '1d', segment: 'all' });
 
     expect(memory.entries).toHaveLength(initialLength);
-    expect(memory.actions).toEqual([
-      { mode: 'replace', href: '/heroes?keep=yes&lang=en' },
-    ]);
+    expect(memory.actions).toEqual([{ mode: 'replace', href: '/heroes?keep=yes&lang=en' }]);
     expect(location.current()).toMatchObject({
       locale: 'en',
       scope: { window: '1d', segment: 'all' },
@@ -115,15 +110,11 @@ describe('deep SPA location interface', () => {
     });
     location.canonicalize();
 
-    expect(memory.actions).toEqual([
-      { mode: 'replace', href: '/heroes?keep=yes' },
-    ]);
+    expect(memory.actions).toEqual([{ mode: 'replace', href: '/heroes?keep=yes' }]);
   });
 
   test('does not rewrite unrelated Hero query encoding when scope is already canonical', () => {
-    const { memory, location } = setup(
-      'https://example.test/heroes?campaign=two%20words&w=3d'
-    );
+    const { memory, location } = setup('https://example.test/heroes?campaign=two%20words&w=3d');
 
     expect(location.current().canonicalHref).toBeNull();
     location.canonicalize();
@@ -170,7 +161,9 @@ describe('deep SPA location interface', () => {
     memory.back();
 
     expect(listener).toHaveBeenCalledWith(
-      expect.objectContaining({ route: { page: 'tutorial', path: '/tutorial', group: 'secondary' } })
+      expect.objectContaining({
+        route: { page: 'tutorial', path: '/tutorial', group: 'secondary' },
+      })
     );
     unsubscribe();
   });

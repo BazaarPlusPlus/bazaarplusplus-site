@@ -31,18 +31,16 @@ function makeRow(overrides: Record<string, unknown> = {}) {
 }
 
 function makeDay(day: string, overrides = [makeRow()]) {
-  const overrideByKey = new Map(
-    overrides.map((row) => [`${String(row.hero)}\0${String(row.segment)}`, row])
-  );
+  const overrideByKey = new Map(overrides.map((row) => [`${row.hero}\0${row.segment}`, row]));
   const rows = HEROES.flatMap((hero) =>
-    (['legend', 'non_legend'] as const).map((segment) =>
-      overrideByKey.get(`${hero}\0${segment}`) ?? makeRow({ hero, segment })
+    (['legend', 'non_legend'] as const).map(
+      (segment) => overrideByKey.get(`${hero}\0${segment}`) ?? makeRow({ hero, segment })
     )
   );
   rows.push(
     ...overrides.filter(
       (row) =>
-        !(HEROES as readonly string[]).includes(String(row.hero)) ||
+        !(HEROES as readonly string[]).includes(row.hero) ||
         (row.segment !== 'legend' && row.segment !== 'non_legend')
     )
   );
@@ -141,7 +139,9 @@ describe('loadHeroMetricsDataset', () => {
           additive_row_field: true,
         }),
       ]),
-      ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
+      ...DATES.slice(0, -1)
+        .reverse()
+        .map((day) => makeDay(day)),
     ]);
     Object.assign(snapshot, { additive_snapshot_field: true });
     const transport = makeTransport(async () => snapshot);
@@ -178,7 +178,10 @@ describe('loadHeroMetricsDataset', () => {
     const fiveDates = DATES.slice(-5);
     const transport = makeTransport(async () =>
       makeSnapshot(
-        [...fiveDates].reverse().slice(1).map((day) => makeDay(day)),
+        [...fiveDates]
+          .reverse()
+          .slice(1)
+          .map((day) => makeDay(day)),
         fiveDates
       )
     );
@@ -191,7 +194,10 @@ describe('loadHeroMetricsDataset', () => {
   test('requires snapshot entries in newest-first order', async () => {
     const fiveDates = DATES.slice(-5);
     const transport = makeTransport(async () =>
-      makeSnapshot(fiveDates.map((day) => makeDay(day)), fiveDates)
+      makeSnapshot(
+        fiveDates.map((day) => makeDay(day)),
+        fiveDates
+      )
     );
 
     await expect(loadHeroMetricsDataset(transport)).rejects.toThrow(
@@ -202,10 +208,10 @@ describe('loadHeroMetricsDataset', () => {
   test('surfaces an invalid date in Dataset Coverage without zero-filling it', async () => {
     const transport = makeTransport(async () =>
       makeSnapshot([
-        makeDay('2026-06-07', [
-          makeRow({ runs: { completed: -1, scored: 0, ten_win: 0 } }),
-        ]),
-        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
+        makeDay('2026-06-07', [makeRow({ runs: { completed: -1, scored: 0, ten_win: 0 } })]),
+        ...DATES.slice(0, -1)
+          .reverse()
+          .map((day) => makeDay(day)),
       ])
     );
 
@@ -223,10 +229,7 @@ describe('loadHeroMetricsDataset', () => {
     ['stored segment', { segment: 'all' }],
     ['required counter', { runs: { completed: 8, scored: 8, ten_win: Number.NaN } }],
     ['ten-win invariant', { runs: { completed: 8, scored: 8, ten_win: 3 } }],
-    [
-      'outcome invariant',
-      { outcomes: { perfect: 1, gold: 1, silver: 4, bronze: 3 } },
-    ],
+    ['outcome invariant', { outcomes: { perfect: 1, gold: 1, silver: 4, bronze: 3 } }],
     [
       'matchup invariant',
       { matchups: [{ opponent_hero: 'Mak', decided: 10, wins: 6, losses: 3 }] },
@@ -235,7 +238,9 @@ describe('loadHeroMetricsDataset', () => {
     const transport = makeTransport(async () =>
       makeSnapshot([
         makeDay('2026-06-07', [makeRow(rowOverride)]),
-        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
+        ...DATES.slice(0, -1)
+          .reverse()
+          .map((day) => makeDay(day)),
       ])
     );
 
@@ -253,7 +258,9 @@ describe('loadHeroMetricsDataset', () => {
     const transport = makeTransport(async () =>
       makeSnapshot([
         incompleteDay,
-        ...DATES.slice(0, -1).reverse().map((day) => makeDay(day)),
+        ...DATES.slice(0, -1)
+          .reverse()
+          .map((day) => makeDay(day)),
       ])
     );
 

@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "./tokens.css";
+@import 'tailwindcss';
+@import './tokens.css';
 
 html,
 body {
@@ -24,7 +24,7 @@ body {
   min-height: 100vh;
   background-color: var(--color-bg-base);
   background-image:
-    radial-gradient(circle at 12% -8%, rgba(232, 185, 74, 0.10), transparent 38%),
+    radial-gradient(circle at 12% -8%, rgba(232, 185, 74, 0.1), transparent 38%),
     radial-gradient(circle at 92% -4%, rgba(208, 90, 74, 0.06), transparent 42%),
     radial-gradient(circle at 50% 110%, rgba(90, 138, 134, 0.05), transparent 50%),
     linear-gradient(180deg, #0d0a07 0%, #0a0806 100%);
@@ -32,7 +32,7 @@ body {
 
 /* Filmic grain overlay — extremely subtle, gives the dark surface tooth */
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -57,7 +57,7 @@ body::before {
 /* Tabular figure utility — applied to every numeric cell */
 .tnum {
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "tnum", "lnum";
+  font-feature-settings: 'tnum', 'lnum';
   font-family: var(--font-mono);
   letter-spacing: -0.01em;
 }
@@ -95,8 +95,7 @@ body::before {
   min-width: 0;
   max-width: 100%;
   background:
-    linear-gradient(180deg, rgba(255, 235, 200, 0.015), transparent 30%),
-    var(--color-bg-card);
+    linear-gradient(180deg, rgba(255, 235, 200, 0.015), transparent 30%), var(--color-bg-card);
   border: 1px solid var(--color-border-soft);
   border-radius: 18px;
   box-shadow:
@@ -114,7 +113,7 @@ body::before {
 
 /* Section eyebrow gold rule */
 .eyebrow-rule::before {
-  content: "";
+  content: '';
   display: inline-block;
   width: 18px;
   height: 1px;
@@ -126,8 +125,12 @@ body::before {
 
 /* Loading pulse */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .shimmer {
@@ -145,7 +148,7 @@ body::before {
    No position is set here so the sticky first column (Tailwind .sticky) wins;
    `position: sticky` still anchors the ::before accent bar below. */
 .hero-rail > :first-child::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 12%;
@@ -163,15 +166,11 @@ body::before {
 }
 
 .databar::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 8px auto 8px 0;
   width: var(--bar-width, 0%);
-  background: linear-gradient(
-    90deg,
-    rgba(232, 185, 74, 0.16),
-    rgba(232, 185, 74, 0.04)
-  );
+  background: linear-gradient(90deg, rgba(232, 185, 74, 0.16), rgba(232, 185, 74, 0.04));
   border-radius: 2px;
   z-index: -1;
   transition: width 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -187,7 +186,9 @@ body::before {
 
 /* Row hover lift */
 .metric-row {
-  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .metric-row:hover {

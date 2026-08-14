@@ -36,7 +36,10 @@ export function LoadingScreen({ location }: LoadingScreenProps) {
           />
 
           <div className="relative flex w-full max-w-xl flex-col items-center text-center">
-            <div aria-hidden="true" className="relative mb-7 flex h-16 w-16 items-center justify-center">
+            <div
+              aria-hidden="true"
+              className="relative mb-7 flex h-16 w-16 items-center justify-center"
+            >
               <span className="absolute inset-0 rounded-full border border-[color:var(--color-border-bright)] opacity-60 motion-safe:animate-pulse" />
               <span className="absolute inset-2 rounded-full border border-[color:var(--color-border-soft)]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_24px_rgba(232,185,74,0.75)]" />

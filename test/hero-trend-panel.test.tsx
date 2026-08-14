@@ -14,10 +14,7 @@ const trend: HeroAnalysis['trend'] = {
         { day: '2026-08-10', winRate: 0.4 },
         { day: '2026-08-12', winRate: 0.6 },
       ],
-      segments: [
-        [{ day: '2026-08-10', winRate: 0.4 }],
-        [{ day: '2026-08-12', winRate: 0.6 }],
-      ],
+      segments: [[{ day: '2026-08-10', winRate: 0.4 }], [{ day: '2026-08-12', winRate: 0.6 }]],
       firstWinRate: 0.4,
       latestWinRate: 0.6,
       nullPointCount: 1,
@@ -47,12 +44,7 @@ const trend: HeroAnalysis['trend'] = {
 describe('HeroTrendPanel interface', () => {
   test('renders gaps and focused areas from the supplied Hero Analysis trend', () => {
     const { container } = render(
-      <HeroTrendPanel
-        locale="en"
-        trend={trend}
-        focusedHero="Vanessa"
-        onFocusHero={vi.fn()}
-      />
+      <HeroTrendPanel locale="en" trend={trend} focusedHero="Vanessa" onFocusHero={vi.fn()} />
     );
 
     const vanessa = container.querySelector('[data-hero="Vanessa"]')!;
@@ -64,12 +56,7 @@ describe('HeroTrendPanel interface', () => {
   test('owns pointer, keyboard, touch, and tooltip geometry behavior', () => {
     const onFocusHero = vi.fn();
     const { container } = render(
-      <HeroTrendPanel
-        locale="en"
-        trend={trend}
-        focusedHero="Vanessa"
-        onFocusHero={onFocusHero}
-      />
+      <HeroTrendPanel locale="en" trend={trend} focusedHero="Vanessa" onFocusHero={onFocusHero} />
     );
 
     fireEvent.focus(screen.getByLabelText('Vanessa Aug 10 40.0%'));

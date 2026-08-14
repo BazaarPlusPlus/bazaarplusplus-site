@@ -5,11 +5,7 @@ import DialogShell from '../../shared/components/DialogShell';
 import InfoPageShell from '../../shared/components/InfoPageShell';
 import type { ResolvedSpaLocation } from '../../app/router';
 import { getSiteCopy, KOFI_URL, type SupportPageCopy } from '../../content/site-copy';
-import {
-  loadSupporters,
-  orderSupportersForDisplay,
-  type Supporter,
-} from './supporters-data';
+import { loadSupporters, orderSupportersForDisplay, type Supporter } from './supporters-data';
 import { wechatPayQrSvg } from './wechat-pay';
 
 type SupportPageProps = {
@@ -101,17 +97,10 @@ export default function SupportPage({ location }: SupportPageProps) {
     queryFn: ({ signal }) => loadSupporters(signal),
   });
 
-  const orderedSupporters = useMemo(
-    () => (data ? orderSupportersForDisplay(data) : []),
-    [data]
-  );
+  const orderedSupporters = useMemo(() => (data ? orderSupportersForDisplay(data) : []), [data]);
 
   return (
-    <InfoPageShell
-      locale={locale}
-      location={location}
-      title={copy.title}
-    >
+    <InfoPageShell locale={locale} location={location} title={copy.title}>
       <section className="grid gap-6">
         <p className="max-w-2xl text-sm leading-7 text-[color:var(--color-text-muted)]">
           {copy.intro}
@@ -159,7 +148,9 @@ export default function SupportPage({ location }: SupportPageProps) {
               className="group mt-auto inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--color-accent)] px-5 py-3 text-sm font-medium tracking-[0.04em] text-[color:var(--color-accent-bright)] transition hover:bg-[color:var(--color-accent)] hover:text-[#1a1306]"
             >
               <span>{copy.kofi.actionLabel}</span>
-              <span aria-hidden="true" className="transition group-hover:translate-x-0.5">↗</span>
+              <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
+                ↗
+              </span>
             </a>
           </article>
         </div>

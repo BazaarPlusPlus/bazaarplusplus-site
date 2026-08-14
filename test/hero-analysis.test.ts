@@ -231,7 +231,7 @@ describe('analyzeHeroes', () => {
     );
 
     const analysis = analyzeHeroes(dataset, { window: '1d', segment: 'all' }, 'Vanessa');
-    const row = analysis.ranking[0]!;
+    const row = analysis.ranking[0];
 
     expect(row.runShare).toBeNull();
     expect(row.tenWinRate).toBeNull();
@@ -246,26 +246,23 @@ describe('analyzeHeroes', () => {
 
   test('derives the seven-day daily trend after segment aggregation and splits zero-denominator gaps', () => {
     const dates = ['2026-06-05', '2026-06-06', '2026-06-07'];
-    const dataset = makeDataset(
-      dates,
-      [
-        makeDay('2026-06-05', [
-          makeCountedRow('Vanessa', 10, 4),
-          { ...makeCountedRow('Vanessa', 10, 6), segment: 'non_legend' },
-        ]),
-        makeDay('2026-06-06', [
-          makeRow({ hero: 'Vanessa', segment: 'legend' }),
-          makeRow({ hero: 'Vanessa', segment: 'non_legend' }),
-        ]),
-        makeDay('2026-06-07', [
-          makeCountedRow('Vanessa', 20, 5),
-          { ...makeCountedRow('Vanessa', 20, 15), segment: 'non_legend' },
-        ]),
-      ]
-    );
+    const dataset = makeDataset(dates, [
+      makeDay('2026-06-05', [
+        makeCountedRow('Vanessa', 10, 4),
+        { ...makeCountedRow('Vanessa', 10, 6), segment: 'non_legend' },
+      ]),
+      makeDay('2026-06-06', [
+        makeRow({ hero: 'Vanessa', segment: 'legend' }),
+        makeRow({ hero: 'Vanessa', segment: 'non_legend' }),
+      ]),
+      makeDay('2026-06-07', [
+        makeCountedRow('Vanessa', 20, 5),
+        { ...makeCountedRow('Vanessa', 20, 15), segment: 'non_legend' },
+      ]),
+    ]);
 
     const analysis = analyzeHeroes(dataset, { window: '1d', segment: 'all' }, 'Vanessa');
-    const trend = analysis.trend.series[0]!;
+    const trend = analysis.trend.series[0];
 
     expect(trend.points).toEqual([
       { day: '2026-06-05', winRate: 0.5 },

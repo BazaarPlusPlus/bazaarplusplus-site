@@ -34,7 +34,10 @@ function FeatureCard({
         <ul className="mt-auto flex flex-col gap-2.5 border-t border-[color:var(--color-border-soft)] pt-4 text-sm leading-6 text-[color:var(--color-text-muted)]">
           {feature.details.map((detail) => (
             <li key={detail} className="flex gap-3">
-              <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-accent)]" />
+              <span
+                aria-hidden="true"
+                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-accent)]"
+              />
               <span>{detail}</span>
             </li>
           ))}
@@ -99,7 +102,9 @@ function HotkeyCard({ item, className = '' }: { item: HotkeyItem; className?: st
   const secondaryBindings = hasBindingActions ? item.bindings.slice(1) : [];
 
   return (
-    <article className={`surface-flat flex flex-col gap-4 overflow-hidden p-5 transition duration-200 hover:border-[color:var(--color-border-bright)] ${className}`}>
+    <article
+      className={`surface-flat flex flex-col gap-4 overflow-hidden p-5 transition duration-200 hover:border-[color:var(--color-border-bright)] ${className}`}
+    >
       <div className="flex max-w-full flex-wrap items-center gap-2">
         {hasBindingActions && primaryBinding ? (
           <>
@@ -111,9 +116,7 @@ function HotkeyCard({ item, className = '' }: { item: HotkeyItem; className?: st
             ) : null}
           </>
         ) : (
-          item.bindings.map((binding) => (
-            <Keycap key={binding.key} binding={binding} />
-          ))
+          item.bindings.map((binding) => <Keycap key={binding.key} binding={binding} />)
         )}
       </div>
       <div className="grid min-w-0 gap-1.5">
@@ -190,12 +193,7 @@ export default function TutorialPage({ location }: TutorialPageProps) {
   const supportHref = location.navigation.items.find((item) => item.page === 'support')!.href;
 
   return (
-    <InfoPageShell
-      locale={locale}
-      location={location}
-      title={copy.title}
-      intro={copy.intro}
-    >
+    <InfoPageShell locale={locale} location={location} title={copy.title} intro={copy.intro}>
       <section className="surface overflow-hidden p-5 sm:p-7">
         <div className="grid gap-5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center">
           <img

@@ -6,11 +6,7 @@ import {
 
 import type { Locale } from '../../app/router';
 import { getSiteCopy } from '../../content/site-copy';
-import {
-  formatNullablePercent,
-  formatPercent,
-  formatShortDate,
-} from '../../shared/lib/dashboard';
+import { formatNullablePercent, formatPercent, formatShortDate } from '../../shared/lib/dashboard';
 import { getHeroShortLabel } from '../../shared/lib/heroes';
 import type { HeroAnalysis } from './hero-analysis';
 
@@ -96,22 +92,12 @@ export default function HeroTrendPanel({
   const focusedSeries = series.find((heroSeries) => heroSeries.hero === focusedHero);
   const [hoveredPoint, setHoveredPoint] = useState<HoveredTrendPoint | null>(null);
 
-  const winRates = series.flatMap((heroSeries) =>
-    heroSeries.points.map((point) => point.winRate)
-  );
+  const winRates = series.flatMap((heroSeries) => heroSeries.points.map((point) => point.winRate));
   const minWinRate = winRates.length > 0 ? Math.min(...winRates) : 0;
   const maxWinRate = winRates.length > 0 ? Math.max(...winRates) : 1;
   const spread = Math.max(maxWinRate - minWinRate, 0.04);
-  const paddedMin = clamp(
-    Math.floor(((minWinRate - spread * 0.2) * 100) / 5) * 5 / 100,
-    0,
-    0.95
-  );
-  const paddedMax = clamp(
-    Math.ceil(((maxWinRate + spread * 0.2) * 100) / 5) * 5 / 100,
-    0.05,
-    1
-  );
+  const paddedMin = clamp((Math.floor(((minWinRate - spread * 0.2) * 100) / 5) * 5) / 100, 0, 0.95);
+  const paddedMax = clamp((Math.ceil(((maxWinRate + spread * 0.2) * 100) / 5) * 5) / 100, 0.05, 1);
   const yMin = Math.min(paddedMin, maxWinRate);
   const yMax = Math.max(paddedMax, minWinRate + 0.01);
   const tickStep = (yMax - yMin) / GRIDLINE_COUNT;
@@ -209,11 +195,7 @@ export default function HeroTrendPanel({
                     <text
                       x={x}
                       y={CHART_HEIGHT - 14}
-                      fill={
-                        isLast
-                          ? 'rgba(255,212,122,0.95)'
-                          : 'rgba(179,160,121,0.95)'
-                      }
+                      fill={isLast ? 'rgba(255,212,122,0.95)' : 'rgba(179,160,121,0.95)'}
                       fontSize="11"
                       fontFamily="JetBrains Mono, monospace"
                       fontWeight={isLast ? '600' : '400'}
@@ -250,9 +232,7 @@ export default function HeroTrendPanel({
               {series.map((heroSeries) => {
                 const isFocused = heroSeries.hero === focusedSeries?.hero;
                 const allPoints = heroSeries.points.map(toChartPoint);
-                const segments = heroSeries.segments.map((segment) =>
-                  segment.map(toChartPoint)
-                );
+                const segments = heroSeries.segments.map((segment) => segment.map(toChartPoint));
                 const showPoint = (point: ChartPoint | undefined) => {
                   if (point == null) {
                     return;
@@ -438,9 +418,7 @@ export default function HeroTrendPanel({
                   ? 'border-[color:var(--color-accent)] bg-[color:rgba(232,185,74,0.1)]'
                   : 'border-[color:var(--color-border-soft)] bg-[color:rgba(15,12,8,0.6)] hover:border-[color:var(--color-accent-deep)]'
               }`}
-              aria-label={`${heroSeries.hero} ${formatNullablePercent(
-                heroSeries.latestWinRate
-              )}`}
+              aria-label={`${heroSeries.hero} ${formatNullablePercent(heroSeries.latestWinRate)}`}
               title={heroSeries.hero}
             >
               <span className="flex min-w-0 items-center gap-2">

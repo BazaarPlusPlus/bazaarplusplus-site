@@ -6,16 +6,17 @@ Read `docs/ARCHITECTURE.md` before changing routes, URL/history behavior, Hero m
 
 ## Verification
 
-- Code changes run `npm test` and `npm run typecheck`.
+- Code changes run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run format:check`.
 - Also run `npm run build` when bundling or code-splitting can change. Deploy only when asked.
 - Use the existing dev and preview scripts; both reserve port 3000 with `strictPort`.
-- Local Hero Analysis needs no credentials: dev defaults to the production metrics origin, while preview builds against the `/metrics/` proxy in `vite.config.ts`.
+- Local Hero Analysis needs no credentials: dev and preview both read the production metrics origin directly over CORS. Point `VITE_METRICS_BASE` elsewhere to use a different origin.
 
 ## Project Rules
 
 - Put every user-facing string in `src/content/site-copy.ts`, including labels, aria text, loading states, and shell copy; pass it through the existing locale props.
 - Implement cross-module changes in the owner named by `docs/ARCHITECTURE.md`; extend the documented boundary explicitly when no owner fits.
 - Use the concepts in `CONTEXT.md`. Add a glossary entry when the domain has a real naming gap.
+- Type-aware lint runs on `oxlint-tsgolint`, which pins the TypeScript major. Upgrading `typescript` requires a matching `oxlint-tsgolint`; see `docs/adr/0002-oxc-toolchain.md`.
 
 ## Decisions and Work Tracking
 

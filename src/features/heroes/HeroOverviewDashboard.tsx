@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 
 import type { Locale, ResolvedSpaLocation } from '../../app/router';
-import {
-  BAZAARDB_ICON_PATH,
-  BAZAARDB_META_URL,
-  getSiteCopy,
-} from '../../content/site-copy';
+import { BAZAARDB_ICON_PATH, BAZAARDB_META_URL, getSiteCopy } from '../../content/site-copy';
 import HeroBadge from '../../shared/components/HeroBadge';
-import {
-  SegmentedButton,
-  SegmentedControl,
-} from '../../shared/components/ScopeFilterPanel';
+import { SegmentedButton, SegmentedControl } from '../../shared/components/ScopeFilterPanel';
 import StatsPageShell from '../../shared/components/StatsPageShell';
 import {
   WINDOW_LABELS,
@@ -25,10 +18,7 @@ import {
   type HeroMatchup,
   type MetricWindow,
 } from './hero-analysis';
-import type {
-  HeroMetricsDataset,
-  HeroMetricsSegment,
-} from './hero-metrics-dataset';
+import type { HeroMetricsDataset, HeroMetricsSegment } from './hero-metrics-dataset';
 import HeroRankingTable from './HeroRankingTable';
 import HeroTrendPanel from './HeroTrendPanel';
 
@@ -65,12 +55,7 @@ export default function HeroOverviewDashboard({
   }, [requestedScope.segment, requestedScope.window]);
 
   const analysis = useMemo(
-    () =>
-      analyzeHeroes(
-        dataset,
-        { window: selectedWindow, segment: selectedSegment },
-        focusedHero
-      ),
+    () => analyzeHeroes(dataset, { window: selectedWindow, segment: selectedSegment }, focusedHero),
     [dataset, focusedHero, selectedSegment, selectedWindow]
   );
 
@@ -241,14 +226,8 @@ export default function HeroOverviewDashboard({
                     aria-label={copy.common.filters}
                     className="flex flex-wrap items-end gap-x-8 gap-y-4"
                   >
-                    <div
-                      role="group"
-                      aria-label={scopeCopy.window}
-                      className="min-w-0 space-y-2.5"
-                    >
-                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">
-                        {scopeCopy.window}
-                      </p>
+                    <div role="group" aria-label={scopeCopy.window} className="min-w-0 space-y-2.5">
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.window}</p>
                       <SegmentedControl>
                         {availableWindows.map((option) => (
                           <SegmentedButton
@@ -266,9 +245,7 @@ export default function HeroOverviewDashboard({
                       aria-label={scopeCopy.segment}
                       className="min-w-0 space-y-2.5"
                     >
-                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">
-                        {scopeCopy.segment}
-                      </p>
+                      <p className="eyebrow text-[0.7rem] tracking-[0.22em]">{scopeCopy.segment}</p>
                       <SegmentedControl>
                         {availableSegments.map((option) => (
                           <SegmentedButton
@@ -291,7 +268,7 @@ export default function HeroOverviewDashboard({
                 {coverageCopy.someDaysUnavailable}{' '}
                 <span className="tnum text-[color:var(--color-text-faint)]">
                   {loadedWindowDays.length > 0
-                    ? `${formatShortDate(loadedWindowDays[0]!, locale)} – ${formatShortDate(
+                    ? `${formatShortDate(loadedWindowDays[0], locale)} – ${formatShortDate(
                         loadedWindowDays.at(-1)!,
                         locale
                       )}`
@@ -344,34 +321,25 @@ function MatchupList({
   className?: string;
 }) {
   if (rows.length === 0) {
-    return (
-      <p className="text-sm text-[color:var(--color-text-muted)]">
-        {matchupCopy.empty}
-      </p>
-    );
+    return <p className="text-sm text-[color:var(--color-text-muted)]">{matchupCopy.empty}</p>;
   }
 
   return (
     <ul data-testid="matchup-list" className={className}>
       {rows.map((row) => (
-        <li
-          key={row.opponentHero}
-          className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5"
-        >
+        <li key={row.opponentHero} className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
           <HeroBadge hero={row.opponentHero} size="sm" />
           <span
             className="databar databar-pos relative block h-6 rounded-sm"
             style={
               {
-                '--bar-width': `${(row.isLowSample ? 0 : row.winRate ?? 0) * 100}%`,
+                '--bar-width': `${(row.isLowSample ? 0 : (row.winRate ?? 0)) * 100}%`,
               } as CSSProperties
             }
           >
             <span
               className="absolute inset-y-0 left-2 flex items-center gap-2 tnum text-[0.78rem] text-[color:var(--color-text-base)]"
-              aria-label={
-                row.isLowSample || row.winRate == null ? noValueLabel : undefined
-              }
+              aria-label={row.isLowSample || row.winRate == null ? noValueLabel : undefined}
             >
               {row.isLowSample ? '—' : formatNullablePercent(row.winRate)}
               {row.isLowSample ? (

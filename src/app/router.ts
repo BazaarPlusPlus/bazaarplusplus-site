@@ -22,10 +22,7 @@ const ROUTES = [
   { page: 'support', path: '/support', group: 'secondary' },
 ] as const satisfies readonly RouteDefinition[];
 
-export type PrimaryNavigationPage = Extract<
-  (typeof ROUTES)[number],
-  { group: 'primary' }
->['page'];
+export type PrimaryNavigationPage = Extract<(typeof ROUTES)[number], { group: 'primary' }>['page'];
 export type SecondaryNavigationPage = Extract<
   (typeof ROUTES)[number],
   { group: 'secondary' }
@@ -35,9 +32,7 @@ export type ResolvedSpaLocation = {
   pathname: string;
   search: string;
   hash: string;
-  route:
-    | RouteDefinition
-    | { page: 'not-found'; path: string; group: null };
+  route: RouteDefinition | { page: 'not-found'; path: string; group: null };
   locale: Locale;
   scope: AnalysisScope;
   canonicalHref: string | null;
@@ -142,11 +137,7 @@ function buildLocaleHref(raw: RawSpaLocation, locale: Locale): string {
   return `${raw.pathname}${query ? `?${query}` : ''}${raw.hash}`;
 }
 
-function buildScopeSearch(
-  currentSearch: string,
-  locale: Locale,
-  scope: AnalysisScope
-): string {
+function buildScopeSearch(currentSearch: string, locale: Locale, scope: AnalysisScope): string {
   const search = new URLSearchParams(currentSearch);
   if (scope.window === '1d') {
     search.delete('w');
@@ -178,15 +169,9 @@ function scopeSearchNeedsCanonicalization(
 
   return (
     search.has('t') ||
-    (scope.window === '1d'
-      ? search.has('w')
-      : !hasCanonicalValue('w', scope.window)) ||
-    (scope.segment === 'all'
-      ? search.has('s')
-      : !hasCanonicalValue('s', scope.segment)) ||
-    (locale === DEFAULT_LOCALE
-      ? search.has('lang')
-      : !hasCanonicalValue('lang', locale))
+    (scope.window === '1d' ? search.has('w') : !hasCanonicalValue('w', scope.window)) ||
+    (scope.segment === 'all' ? search.has('s') : !hasCanonicalValue('s', scope.segment)) ||
+    (locale === DEFAULT_LOCALE ? search.has('lang') : !hasCanonicalValue('lang', locale))
   );
 }
 
@@ -205,10 +190,10 @@ function resolveLocation(raw: RawSpaLocation): ResolvedSpaLocation {
       ? buildScopeSearch(raw.search, locale, scope)
       : raw.search;
   const canonicalHref = `${canonicalPath ?? raw.pathname}${canonicalSearch}`;
-  const items = ROUTES.map((route) => ({
-    page: route.page,
-    group: route.group,
-    href: buildRouteHref(route.path, locale),
+  const items = ROUTES.map((candidate) => ({
+    page: candidate.page,
+    group: candidate.group,
+    href: buildRouteHref(candidate.path, locale),
   }));
 
   return {
@@ -218,8 +203,7 @@ function resolveLocation(raw: RawSpaLocation): ResolvedSpaLocation {
     route,
     locale,
     scope,
-    canonicalHref:
-      canonicalPath != null || canonicalSearch !== raw.search ? canonicalHref : null,
+    canonicalHref: canonicalPath != null || canonicalSearch !== raw.search ? canonicalHref : null,
     navigation: {
       homeHref: buildRouteHref('/', locale),
       heroesHref: buildRouteHref('/heroes', locale),
@@ -237,11 +221,7 @@ function toRelativeHref(url: URL): string {
 }
 
 function buildScopeHref(location: ResolvedSpaLocation, scope: AnalysisScope): string {
-  return `${location.pathname}${buildScopeSearch(
-    location.search,
-    location.locale,
-    scope
-  )}`;
+  return `${location.pathname}${buildScopeSearch(location.search, location.locale, scope)}`;
 }
 
 export function createSpaLocation(adapter: SpaLocationAdapter): SpaLocation {
@@ -312,11 +292,7 @@ export function createSpaLocation(adapter: SpaLocationAdapter): SpaLocation {
       if (next.origin !== raw.origin || resolveRoute(next.pathname).page === 'not-found') {
         return false;
       }
-      if (
-        next.pathname === raw.pathname &&
-        next.search === raw.search &&
-        next.hash.length > 0
-      ) {
+      if (next.pathname === raw.pathname && next.search === raw.search && next.hash.length > 0) {
         return false;
       }
 
@@ -352,7 +328,7 @@ export function createMemorySpaLocationAdapter(initialHref: string) {
   let index = 0;
 
   function currentUrl() {
-    return new URL(entries[index]!);
+    return new URL(entries[index]);
   }
 
   const adapter: SpaLocationAdapter = {

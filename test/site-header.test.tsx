@@ -15,10 +15,22 @@ describe('SiteHeader', () => {
 
     const primaryNav = screen.getByRole('navigation', { name: '主要导航' });
 
-    expect(within(primaryNav).getByRole('link', { name: '统计' })).toHaveAttribute('href', '/heroes');
-    expect(within(primaryNav).getByRole('link', { name: '教程' })).toHaveAttribute('href', '/tutorial');
-    expect(within(primaryNav).getByRole('link', { name: '下载' })).toHaveAttribute('href', '/download');
-    expect(within(primaryNav).getByRole('link', { name: '支持' })).toHaveAttribute('href', '/support');
+    expect(within(primaryNav).getByRole('link', { name: '统计' })).toHaveAttribute(
+      'href',
+      '/heroes'
+    );
+    expect(within(primaryNav).getByRole('link', { name: '教程' })).toHaveAttribute(
+      'href',
+      '/tutorial'
+    );
+    expect(within(primaryNav).getByRole('link', { name: '下载' })).toHaveAttribute(
+      'href',
+      '/download'
+    );
+    expect(within(primaryNav).getByRole('link', { name: '支持' })).toHaveAttribute(
+      'href',
+      '/support'
+    );
     expect(screen.queryByRole('navigation', { name: '辅助导航' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '支持者' })).not.toBeInTheDocument();
 
@@ -26,7 +38,10 @@ describe('SiteHeader', () => {
     expect(container.querySelector('img[src="/bazaarplusplus-icon.webp"]')).toBeInTheDocument();
     expect(container.querySelector('img[src="/bazaarplusplus-icon.png"]')).not.toBeInTheDocument();
     expect(screen.queryByText('实时数据')).not.toBeInTheDocument();
-    expect(within(primaryNav).getByRole('link', { name: '统计' })).toHaveAttribute('aria-current', 'page');
+    expect(within(primaryNav).getByRole('link', { name: '统计' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 
   test('uses english labels when explicitly selected', () => {
@@ -35,10 +50,19 @@ describe('SiteHeader', () => {
     expect(screen.queryByText('Live feed')).not.toBeInTheDocument();
 
     expect(screen.getByRole('link', { name: 'Stats' })).toHaveAttribute('href', '/heroes?lang=en');
-    expect(screen.getByRole('link', { name: 'Tutorial' })).toHaveAttribute('href', '/tutorial?lang=en');
-    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('href', '/download?lang=en');
+    expect(screen.getByRole('link', { name: 'Tutorial' })).toHaveAttribute(
+      'href',
+      '/tutorial?lang=en'
+    );
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
+      'href',
+      '/download?lang=en'
+    );
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute('href', '/support?lang=en');
+    expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute(
+      'href',
+      '/support?lang=en'
+    );
     expect(screen.queryByRole('link', { name: 'Supporters' })).not.toBeInTheDocument();
   });
 

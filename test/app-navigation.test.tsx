@@ -62,12 +62,11 @@ describe('App SPA navigation integration', () => {
   });
 
   test('canonicalizes Hero scope without waiting for the Hero Metrics Dataset', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})));
-    window.history.replaceState(
-      {},
-      '',
-      '/heroes?lang=zh&w=invalid&t=high&s=all&keep=yes'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {}))
     );
+    window.history.replaceState({}, '', '/heroes?lang=zh&w=invalid&t=high&s=all&keep=yes');
     const replace = vi.spyOn(window.history, 'replaceState');
     render(
       <Providers>

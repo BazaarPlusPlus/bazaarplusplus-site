@@ -18,10 +18,7 @@ const HeroOverviewPage = lazy(() =>
 
 export default function App() {
   const transport = useMemo(() => createHeroMetricsHttpTransport(), []);
-  const spaLocation = useMemo(
-    () => createSpaLocation(createBrowserSpaLocationAdapter()),
-    []
-  );
+  const spaLocation = useMemo(() => createSpaLocation(createBrowserSpaLocationAdapter()), []);
   const [location, setLocation] = useState<ResolvedSpaLocation>(() => spaLocation.current());
 
   useEffect(() => spaLocation.subscribe(setLocation), [spaLocation]);

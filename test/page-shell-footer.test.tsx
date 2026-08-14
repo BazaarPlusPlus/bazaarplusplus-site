@@ -33,11 +33,7 @@ describe('page shell footer', () => {
 
   test('renders the author credit in English for Chinese pages', () => {
     render(
-      <InfoPageShell
-        locale="zh"
-        location={pageLocation('/download')}
-        title="下载 BazaarPlusPlus"
-      >
+      <InfoPageShell locale="zh" location={pageLocation('/download')} title="下载 BazaarPlusPlus">
         <div>下载内容</div>
       </InfoPageShell>
     );

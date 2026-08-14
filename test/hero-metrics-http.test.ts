@@ -15,7 +15,9 @@ describe('createHeroMetricsHttpTransport', () => {
     })) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({ fetchImpl });
 
-    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ unknown: true });
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({
+      unknown: true,
+    });
 
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://bpp-metrics.bazaarplusplus.com/analyzer-v5/heroes/latest.json',
@@ -24,7 +26,10 @@ describe('createHeroMetricsHttpTransport', () => {
   });
 
   test('uses a configured base URL', async () => {
-    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as unknown as typeof fetch;
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({}),
+    })) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({
       metricsBaseUrl: 'https://metrics.example.com/root',
       fetchImpl,
@@ -42,14 +47,19 @@ describe('createHeroMetricsHttpTransport', () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, status })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ recovered: true }) }) as unknown as typeof fetch;
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ recovered: true }),
+      }) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({
       fetchImpl,
       requestRetries: 1,
       requestRetryDelayMs: 0,
     });
 
-    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ recovered: true });
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({
+      recovered: true,
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -57,14 +67,19 @@ describe('createHeroMetricsHttpTransport', () => {
     const fetchImpl = vi
       .fn()
       .mockRejectedValueOnce(new TypeError('network dropped'))
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ recovered: true }) }) as unknown as typeof fetch;
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ recovered: true }),
+      }) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({
       fetchImpl,
       requestRetries: 1,
       requestRetryDelayMs: 0,
     });
 
-    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({ recovered: true });
+    await expect(transport.load('analyzer-v5/heroes/latest.json')).resolves.toEqual({
+      recovered: true,
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -88,10 +103,13 @@ describe('createHeroMetricsHttpTransport', () => {
   });
 
   test('aborts a hung request after the configured timeout with a structured failure', async () => {
-    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
-      new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
-      })
+    const fetchImpl = vi.fn(
+      (_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError'))
+          );
+        })
     ) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({
       fetchImpl,
@@ -112,10 +130,11 @@ describe('createHeroMetricsHttpTransport', () => {
 
   test('propagates caller aborts without retrying or reclassifying them', async () => {
     const controller = new AbortController();
-    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
-      new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
-      })
+    const fetchImpl = vi.fn(
+      (_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+        })
     ) as unknown as typeof fetch;
     const transport = createHeroMetricsHttpTransport({
       fetchImpl,

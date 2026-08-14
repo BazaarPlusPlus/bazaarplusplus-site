@@ -62,7 +62,9 @@ describe('site copy', () => {
     expect(zhCopy.tutorial.installation.steps[3]?.description).toBe(
       '主菜单设置按钮上方会出现图鉴按钮；下方游戏版本信息会显示 BPP version'
     );
-    expect(zhCopy.tutorial.features.find((feature) => feature.title === '附魔与升级预览')?.details).toEqual([
+    expect(
+      zhCopy.tutorial.features.find((feature) => feature.title === '附魔与升级预览')?.details
+    ).toEqual([
       '将附魔后的效果直接整合进物品提示，方便横向对比不同选择',
       '升级预览适合在选择遭遇，调整构筑时，确认升级后的收益',
     ]);
@@ -84,7 +86,9 @@ describe('site copy', () => {
       [{ key: 'Ctrl' }],
       [{ key: 'Shift' }],
     ]);
-    expect(zhCopy.tutorial.quickStart.groups[1]?.note).toBe('在游戏“设置” -> “游玩设置”中重绑 Ctrl / Shift 预览键位');
+    expect(zhCopy.tutorial.quickStart.groups[1]?.note).toBe(
+      '在游戏“设置” -> “游玩设置”中重绑 Ctrl / Shift 预览键位'
+    );
 
     expect(enCopy.common.scope.segmentLabels.non_legend).toBe('Non-Legend');
     expect(zhCopy.stats.heroes.eyebrow).toBe('BazaarPlusPlus');
@@ -124,7 +128,9 @@ describe('site copy', () => {
       [{ key: 'Ctrl' }],
       [{ key: 'Shift' }],
     ]);
-    expect(enCopy.tutorial.quickStart.groups[1]?.note).toBe('Rebind Ctrl / Shift preview hotkeys in Settings -> Gameplay Settings.');
+    expect(enCopy.tutorial.quickStart.groups[1]?.note).toBe(
+      'Rebind Ctrl / Shift preview hotkeys in Settings -> Gameplay Settings.'
+    );
     expect(enCopy.tutorial.features.map((feature) => feature.title)).toEqual([
       'Card Collection',
       'BazaarDB Auto Upload',
@@ -135,7 +141,9 @@ describe('site copy', () => {
       'Enchant and upgrade previews',
       'Chinese Terminology',
     ]);
-    expect(enCopy.tutorial.features.find((feature) => feature.title === 'Anonymous Mode')).toMatchObject({
+    expect(
+      enCopy.tutorial.features.find((feature) => feature.title === 'Anonymous Mode')
+    ).toMatchObject({
       description: 'Show the local player name as Anonymous.',
       details: [
         'Hide your local name in screenshots and recordings.',

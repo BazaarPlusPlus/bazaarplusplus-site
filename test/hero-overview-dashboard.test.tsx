@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
 
 import { createMemorySpaLocationAdapter, createSpaLocation } from '../src/app/router';
@@ -162,14 +162,25 @@ describe('HeroOverviewDashboard', () => {
     expect(detailDataLink).toHaveAttribute('href', BAZAARDB_META_URL);
     expect(detailDataLink).toHaveAttribute('target', '_blank');
     expect(detailDataLink.querySelector('img')).toHaveAttribute('src', BAZAARDB_ICON_PATH);
-    expect(screen.queryByRole('link', { name: 'Learn how data syncs to BazaarDB' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Learn how data syncs to BazaarDB' })
+    ).not.toBeInTheDocument();
 
     const filters = within(screen.getByTestId('ranking-panel')).getByRole('group', {
       name: 'Filters',
     });
-    expect(within(filters).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(filters).getByRole('button', { name: 'Legend' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(filters).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(filters).getByRole('button', { name: '3D' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(within(filters).getByRole('button', { name: 'Legend' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(within(filters).getByRole('button', { name: 'All' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
     expect(within(filters).getByRole('button', { name: 'Non-Legend' })).toBeInTheDocument();
     expect(screen.queryByTestId('coverage-strip')).not.toBeInTheDocument();
   });
@@ -184,7 +195,9 @@ describe('HeroOverviewDashboard', () => {
     expect(within(table).getByText('Mak')).toBeInTheDocument();
     expect(within(table).getByText('Dooley')).toBeInTheDocument();
     expect(within(table).queryByText('Jules')).not.toBeInTheDocument();
-    expect(container.querySelector('[data-testid="daily-winrate-line"][data-hero="Mak"]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-testid="daily-winrate-line"][data-hero="Mak"]')
+    ).not.toBeNull();
     fireEvent.click(within(table).getByRole('button', { name: 'Mak' }));
     expect(screen.getByTestId('selected-matchup-hero')).toHaveTextContent('Mak');
     expect(screen.getByTestId('matchup-list')).toHaveTextContent('Stelle');
@@ -218,7 +231,7 @@ describe('HeroOverviewDashboard', () => {
 
     fireEvent.click(within(getRankingTable()).getByRole('button', { name: 'Vanessa' }));
     expect(screen.getByText('Some days have no calculable trend point.')).toBeInTheDocument();
-    fireEvent.mouseEnter(vanessaCircles[0]!);
+    fireEvent.mouseEnter(vanessaCircles[0]);
     expect(screen.getByTestId('trend-point-tooltip')).toBeInTheDocument();
   });
 
@@ -253,7 +266,9 @@ describe('HeroOverviewDashboard', () => {
   test('failed dates remain explicit while usable snapshot data stays visible', () => {
     renderDashboard({ excludeDays: ['2026-06-05'] });
 
-    expect(screen.getByText('Some days are unavailable; this view includes loaded days only.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Some days are unavailable; this view includes loaded days only.')
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('coverage-strip')).not.toBeInTheDocument();
     expect(getRankingTable()).toBeInTheDocument();
   });

@@ -648,14 +648,16 @@ const en: LocalizedSiteCopy = {
   },
   tutorial: {
     title: 'BazaarPlusPlus Official Guide',
-    intro: 'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.',
+    intro:
+      'From installation to in-game combat controls, master the core features of BazaarPlusPlus and elevate your gameplay.',
     primaryActionLabel: 'Download Now',
     secondaryActionLabel: 'Support the Project',
     featureHeading: 'What the mod adds',
     features: [
       {
         title: 'Card Collection',
-        description: 'Browse all items and skills in-game with powerful, multi-dimensional filters.',
+        description:
+          'Browse all items and skills in-game with powerful, multi-dimensional filters.',
         details: [
           'Filter precisely by Hero, Tier, Size, or even the specific Merchant.',
           'Sync with your current run day to see exactly what is available to you.',
@@ -663,7 +665,8 @@ const en: LocalizedSiteCopy = {
       },
       {
         title: 'BazaarDB Auto Upload',
-        description: 'Contribute to community data by automatically uploading your end-of-run boards and stats.',
+        description:
+          'Contribute to community data by automatically uploading your end-of-run boards and stats.',
         details: [
           'Uploads run silently in the background only when out of combat to ensure zero lag.',
           'This feature is opt-in and disabled by default. Turn it on in settings to help build the database.',
@@ -703,7 +706,8 @@ const en: LocalizedSiteCopy = {
       },
       {
         title: 'Enchant and upgrade previews',
-        description: 'Preview how an item changes after enchantment or upgrade before committing to the choice.',
+        description:
+          'Preview how an item changes after enchantment or upgrade before committing to the choice.',
         details: [
           'Enchant previews add post-enchant values and effects to item tooltips for easier comparison.',
           'Upgrade previews help evaluate shop buys, rewards, and build changes before spending resources.',
@@ -723,11 +727,13 @@ const en: LocalizedSiteCopy = {
       steps: [
         {
           title: 'Download latest installer',
-          description: 'Open the downloads page and choose the Windows .exe or macOS .dmg for your system.',
+          description:
+            'Open the downloads page and choose the Windows .exe or macOS .dmg for your system.',
         },
         {
           title: 'Run the installer',
-          description: 'Close the game first. For updates, uninstall the old build before installing the new one.',
+          description:
+            'Close the game first. For updates, uninstall the old build before installing the new one.',
         },
         {
           title: 'Start the game once',

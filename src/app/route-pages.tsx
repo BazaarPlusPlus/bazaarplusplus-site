@@ -27,9 +27,8 @@ function usePageQuery<T>(
 }
 
 export function HeroOverviewPage({ transport, location, onScopeChange }: RoutePageProps) {
-  const { data, error, isLoading } = usePageQuery(
-    ['hero-overview'],
-    (signal) => loadHeroMetricsDataset(transport, { signal })
+  const { data, error, isLoading } = usePageQuery(['hero-overview'], (signal) =>
+    loadHeroMetricsDataset(transport, { signal })
   );
 
   if (isLoading) {
@@ -40,13 +39,7 @@ export function HeroOverviewPage({ transport, location, onScopeChange }: RoutePa
     return <ErrorScreen location={location} error={error} />;
   }
 
-  return (
-    <HeroOverviewRouteContent
-      data={data}
-      location={location}
-      onScopeChange={onScopeChange}
-    />
-  );
+  return <HeroOverviewRouteContent data={data} location={location} onScopeChange={onScopeChange} />;
 }
 
 function HeroOverviewRouteContent({

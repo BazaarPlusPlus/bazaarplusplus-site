@@ -45,9 +45,7 @@ export default function StatsPageShell({
             </div>
 
             {actions ? (
-              <div className="flex shrink-0 flex-wrap items-center gap-3">
-                {actions}
-              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>
             ) : null}
           </div>
         </section>
@@ -58,7 +56,8 @@ export default function StatsPageShell({
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--color-border-soft)] pt-6 text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-text-faint)]">
           <FooterCredit locale={locale} />
           <span className="tnum">
-            <span className="text-[color:var(--color-text-muted)]">{commonCopy.lastSync}</span> · {formattedGeneratedAt}
+            <span className="text-[color:var(--color-text-muted)]">{commonCopy.lastSync}</span> ·{' '}
+            {formattedGeneratedAt}
           </span>
         </footer>
       </main>

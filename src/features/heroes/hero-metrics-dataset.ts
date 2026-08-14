@@ -4,11 +4,7 @@ export type HeroMetricsStoredSegment = 'legend' | 'non_legend';
 
 export type HeroMetricsSegment = 'all' | HeroMetricsStoredSegment;
 
-export const HERO_METRICS_SEGMENTS: HeroMetricsSegment[] = [
-  'all',
-  'legend',
-  'non_legend',
-];
+export const HERO_METRICS_SEGMENTS: HeroMetricsSegment[] = ['all', 'legend', 'non_legend'];
 
 export type HeroBattleCounts = {
   decided: number;
@@ -252,7 +248,10 @@ function asNonEmptyString(value: unknown): string | null {
 }
 
 function asCounter(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0
     ? value
     : null;
 }
